@@ -3,67 +3,74 @@
 #include <pthread.h>
 #include <stdio.h>
 
-pthread_mutex_t Poll_Work;       //互斥
-pthread_cond_t Poll_Full;       //条件
+pthread_mutex_t lock = PTHREAD_MUTEX_INITIALIZER;
+pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
+pthread_cond_t cond = PTHREAD_COND_INITIALIZER;
 
-void* thread0(void *param)
+void* thread_1(void *a)
 {
-	
-	while(*(int*)param < 100 ){
-		pthread_mutex_lock(&Poll_Work);
-		(*(int*)param) += 5;
-		printf("Thread0: %d\n", *(int*)param);
-		pthread_mutex_unlock(&Poll_Work);
+    while(1)
+    {
+        pthread_mutex_lock(&lock);
+        pthread_cond_wait(&cond, &lock);
+        printf("1111111111111\n");
+        pthread_mutex_unlock(&lock);
+        sleep(1);
+    }
+}
+
+void* thread_2(void *a)  
+{  
+    while(1)
+    {
+        pthread_mutex_lock(&lock);
+        printf("222222222\n");
+        pthread_mutex_unlock(&lock);
+        pthread_cond_signal(&cond);
         sleep(2);
-	}
-	pthread_cond_signal(&Poll_Full);
-	return NULL;
-}
-/*
-1) sleep()使当前线程进入停滞状态，所以执行sleep()的线程在指定的时间内肯定不会执行；
-yield()只是使当前线程重新回到可执行状态，所以执行yield()的线程有可能在进入到可执行状态后马上又被执行。
-2) sleep()可使优先级低的线程得到执行的机会，当然也可以让同优先级和高优先级的线程有执行的机会；
-yield()只能使同优先级的线程有执行的机会。
+    }
+}  
 
-*/
-void* thread1(void *param)
+void* thread_3(void *a)
 {
-	while(*(int*)param < 100 && *(int*)param >= 3){
-		pthread_mutex_lock(&Poll_Work);
-		(*(int*)param) -= 3;
-		printf("Thread1: %d\n", *(int*)param);
-		pthread_mutex_unlock(&Poll_Work);
-        sleep(2); //pthread_yield
-	}
-	pthread_cond_signal(&Poll_Full);
-	return NULL;
+    while(1)
+    {
+        pthread_mutex_lock(&mutex);
+        printf("333333333\n");
+        pthread_mutex_unlock(&mutex);
+        sleep(3);
+    }
 }
 
-void* thread2(void *param)
-{
-	pthread_mutex_lock(&Poll_Work); 
-	while(*(int*)param < 100) 
-		pthread_cond_wait(&Poll_Full, &Poll_Work); 
-	printf("Thread2: Poll Is Full!!\n");  
-	pthread_mutex_unlock(&Poll_Work); 
-	return NULL;
-}
+void* thread_4(void *a)  
+{  
+    while(1)
+    {
+        pthread_mutex_lock(&mutex);
+        printf("222222222\n");
+        pthread_mutex_unlock(&mutex);
+        sleep(4);
+    }
+}  
 
 int main()
 {
-	int sum = 0;   //水深  满为100米 初始化 池里没有水
 	int i;
-	pthread_t ths[3];
+	pthread_t ths[2];
 
-	pthread_mutex_init(&Poll_Work, NULL);
-	pthread_cond_init(&Poll_Full, NULL);
-	pthread_create(&ths[0], NULL,  thread0, (void*)&sum);
-	pthread_create(&ths[1], NULL,  thread1, (void*)&sum);
-	pthread_create(&ths[2], NULL,  thread2, (void*)&sum);
-	for(i = 0; i < 3; ++ i){
+#if 1
+	pthread_create(&ths[0], NULL,  thread_1, 0);
+	pthread_create(&ths[1], NULL,  thread_2, 0);
+#else    
+	//pthread_create(&ths[0], NULL,  thread_3, 0);
+	//pthread_create(&ths[1], NULL,  thread_4, 0);
+#endif
+    
+	for(i = 0; i < 2; ++ i){
 		pthread_join(ths[i], NULL);
 	}
 	printf("Play End!\n");
+    return 0;
 }
 
 

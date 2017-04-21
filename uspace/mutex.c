@@ -39,10 +39,11 @@ void thread_1(void)
     int i;  
     for(i=0; i<10; i++)  {
         pthread_mutex_lock(&mutex1);
-        printf("This is thread_1.\n");  
+        printf("This is pthread_111...");  
+        sleep(2);  
+        printf("111.\n");
+        pthread_mutex_unlock(&mutex1);
         sleep(1);  
-        printf("thread_1 sleep ok.\n");
-        pthread_mutex_unlock(&mutex2);
     }  
     pthread_exit(0);  
 }  
@@ -51,11 +52,12 @@ void thread_2(void)
 {  
     int i;  
     for(i=0; i<10; i++) {
-        pthread_mutex_lock(&mutex2);
-        printf("This is thread_2.\n");  
+        pthread_mutex_lock(&mutex1);
+        printf("This is pthread_222...");  
         sleep(2);  
-        printf("thread_2 sleep ok.\n");
+        printf("222.\n");
         pthread_mutex_unlock(&mutex1);
+        sleep(1);  
     }  
     pthread_exit(0);  
 }  
@@ -95,8 +97,8 @@ void common_proc(char *thread_name)
 {
     pthread_mutex_lock(&mutex3);
     printf("This is %s.\n", thread_name);  
-    sleep(1);  
-    printf("common_proc sleep ok.\n");
+    sleep(2);  
+    printf("%s sleep ok.\n", thread_name);
     pthread_mutex_unlock(&mutex3);
 }
 

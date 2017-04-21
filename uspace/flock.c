@@ -1,18 +1,20 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <pthread.h>
-#include <string.h>
-#include <sys/syscall.h>
 #include <unistd.h>
+#include <sys/types.h>
+#include <sys/stat.h>
 #include <fcntl.h>
 #include <errno.h>
+#include <string.h>
+#include <pthread.h>
+#include <sys/file.h>
 
 #ifndef T_DESC
 #define T_DESC(x, y)   (y)
 #endif
 
-#if T_DESC("TU1", 1)
+#if T_DESC("fcntl", 1)
 
 char *flock_name1 = "/tmp/flock1";
 char *flock_name2 = "/tmp/flock2";
@@ -72,16 +74,25 @@ int file_unlock(int fd)
     lock.l_whence = SEEK_SET;  
     return fcntl(fd, F_SETLK, &lock);  
 }
+#endif
+
+#if T_DESC("flock", 1)
+
+#endif
+
+
+#if T_DESC("tu", 1)
 
 void thread_11(void)  
 {  
     int i;  
-    for(i=0; i<10; i++)  {
+    for(i=0; i<100; i++)  {
         write_lock(flock_fd1);
-        printf("This is pthread_1.\n");  
-        sleep(1);  
-        printf("pthread_1 sleep ok.\n");
-        file_unlock(flock_fd2);
+        printf("This is pthread_111...");  
+        sleep(2);  
+        printf("111.\n");
+        file_unlock(flock_fd1);
+        sleep(1);
     }  
     pthread_exit(0);  
 }  
@@ -89,24 +100,50 @@ void thread_11(void)
 void thread_12(void)  
 {  
     int i;  
-    for(i=0; i<10; i++) {
+    for(i=0; i<100; i++) {
         write_lock(flock_fd2);
-        printf("This is pthread_2.\n");  
-        sleep(1);  
-        printf("pthread_2 sleep ok.\n");
+        printf("This is pthread_222...");  
+        sleep(2);  
+        printf("222.\n");
         file_unlock(flock_fd1);
+        sleep(1);  
     }  
     pthread_exit(0);  
 }  
 
-int tu1_proc(int argc, char **argv)  
+void thread_21(void)  
+{  
+    int i;  
+    for(i=0; i<100; i++)  {
+        flock(flock_fd1, LOCK_EX);
+        printf("This is pthread_111...");  
+        sleep(2);  
+        printf("111.\n");
+        flock(flock_fd1, LOCK_UN);
+        sleep(1);  
+    }  
+    pthread_exit(0);  
+}  
+  
+void thread_22(void)  
+{  
+    int i;  
+    for(i=0; i<100; i++) {
+        flock(flock_fd1, LOCK_EX);
+        printf("This is pthread_222...");  
+        sleep(2);  
+        printf("222.\n");
+        flock(flock_fd1, LOCK_UN);
+        sleep(1);  
+    }  
+    pthread_exit(0);  
+}  
+
+int tu1_proc(int tu_id)  
 {  
     pthread_t id_1,id_2;  
     int fd,ret;  
     int param;
-
-    if (argc < 2) return 1;
-    param = atoi(argv[1]);
 
     flock_fd1 = open(flock_name1, O_RDWR| O_CREAT, 0600);
     if (flock_fd1 < 0) return -1;
@@ -114,7 +151,7 @@ int tu1_proc(int argc, char **argv)
     flock_fd2 = open(flock_name2, O_RDWR| O_CREAT, 0600);
     if (flock_fd2 < 0) return -1;
 
-    if (!param) {
+    if (tu_id == 1) {
         ret = pthread_create(&id_1, NULL, (void *)thread_11, NULL);  
     } else {
         ret = pthread_create(&id_2, NULL, (void *)thread_12, NULL);  
@@ -126,7 +163,7 @@ int tu1_proc(int argc, char **argv)
     }  
     
     /*等待线程结束*/  
-    if (!param) {
+    if (tu_id == 1) {
         pthread_join(id_1, NULL);  
     } else {
         pthread_join(id_2, NULL);  
@@ -144,23 +181,28 @@ int tu1_proc(int argc, char **argv)
 void usage()
 {
     printf("\n Usage: <cmd> <tu> <p1> <...>");
-    printf("\n   1 -- sem between thread");
-    printf("\n     => P1: 0 - create pid 0; 1 - create pid 1");
+    printf("\n   1 -- create task 1");
+    printf("\n   2 -- create task 2");
     printf("\n");
 }
 
 int main(int argc, char **argv)
 {
     int ret;
+    int tu_id;
     
     if(argc < 2) {
         usage();
         return 0;
     }
 
-    int tu = atoi(argv[1]);
-    if (tu == 1) ret = tu1_proc(argc - 1, &argv[1]);
+    tu_id = atoi(argv[1]);
+    if (tu_id < 1 || tu_id > 2)  {
+        usage();
+        return 0;
+    }
     
+    ret = tu1_proc(tu_id);
     return ret;
 }
 #endif
