@@ -12,6 +12,8 @@
 #define T_DESC(x, y)   (y)
 #endif
 
+__thread int my_var = 6;
+
 #if T_DESC("global", 1)
 pid_t gettid(void)
 {  
@@ -26,6 +28,8 @@ void thread_1(void)
 
     for(i=0; i<10; i++)  {
         printf("thread_1: pid=0x%x tid=0x%x self=0x%x\n", getpid(), gettid(), (int)pthread_self());
+        my_var += 2;
+        printf("thread_1: my_var=%d addr=0x%x \n", my_var, &my_var);
         sleep(1);  
     }  
     pthread_exit(0);  
@@ -37,6 +41,8 @@ void thread_2(void)
     
     for(i=0; i<5; i++) {
         printf("thread_2: pid=0x%x tid=0x%x self=0x%x\n", getpid(), gettid(), (int)pthread_self());
+        my_var += 3;
+        printf("thread_2: my_var=%d addr=0x%x \n", my_var, &my_var);
         sleep(1);  
     }  
     pthread_exit(0);  

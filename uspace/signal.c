@@ -63,7 +63,7 @@ int tu1_proc(void)
 void usage()
 {
     printf("\n Usage: <cmd> <tu> <p1> <...>");
-    printf("\n   1 -- signal");
+    printf("\n   1 -- signal send test");
     printf("\n");
 }
 
