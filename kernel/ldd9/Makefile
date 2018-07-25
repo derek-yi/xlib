@@ -1,6 +1,6 @@
 ifneq ($(KERNELRELEASE),)
 
-obj-m:=klog.o
+obj-m:=misc.o
 
 else
 

@@ -25,7 +25,9 @@
 
 
 #if 1
-static irqreturn_t my_interrupt(int irq, void *dev_id)
+
+//irqreturn_t (*handler)(int irq, struct uio_info *dev_info);
+static irqreturn_t my_interrupt(int irq, struct uio_info *dev_id)
 {
 	struct uio_info *info = (struct uio_info *)dev_id;
 

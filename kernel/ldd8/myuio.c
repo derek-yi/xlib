@@ -20,7 +20,7 @@ char global_buffer[STRING_LEN] = {0};
 
 #if 1
 
-static irqreturn_t my_interrupt(int irq, void *dev_id)
+static irqreturn_t my_interrupt(int irq, struct uio_info *dev_id)
 {
 	struct uio_info *info = (struct uio_info *)dev_id;
 	unsigned long *ret_val_add = (unsigned long *)(info->mem[0].addr);

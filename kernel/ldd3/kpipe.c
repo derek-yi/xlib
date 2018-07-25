@@ -157,7 +157,8 @@ int my_dev_release(struct inode *inode, struct file *filp)
 {  
     return 0;  
 }  
-static int my_dev_ioctl( struct file *file, unsigned int cmd, unsigned long arg)
+
+static long my_dev_ioctl( struct file *file, unsigned int cmd, unsigned long arg)
 {    
     USER_MSG_INFO user_msg;
     int ret = 0;

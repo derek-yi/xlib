@@ -55,7 +55,7 @@ int mem_release(struct inode *inode, struct file *filp)
 
 int temp_data = 0;
 
-static int mem_ioctl( struct file *file, unsigned int cmd, unsigned long arg)
+static long mem_ioctl( struct file *file, unsigned int cmd, unsigned long arg)
 {    
     switch(cmd)
     {

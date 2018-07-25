@@ -26,7 +26,7 @@
 static int user_cmd_proc(char *user_cmd, char *out_str)
 {
     if(strncmp(user_cmd, "sendsig", 7) == 0) {
-        send_sig(SIGUSR1, current, 0); //send SIGUSR 1
+        //send_sig(SIGUSR1, current, 0); //send SIGUSR 1
     }
     
     if(strncmp(user_cmd, "showpid", 7) == 0) {
@@ -52,7 +52,7 @@ int mem_release(struct inode *inode, struct file *filp)
 char user_cmd[IO_CMD_LEN] = {0};
 char out_str[IO_CMD_LEN] = {0};
 
-static int mem_ioctl( struct file *file, unsigned int cmd, unsigned long arg)
+static long mem_ioctl( struct file *file, unsigned int cmd, unsigned long arg)
 {    
     printk("mem_ioctl: %d \n", cmd);    
     

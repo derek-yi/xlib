@@ -86,7 +86,7 @@ int mem_release(struct inode *inode, struct file *filp)
 char user_cmd[IO_CMD_LEN] = {0};
 char out_str[IO_CMD_LEN] = {0};
 
-int mem_ioctl( struct file *file, unsigned int cmd, unsigned long arg)
+long mem_ioctl( struct file *file, unsigned int cmd, unsigned long arg)
 {    
     printk("mem_ioctl: %d \n", cmd);    
     
