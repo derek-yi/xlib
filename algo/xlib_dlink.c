@@ -11,17 +11,17 @@ struct node_st {
     struct node_st *next, *prev;  
 };  
    
-struct llist_st {  
+struct dlink_st {  
     struct node_st head;  
     int elmsize;  
     int elmnr;  
 };  
   
-void* llist_new(int elmsize)  
+void* dlink_new(int elmsize)  
 {  
-    struct llist_st *newlist;  
+    struct dlink_st *newlist;  
       
-    newlist = (struct llist_st *)malloc(sizeof(struct llist_st));  
+    newlist = (struct dlink_st *)malloc(sizeof(struct dlink_st));  
     if (newlist == NULL) {  
         return NULL;  
     }  
@@ -34,9 +34,9 @@ void* llist_new(int elmsize)
     return (void*)newlist;  
 }  
   
-int llist_destroy(void *llist)  
+int dlink_destroy(void *llist)  
 {  
-    struct llist_st *me = llist;  
+    struct dlink_st *me = llist;  
     struct node_st *curr, *saved;  
   
     if (NULL == llist) return -1;  
@@ -50,9 +50,9 @@ int llist_destroy(void *llist)
     return 0;  
 }  
   
-int llist_node_append(void *llist, const void *datap)  
+int dlink_node_append(void *llist, const void *datap)  
 {  
-    struct llist_st *me = llist;  
+    struct dlink_st *me = llist;  
     struct node_st *newnodep;  
   
     newnodep = (struct node_st *)malloc(sizeof(struct node_st));  
@@ -76,9 +76,9 @@ int llist_node_append(void *llist, const void *datap)
     return 0;  
 }  
   
-int llist_node_insert(void* llist, const void* datap, fp_node_cmp comp)  
+int dlink_node_insert(void* llist, const void* datap, fp_node_cmp comp)  
 {  
-    struct llist_st *me = llist;  
+    struct dlink_st *me = llist;  
     struct node_st *curr = NULL;  
     struct node_st *newnodep;  
   
@@ -116,9 +116,9 @@ int llist_node_insert(void* llist, const void* datap, fp_node_cmp comp)
     return 0;  
 }  
   
-void *llist_node_delete(void* llist, const void *key, fp_node_cmp comp)  
+void *dlink_node_delete(void* llist, const void *key, fp_node_cmp comp)  
 {  
-    struct llist_st *me = llist;  
+    struct dlink_st *me = llist;  
     struct node_st *curr = NULL;  
   
     if (NULL == llist) return NULL;  
@@ -136,9 +136,9 @@ void *llist_node_delete(void* llist, const void *key, fp_node_cmp comp)
 }  
   
 // if proc return !0, then break the travel  
-int llist_travel(void* llist, fp_node_proc proc, void *cookie)  
+int dlink_travel(void* llist, fp_node_proc proc, void *cookie)  
 {  
-    struct llist_st *me = (struct llist_st *)llist;  
+    struct dlink_st *me = (struct dlink_st *)llist;  
     struct node_st *curr;  
   
     if (NULL == llist) return -1;  
@@ -153,9 +153,9 @@ int llist_travel(void* llist, fp_node_proc proc, void *cookie)
     return 0;  
 }  
   
-void* llist_node_find(void *llist, fp_node_cmp comp, const void *key)  
+void* dlink_node_find(void *llist, fp_node_cmp comp, const void *key)  
 {  
-    struct llist_st *me = llist;  
+    struct dlink_st *me = llist;  
     struct node_st *curr;  
   
     if (NULL == llist) return NULL;  
@@ -170,9 +170,9 @@ void* llist_node_find(void *llist, fp_node_cmp comp, const void *key)
     return NULL;  
 }  
   
-int llist_sort(void* llist, fp_node_cmp comp)  
+int dlink_sort(void* llist, fp_node_cmp comp)  
 {  
-    struct llist_st *me = llist;  
+    struct dlink_st *me = llist;  
     struct node_st *curr;  
     struct node_st *ptr, *saved;  
     struct node_st temp_head;  
@@ -242,7 +242,7 @@ int node_cmp(const void* data1, const void* data2)
 #define ARRAY_SIZE  16
   
 #ifdef BUILD_XLIB_SO
-int xlib_llist_test()
+int xlib_dlink_test()
 #else
 int main()
 #endif
@@ -250,50 +250,50 @@ int main()
     int i;  
     USER_DATA_ST temp;  
     USER_DATA_ST *ptr;  
-    USER_DATA_ST *my_llist = llist_new(sizeof(USER_DATA_ST));  
+    USER_DATA_ST *my_llist = dlink_new(sizeof(USER_DATA_ST));  
   
     printf("\r\n init  : ");  
     srand(time(NULL));  
     for(i = 0; i < ARRAY_SIZE; i++) {  
         temp.key = i;  
         temp.param = rand()%ARRAY_SIZE;  
-        llist_node_append(my_llist, &temp);  
+        dlink_node_append(my_llist, &temp);  
     }  
-    llist_travel(my_llist, node_print, NULL);  
+    dlink_travel(my_llist, node_print, NULL);  
   
     printf("\r\n delete: ");  
-    temp.key = 0; llist_node_delete(my_llist, &temp, node_cmp);  
-    temp.key = 3; llist_node_delete(my_llist, &temp, node_cmp);  
-    temp.key = 5; llist_node_delete(my_llist, &temp, node_cmp);  
-    temp.key = 8; llist_node_delete(my_llist, &temp, node_cmp);  
-    llist_travel(my_llist, node_print, NULL);  
+    temp.key = 0; dlink_node_delete(my_llist, &temp, node_cmp);  
+    temp.key = 3; dlink_node_delete(my_llist, &temp, node_cmp);  
+    temp.key = 5; dlink_node_delete(my_llist, &temp, node_cmp);  
+    temp.key = 8; dlink_node_delete(my_llist, &temp, node_cmp);  
+    dlink_travel(my_llist, node_print, NULL);  
   
     printf("\r\n find  : ");  
-    temp.key = 3; ptr = llist_node_find(my_llist, node_cmp, &temp);  
+    temp.key = 3; ptr = dlink_node_find(my_llist, node_cmp, &temp);  
     if(NULL != ptr) printf("\r\n find error");  
-    temp.key = 4; ptr = llist_node_find(my_llist, node_cmp, &temp);  
+    temp.key = 4; ptr = dlink_node_find(my_llist, node_cmp, &temp);  
     if(NULL == ptr) printf("\r\n find error");  
     node_print(ptr, NULL);  
   
     printf("\r\n sort  : ");  
-    llist_sort(my_llist, node_cmp);  
-    llist_travel(my_llist, node_print, NULL);  
+    dlink_sort(my_llist, node_cmp);  
+    dlink_travel(my_llist, node_print, NULL);  
   
     printf("\r\n insert: ");  
     temp.key = 0; temp.param = 111;  
-    llist_node_insert(my_llist, &temp, node_cmp);  
+    dlink_node_insert(my_llist, &temp, node_cmp);  
     temp.key = 5; temp.param = 222;  
-    llist_node_append(my_llist, &temp);  
+    dlink_node_append(my_llist, &temp);  
     temp.key = 20; temp.param = 333;  
-    llist_node_insert(my_llist, &temp, node_cmp);  
-    llist_travel(my_llist, node_print, NULL);  
+    dlink_node_insert(my_llist, &temp, node_cmp);  
+    dlink_travel(my_llist, node_print, NULL);  
   
     printf("\r\n sort  : ");  
-    llist_sort(my_llist, node_cmp);  
-    llist_travel(my_llist, node_print, NULL);  
+    dlink_sort(my_llist, node_cmp);  
+    dlink_travel(my_llist, node_print, NULL);  
   
     printf("\r\n destroy: ");  
-    llist_destroy(my_llist);  
+    dlink_destroy(my_llist);  
       
     return 0;  
 }  
