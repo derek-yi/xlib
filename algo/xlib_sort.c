@@ -203,13 +203,10 @@ void print_array(int array[], int print_cnt)
     printf("\r\n ================================================ ");
 }
 
-#ifdef BUILD_XLIB_SO
-int xlib_sort_test()
-#else
 int main()
-#endif
 {  
     int i;
+    int sort_select;
   
     printf("\r\n init: ");  
     srand(time(NULL));  
@@ -217,20 +214,32 @@ int main()
         my_array[i] = rand()%ARRAY_SIZE;  
     }  
     print_array(my_array, 64);  
-  
-    printf("\r\n sort: ");  
+
+repeat_select:
+    printf("\r\n 0) qsort");  
+    printf("\r\n 1) bubble_sort");  
+    printf("\r\n 2) cocktail_sort");  
+    printf("\r\n 3) select_sort");  
+    printf("\r\n 4) insert_sort");  
+    printf("\r\n 5) shell_sort");  
+    printf("\r\n input your choice: ");  
+    scanf("%d", &sort_select);
+    if( sort_select < 0 || sort_select > 5) 
+        goto repeat_select;
+    
+    printf("\r\n running...");  
 
 #ifdef WIN32
     QueryPerformanceFrequency(&feq);
     QueryPerformanceCounter(&t1);
 #endif    
     
-    //qsort(array, ARRAY_SIZE, sizeof(int), my_cmp);
-    //bubble_sort(my_array, ARRAY_SIZE, sizeof(int), my_cmp);
-    //cocktail_sort(my_array, ARRAY_SIZE, sizeof(int), my_cmp);
-    //select_sort(my_array, ARRAY_SIZE, sizeof(int), my_cmp);
-    //insert_sort(my_array, ARRAY_SIZE, sizeof(int), my_cmp);
-    shell_sort(my_array, ARRAY_SIZE, sizeof(int), my_cmp);
+    if (sort_select == 0) qsort(my_array, ARRAY_SIZE, sizeof(int), my_cmp);
+    else if (sort_select == 1) bubble_sort(my_array, ARRAY_SIZE, sizeof(int), my_cmp);
+    else if (sort_select == 2) cocktail_sort(my_array, ARRAY_SIZE, sizeof(int), my_cmp);
+    else if (sort_select == 3) select_sort(my_array, ARRAY_SIZE, sizeof(int), my_cmp);
+    else if (sort_select == 4) insert_sort(my_array, ARRAY_SIZE, sizeof(int), my_cmp);
+    else if (sort_select == 5) shell_sort(my_array, ARRAY_SIZE, sizeof(int), my_cmp);
 
 #ifdef WIN32
     QueryPerformanceCounter(&t2);

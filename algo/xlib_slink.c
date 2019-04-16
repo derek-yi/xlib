@@ -38,7 +38,7 @@ int xlib_link_length(link_node_t *pLink)
     link_node_t *p = pLink;
     int count = 0;
     
-    if(NULL == pLink) return XLIB_ECODE_NOT_INITED;
+    if(NULL == pLink) return XLIB_ERROR;
 
     while(NULL != p) {
         count++;
@@ -81,16 +81,16 @@ int xlib_link_add(link_node_t **ppLink, void *pvData, int data_size)
 {
     link_node_t *new_node;
 
-    if (NULL == ppLink) return XLIB_ECODE_INVALID_PARAM;
-    if (NULL == pvData) return XLIB_ECODE_INVALID_PARAM;
+    if (NULL == ppLink) return XLIB_ERROR;
+    if (NULL == pvData) return XLIB_ERROR;
 
     new_node = (link_node_t *)xlib_malloc(sizeof(link_node_t));
-    if (NULL == new_node) return XLIB_ECODE_MALLOC_FAIL;
+    if (NULL == new_node) return XLIB_ERROR;
 
     new_node->pvData = xlib_malloc(data_size);
     if (NULL == new_node) {
         free(new_node);
-        return XLIB_ECODE_MALLOC_FAIL;
+        return XLIB_ERROR;
     }
     
     memcpy(new_node->pvData, pvData, data_size);
@@ -106,19 +106,19 @@ int xlib_link_add_sorted(link_node_t **ppLink, void *pvData, int data_size, fp_n
     link_node_t *p = *ppLink;
     link_node_t *prev = NULL;
 
-    if (NULL == ppLink) return XLIB_ECODE_INVALID_PARAM;
-    if (NULL == pvData) return XLIB_ECODE_INVALID_PARAM;
+    if (NULL == ppLink) return XLIB_ERROR;
+    if (NULL == pvData) return XLIB_ERROR;
 
     if(NULL == fp_cmp)
         return xlib_link_add(ppLink, pvData, data_size);
 
     new_node = (link_node_t *)xlib_malloc(sizeof(link_node_t));
-    if (NULL == new_node) return XLIB_ECODE_MALLOC_FAIL;
+    if (NULL == new_node) return XLIB_ERROR;
 
     new_node->pvData = xlib_malloc(data_size);
     if (NULL == new_node) {
         free(new_node);
-        return XLIB_ECODE_MALLOC_FAIL;
+        return XLIB_ERROR;
     }
     
     memcpy(new_node->pvData, pvData, data_size);
@@ -157,8 +157,8 @@ int xlib_link_delete(link_node_t **ppLink, void *pvData, fp_node_data_cmp fp_cmp
     link_node_t *prev = NULL;
     int count = 0;
     
-    if(NULL == ppLink || NULL == p) return XLIB_ECODE_INVALID_PARAM;
-    if(NULL == fp_cmp) return XLIB_ECODE_INVALID_PARAM;
+    if(NULL == ppLink || NULL == p) return XLIB_ERROR;
+    if(NULL == fp_cmp) return XLIB_ERROR;
 
     while(NULL != p) {
         if (0 == fp_cmp((void*)p->pvData, pvData)) {
@@ -185,16 +185,15 @@ int xlib_link_iterate(link_node_t *pLink, fp_node_data_proc fp_proc)
 {
     link_node_t *p = pLink;
     
-    if(NULL == pLink) return XLIB_ECODE_INVALID_PARAM;
+    if(NULL == pLink) return XLIB_ERROR;
 
     while(NULL != p) {
-        if(0 != fp_proc((void*)p->pvData)) return XLIB_ECODE_ERROR;
+        if(0 != fp_proc((void*)p->pvData)) return XLIB_ERROR;
         p = p->pNext;
     }
 
     return 0;
 }
-
 
 #endif
 
@@ -233,12 +232,7 @@ int link_node_show(void *in_node)
     return 0;
 }
 
-
-#ifdef BUILD_XLIB_SO
-int xlib_link_test()
-#else
 int main()
-#endif
 {
     int i;
     demo_data_t demo_data[10] = {0};

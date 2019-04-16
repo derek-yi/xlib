@@ -1,6 +1,4 @@
 
-#include <stdio.h>
-#include <stdlib.h>
 #include "xlib.h"
 
 
@@ -134,12 +132,7 @@ int node_data_show(void *in_node)
     return 0;
 }
 
-
-#ifdef BUILD_XLIB_SO
-int xlib_stack_test()
-#else
 int main()
-#endif
 {
     int i;
     int num[10] = {0};

@@ -1,8 +1,5 @@
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <stdarg.h>
-#include <string.h>
+#include "xlib.h"
 
 #define VOS_OK          0
 #define VOS_ERR         1
@@ -11,7 +8,6 @@
 #ifndef uint32
 #define uint32 unsigned int
 #endif
-
 
 #if 1
 typedef int (* FUNC_ENTRY)(void *param);
@@ -23,16 +19,17 @@ typedef struct CMD_NODE
     char  *cmd_str;
     char  *help_str;
     FUNC_ENTRY  cmd_func;    
-}CMD_NODE, *PCMD_NODE;
+}CMD_NODE;
 
 #define MAX_CMD_BUFF_SZ         1024
+
 #define CMD_ERR_NOT_MATCH       0x0001
 #define CMD_ERR_AMBIG           0x0002 //ambiguous
 
 int vos_print(const char * format,...)
 {
     va_list args;
-    char buf[1024];
+    char buf[MAX_CMD_BUFF_SZ];
     int len;
 
     va_start(args, format);
@@ -46,82 +43,22 @@ int vos_print(const char * format,...)
 
     printf("%s", buf);
 
-    //STD_OUT=1, STD_IN=0
-    //write(1, buf, len);
-
     return len;    
 }
-
-#define FILINE  __FILE__, __LINE__
-int vos_debug(char *file, int line, uint32 ulDebug, const char * format,...)
-{
-    va_list args;
-    char buf[1024];
-    int len;
-    char *p, *pos;
-
-    if( NULL == format )
-    {
-        return VOS_ERR;
-    }
-
-    if ( NULL != file )
-    {
-        p   = file;
-        pos = file;
-        while(*p)
-        {
-            if(*p == '\\' || *p == '/')
-            {
-                if( 0 != *(p+1) ) pos = p + 1;
-            }
-            p++;
-        }
-        
-        printf("%s:%d ", pos, line);
-    }
-    
-    va_start(args, format);
-    len = vsprintf(buf, format, args);
-    va_end(args);
-
-    if (len < 0 || len > 1024)
-    {
-        return -1;
-    }
-
-    printf("%s", buf);
-
-    //STD_OUT=1, STD_IN=0
-    //write(1, buf, len);
-
-    return len;    
-}
-
 
 char    cli_cmd_buff[MAX_CMD_BUFF_SZ];
 uint32  cli_cmd_ptr = 0;
 
-PCMD_NODE  gst_cmd_list  = VOS_NULL;
+CMD_NODE  *gst_cmd_list  = VOS_NULL;
 uint32     cmd_end_flag  = 0;
 
-/****************************************************************************
- * Name:   --
- * Func:   -- 
- * Input:  -- 
- * Output: -- 
- * Return: -- 
- * LOG:    
- ****************************************************************************
- *
- ****************************************************************************/
 int cli_cmd_exec(char *buff)
 {
     uint32 cmd_key_len;
     uint32 cmd_len;
     uint32 i;
     int  rc;
-    PCMD_NODE pNode;
+    CMD_NODE *pNode;
 
     cmd_len = strlen(buff);
     if(cmd_len < 1)
@@ -155,11 +92,11 @@ int cli_cmd_exec(char *buff)
         return rc; // CMD_ERR_NOT_MATCH;
     }
 
-#if 0
+#if 0 //todo
     //if not full match, check ambiguous
     if(cmd_key_len < vos_strlen(pNode->cmd_str))
     {
-        PCMD_NODE iNode;
+        CMD_NODE *iNode;
         iNode = pNode->pNext;
         while(iNode != VOS_NULL)
         {
@@ -185,24 +122,14 @@ int cli_cmd_exec(char *buff)
     return rc;
 }
 
-/****************************************************************************
- * Name:   --
- * Func:   -- 
- * Input:  -- 
- * Output: -- 
- * Return: -- 
- * LOG:    
- ****************************************************************************
- *
- ****************************************************************************/
 int cli_cmd_reg(char *cmd, char *help, FUNC_ENTRY func)
 {
-    PCMD_NODE new_node;
+    CMD_NODE *new_node;
     
-    new_node = (PCMD_NODE)malloc(sizeof(CMD_NODE));
+    new_node = (CMD_NODE *)malloc(sizeof(CMD_NODE));
     if(new_node == VOS_NULL)
     {
-        vos_debug(FILINE, 0, "VOS_MALLOC failed!\r\n");
+        printf("VOS_MALLOC failed!\r\n");
         return VOS_ERR;
     }
 
@@ -211,10 +138,10 @@ int cli_cmd_reg(char *cmd, char *help, FUNC_ENTRY func)
     new_node->cmd_str = (char *)strdup(cmd);
     new_node->help_str = (char *)strdup(help);
 
-    vos_debug( FILINE, 0, "=====================================\r\n");
-    vos_debug( FILINE, 0, "cli_cmd_reg: %s(%s) in ADDR(0x%x)\r\n", 
-               new_node->cmd_str, new_node->help_str, new_node->cmd_func );
-    vos_debug( FILINE, 0, "=====================================\r\n\r\n");
+    printf("=====================================\r\n");
+    printf("cli_cmd_reg: %s(%s) in ADDR(0x%x)\r\n", 
+           new_node->cmd_str, new_node->help_str, new_node->cmd_func );
+    printf("=====================================\r\n\r\n");
     
     //vos_semTake(cmd_list_sem, 0);
     new_node->pNext = gst_cmd_list;
@@ -224,32 +151,13 @@ int cli_cmd_reg(char *cmd, char *help, FUNC_ENTRY func)
     return VOS_OK;
 }
 
-/****************************************************************************
- * Name:   --
- * Func:   -- 
- * Input:  -- 
- * Output: -- 
- * Return: -- 
- * LOG:    
- ****************************************************************************
- *
- ****************************************************************************/
 int cli_do_exit(void *param)
 {
     cmd_end_flag = 1;
     
     return VOS_OK;
 }
-/****************************************************************************
- * Name:   --
- * Func:   -- 
- * Input:  -- 
- * Output: -- 
- * Return: -- 
- * LOG:    
- ****************************************************************************
- *
- ****************************************************************************/
+
 uint32 cli_param_format(char *param, char **argv, uint32 max_cnt)
 {
     char *ptr = param;
@@ -299,16 +207,6 @@ uint32 cli_param_format(char *param, char **argv, uint32 max_cnt)
     return cnt;
 }
 
-/****************************************************************************
- * Name:   --
- * Func:   -- 
- * Input:  -- 
- * Output: -- 
- * Return: -- 
- * LOG:    
- ****************************************************************************
- *
- ****************************************************************************/
 int cli_do_param_test(void *param)
 {
     uint32 rc, i;
@@ -327,14 +225,6 @@ int cli_do_param_test(void *param)
     return VOS_OK;
 }
 
-/****************************************************************************
- * Func:    
- * Param:   
- * Output:  
- * Return:  
- *          
- * Note:    
- ****************************************************************************/
 int cli_do_show_version(void *param)
 {
     vos_print("===================================\r\n");
@@ -344,20 +234,9 @@ int cli_do_show_version(void *param)
     return VOS_OK;
 }
 
-
-/****************************************************************************
- * Name:   --
- * Func:   -- 
- * Input:  -- 
- * Output: -- 
- * Return: -- 
- * LOG:    
- ****************************************************************************
- *
- ****************************************************************************/
 int cli_do_help(void *param)
 {
-    PCMD_NODE pNode;
+    CMD_NODE *pNode;
     
     pNode = gst_cmd_list;
     while(pNode != VOS_NULL)
@@ -370,16 +249,6 @@ int cli_do_help(void *param)
     return VOS_OK;
 }
 
-/****************************************************************************
- * Name:   --
- * Func:   -- 
- * Input:  -- 
- * Output: -- 
- * Return: -- 
- * LOG:    
- ****************************************************************************
- *
- ****************************************************************************/
 void cli_cmd_init(void)
 {
     gst_cmd_list = VOS_NULL;
@@ -391,16 +260,6 @@ void cli_cmd_init(void)
     cli_cmd_reg("cmdtest",      "cmd param test",   &cli_do_param_test);
 }
 
-/****************************************************************************
- * Name:   --
- * Func:   -- 
- * Input:  -- 
- * Output: -- 
- * Return: -- 
- * LOG:    
- ****************************************************************************
- *
- ****************************************************************************/
 void cli_buf_insert(char c)
 {
     if(cli_cmd_ptr == MAX_CMD_BUFF_SZ-1)
@@ -413,31 +272,11 @@ void cli_buf_insert(char c)
     cli_cmd_ptr++;
 }
 
-/****************************************************************************
- * Name:   --
- * Func:   -- 
- * Input:  -- 
- * Output: -- 
- * Return: -- 
- * LOG:    
- ****************************************************************************
- *
- ****************************************************************************/
 void cli_prompt(void)
 {
     vos_print("\r\nNIX#");
 }
 
-/****************************************************************************
- * Name:   --
- * Func:   -- 
- * Input:  -- 
- * Output: -- 
- * Return: -- 
- * LOG:    
- ****************************************************************************
- *
- ****************************************************************************/
 void cli_read_to_exec(void)
 {
     char ch;
@@ -474,16 +313,6 @@ void cli_read_to_exec(void)
     }
 }
 
-/****************************************************************************
- * Name:   cli_init
- * Func:   -- 
- * Input:  -- 
- * Output: -- 
- * Return: -- 
- * LOG:    
- ****************************************************************************
- *
- ****************************************************************************/
 int cli_init(void)
 {
     //cmd init
@@ -498,26 +327,18 @@ int cli_init(void)
 	return VOS_OK;
 }
 
-/****************************************************************************
- * Name:   cli_term
- * Func:   -- 
- * Input:  -- 
- * Output: -- 
- * Return: -- 
- * LOG:    
- ****************************************************************************
- *
- ****************************************************************************/
 int cli_term(void)
 {
 	return VOS_OK;
 }
 #endif
 
+
+#if 1
 int main(int argc, char **argv)
 {
     cli_init();
 
     return 0;
 }
-
+#endif

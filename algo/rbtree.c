@@ -23,7 +23,7 @@
 
 #include "xlib.h"
 
-#if T_DESC("header", 1)
+#if T_DESC("source", 1)
 
 #define EXPORT_SYMBOL(x)
 
@@ -746,11 +746,7 @@ void print_rbtree(struct rb_root *tree)
     printf("\n");
 }
 
-#ifdef BUILD_XLIB_SO
-int rb_tree_test(int argc, char *argv[])
-#else
 int main(int argc, char *argv[])
-#endif
 {
     struct rb_root mytree = RB_ROOT;
     int i, ret, num;

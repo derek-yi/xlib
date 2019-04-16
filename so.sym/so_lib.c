@@ -32,6 +32,6 @@ void test3()
 
 /*
 gcc -fPIC -c so_lib.c   
-gcc -shared -o libxxx.so so_lib.o
+gcc -shared -o libdemo.so so_lib.o
 */
 

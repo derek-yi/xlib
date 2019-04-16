@@ -3,7 +3,6 @@
 
 #include "list.h"
 
-
 #if T_DESC("test", DEBUG_ENABLE)
 
 #include <time.h>
@@ -16,17 +15,12 @@ typedef struct user_data_s
     struct list_head list;
 }user_data_t;  
 
-
 //LIST_HEAD(my_list);
 struct list_head my_list;
 
 #define ARRAY_SIZE 32
 
-#ifdef BUILD_XLIB_SO
-int xlib_dlist_test()
-#else
 int main()
-#endif
 {  
     int i;  
     struct list_head *tmp;

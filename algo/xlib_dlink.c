@@ -241,11 +241,7 @@ int node_cmp(const void* data1, const void* data2)
 
 #define ARRAY_SIZE  16
   
-#ifdef BUILD_XLIB_SO
-int xlib_dlink_test()
-#else
 int main()
-#endif
 {  
     int i;  
     USER_DATA_ST temp;  

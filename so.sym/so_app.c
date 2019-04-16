@@ -18,7 +18,7 @@ int main(int argc, char **argv)
     void (*test)();
     char *error;
 
-    handle = dlopen ("./libxxx.so", RTLD_LAZY);
+    handle = dlopen ("./libdemo.so", RTLD_LAZY);
     if (!handle) {
         fputs(dlerror(), stderr);
         exit(1);
@@ -37,7 +37,7 @@ int main(int argc, char **argv)
 }
 
 /*
-gcc so_app.c -ldl -L./ -lxxx 
+gcc so_app.c -ldl -L./ -ldemo
   
 export LD_LIBRARY_PATH=./:$LD_LIBRARY_PATH && ./a.out 
 */
