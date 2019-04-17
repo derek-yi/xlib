@@ -1,6 +1,6 @@
 ifneq ($(KERNELRELEASE),)
 
-obj-m:=kdev.o
+obj-m:=myuio.o
 
 else
 

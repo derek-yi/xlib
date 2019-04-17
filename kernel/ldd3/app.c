@@ -7,63 +7,47 @@
 #include <sys/stat.h>
 #include <unistd.h>
 #include <sys/ioctl.h>
+#include <fcntl.h>
+#include <errno.h>
+#include <signal.h>
+#include <sys/syscall.h>
 
-#define CMD_MAGIC   'k'
-#define MEM_CMD1    _IO(CMD_MAGIC, 0x1a) // init
-#define MEM_CMD2    _IO(CMD_MAGIC, 0x1b) // write
-#define MEM_CMD3    _IO(CMD_MAGIC, 0x1c) // read
+#define IO_CMD_LEN      256  
+char kdev_io_buf[IO_CMD_LEN] = {0};
 
-typedef struct tagUSER_MSG_INFO
+void signal_handler(int signo)
 {
-    int  uid;
-    int  param1;
-    int  param2;
-    int  param3;
-    char *msg;
-}USER_MSG_INFO;
+    printf("signal_handler: %d\n", signo);
+}
 
+pid_t gettid(void)
+{  
+    return syscall(SYS_gettid);  
+} 
 
-#define _APP_001_
-
-#ifdef _APP_001_
 int main()
 {
     int fd;
-    int ret;
-    char buff[256];
-    USER_MSG_INFO usr_msg;
+    int ret = 0;
 
-    fd = open("/dev/kpipe", O_RDWR);
+    signal(SIGUSR1, (void *)signal_handler);
+    printf("main: pid=%d tid=%d \n", getpid(), gettid());
+    
+    fd = open("/dev/kdev", O_RDWR);
     if( fd < 0 ) {
-        printf("open kpipe WRONG£¡\n");
+        printf("open memdev WRONG£¡\n");
         return 0;
     }
 
-    usr_msg.uid = 0;
-    usr_msg.param1 = 64; // max msg
-    usr_msg.param2 = 128; // max len
-    
-    ret = ioctl(fd, MEM_CMD1, &usr_msg);
-    printf("ioctl: ret=%d\n", ret);
+    sprintf(kdev_io_buf, "sendsig");
+    ret = ioctl(fd, 0, kdev_io_buf);
+    printf("ioctl: ret=%d rdata:%s\n", ret, kdev_io_buf);
 
-    usr_msg.msg = &buff[0];
-    sprintf(buff, "hello,pipe\n");
-    ret = ioctl(fd, MEM_CMD2, &usr_msg);
-    printf("ioctl: ret=%d\n", ret);
-
-    usr_msg.msg = &buff[0];
-    memset(buff, 0, 256);
-    ret = ioctl(fd, MEM_CMD3, &usr_msg);
-    printf("ioctl: ret=%d rdata=%s\n", ret, buff);
+    sprintf(kdev_io_buf, "showpid");
+    ret += ioctl(fd, 0, kdev_io_buf);
+    printf("ioctl: ret=%d rdata:%s\n", ret, kdev_io_buf);
     
     close(fd);
     return 0;
 }
 
-#endif
-
-
-#ifdef _APP_002_
-
-
-#endif
