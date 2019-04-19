@@ -97,7 +97,7 @@ int main()
     for(i = 0; i < 1000; i++) {
         sprintf(log_info, "hello, %d\n", i);
         xlog_buffer(1, log_info);
-        sleep(1);
+        //sleep(1);
     }
     
     return 0;
