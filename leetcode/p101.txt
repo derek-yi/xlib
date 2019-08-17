@@ -1,0 +1,36 @@
+https://leetcode.com/problems/symmetric-tree/
+
+
+/**
+ * Definition for a binary tree node.
+ * struct TreeNode {
+ *     int val;
+ *     struct TreeNode *left;
+ *     struct TreeNode *right;
+ * };
+ */
+
+bool is_tree_equal(struct TreeNode* left_tree, struct TreeNode* right_tree) {
+    if (left_tree == NULL) {
+        if  (right_tree == NULL) return true;
+        return false;
+    }
+    if (right_tree == NULL) {
+        if  (left_tree == NULL) return true;
+        return false;
+    }
+    
+    if (left_tree->val != right_tree->val ) return false;
+    
+    if (!is_tree_equal(left_tree->left, right_tree->right)) return false;
+    if (!is_tree_equal(left_tree->right, right_tree->left)) return false;
+
+    return true;
+}
+
+bool isSymmetric(struct TreeNode* root){
+    if(root == NULL) return true;
+    
+    return is_tree_equal(root->left, root->right);
+}
+
