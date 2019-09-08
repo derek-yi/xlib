@@ -1,0 +1,40 @@
+
+#define INT_MIN     -2147483648
+#define INT_MAX     2147483647
+
+int myAtoi(char * str){
+    int minus_sign = 0;
+    int res_valid = 0;
+    int result = 0;
+    
+    if (str == NULL) return 0;
+    
+    while(*str == ' ') str++;
+    
+    if(*str== '-') {
+        minus_sign = 1;
+        str++;
+    } else if (*str== '+') {
+        str++;
+    }
+    
+    while(*str != 0) {
+        if(*str < '0' || *str > '9') {
+            if (res_valid == 0) return 0;
+            else break;
+        } else {
+            res_valid = 1;
+            
+            if (result > (INT_MAX - (*str) + '0')/10) {
+                return minus_sign?INT_MIN:INT_MAX;
+            }  
+            
+            result = result*10 + ((*str) - '0');
+        }       
+
+        str++;
+    }
+    
+    return minus_sign?(0-result):result;
+}
+
