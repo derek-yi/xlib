@@ -1,0 +1,63 @@
+给定一个字符串，请你找出其中不含有重复字符的 最长子串 的长度。
+
+示例 1:
+
+输入: "abcabcbb"
+输出: 3 
+解释: 因为无重复字符的最长子串是 "abc"，所以其长度为 3。
+示例 2:
+
+输入: "bbbbb"
+输出: 1
+解释: 因为无重复字符的最长子串是 "b"，所以其长度为 1。
+示例 3:
+
+输入: "pwwkew"
+输出: 3
+解释: 因为无重复字符的最长子串是 "wke"，所以其长度为 3。
+     请注意，你的答案必须是 子串 的长度，"pwke" 是一个子序列，不是子串。
+
+来源：力扣（LeetCode）
+链接：https://leetcode-cn.com/problems/longest-substring-without-repeating-characters
+著作权归领扣网络所有。商业转载请联系官方授权，非商业转载请注明出处。
+
+int repeat_char(char *sub_str, int len, char ch) 
+{
+    for(int i = 0; i < len; i++) {
+        if(sub_str[i] == ch) return 1;
+    }
+    return 0;
+}
+
+int lengthOfLongestSubstring(char * s){
+    int *sub_cnt;
+    int *str_len;
+    char *ptr = s;
+    int i,j;
+
+    sub_cnt = (int *)malloc(strlen(s)*4);
+    if(sub_cnt == NULL) return 0;
+    for(i = 0; i < strlen(s); i++) {
+        sub_cnt[i] = 1;
+    }
+    
+    for(i = 1; i < strlen(s); i++) {
+        for(j = 0; j < i; j++) {
+            if(j + sub_cnt[j] < i) continue;
+            
+            if(!repeat_char(&s[j], sub_cnt[j], s[i])) {
+                sub_cnt[j] ++;
+            } 
+        }
+    }
+    
+    int max_sub = 0;
+    for(i = 0; i < strlen(s); i++) {
+        if(sub_cnt[i] > max_sub) {
+            max_sub = sub_cnt[i];
+        }
+    }   
+    
+    free(sub_cnt);
+    return max_sub;
+}
