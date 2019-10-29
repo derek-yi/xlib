@@ -1,0 +1,60 @@
+int char_cnt[] = {3,3,3,3,3,4,3,4};
+char* char_tab[8] = {"abc", "def", "ghi", "jkl", "mno", "pqrs", "tuv", "wxyz"};
+
+void recur_call(char* arr, int size, char* stack, int top, char** res, int* ptr)
+{
+	if (size == 1)
+	{
+		for (int i = 0; i < char_cnt[arr[0] - '2']; ++i)
+		{
+			stack[top] = char_tab[arr[0] - '2'][i];
+			for (int j = 0; j <= top; ++j)
+			{
+				res[*ptr][j] = stack[j];
+			}
+			++(*ptr);
+		}
+	}
+	else
+	{
+		for (int i = 0; i < char_cnt[arr[0] - '2']; ++i)
+		{
+			stack[top] = char_tab[arr[0] - '2'][i];
+			recur_call(arr + 1, size - 1, stack, top + 1, res, ptr);
+		}
+	}
+}
+
+/**
+ * Note: The returned array must be malloced, assume caller calls free().
+ */
+char ** letterCombinations(char * digits, int* returnSize){
+    int dig_len = strlen(digits);
+    int i, j, res_num = 1;
+    
+    if(digits == NULL || digits[0] == 0) {
+        *returnSize = 0;
+        return NULL;
+    }
+    
+    for(i = 0; i < dig_len; i++) {
+        if(digits[i] < '2' || digits[i] > '9') {
+            return NULL;
+        }
+        res_num = res_num*char_cnt[digits[i] - '2'];
+    }
+    
+    char **result = (char **)malloc(sizeof(char *)*res_num);
+    
+    for(i = 0; i < res_num; i++) {
+        result[i] = malloc(dig_len+1);
+        result[i][dig_len] = 0;
+    }    
+    
+    int ptr = 0;
+	char stack[32];
+	recur_call(digits, dig_len, stack, 0, result, &ptr);
+
+    *returnSize = res_num;    
+    return result;            
+}
