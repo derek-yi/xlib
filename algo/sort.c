@@ -1,9 +1,11 @@
 
-#include "xlib.h"
+#include "sort.h"
 
-#if T_DESC("source", 1)
+#include "string.h"
+#include "stdlib.h"
 
-//Bubble sort
+#if 1
+
 void bubble_sort(void *base, size_t num, size_t width, int(*compare)(void*, void*))
 {
     char *temp_data = (char *)malloc(width);    
@@ -29,7 +31,6 @@ void bubble_sort(void *base, size_t num, size_t width, int(*compare)(void*, void
     return ;
 }
 
-//Cocktail shaker sort
 void cocktail_sort(void *base, size_t num, size_t width, int(*compare)(void*, void*))
 {
     char *temp_data = (char *)malloc(width);    
@@ -70,7 +71,6 @@ void cocktail_sort(void *base, size_t num, size_t width, int(*compare)(void*, vo
     return ;
 }
 
-//Selection sort
 void select_sort(void *base, size_t num, size_t width, int(*compare)(void*, void*))
 {
     int i, j, min;
@@ -104,7 +104,6 @@ void select_sort(void *base, size_t num, size_t width, int(*compare)(void*, void
     return ;
 }
 
-//Insertion sort
 void insert_sort(void *base, size_t num, size_t width, int(*compare)(void*, void*))
 {
     int i, j, get;
@@ -116,12 +115,14 @@ void insert_sort(void *base, size_t num, size_t width, int(*compare)(void*, void
     for (i = 1; i < num; i++)             
     {
         memcpy(temp_data, (char *)base + i*width, width);
-        j = i - 1;                      
+        j = i - 1;      
+        
         while ( (j >= 0) && (compare((char *)base + j*width, temp_data) > 0 ) ) 
         {
             memcpy((char *)base + (j+1)*width, (char *)base + j*width, width);   
             j--;
         }
+        
         memcpy((char *)base + (j+1)*width, (char *)temp_data, width);
     }
 
@@ -130,7 +131,6 @@ void insert_sort(void *base, size_t num, size_t width, int(*compare)(void*, void
 }
 
 
-//Shellsort
 void shell_sort(void *base, size_t num, size_t width, int(*compare)(void*, void*))
 {
     int i, j, get;
@@ -164,12 +164,66 @@ void shell_sort(void *base, size_t num, size_t width, int(*compare)(void*, void*
     return ;
 }
 
+void QuickSort(void *base, int low, int high, size_t width, int(*compare)(void*, void*))
+{
+    int i,j;
+    char *temp_data = (char *)malloc(width);    
 
+    if( NULL == base || NULL == compare || NULL == temp_data ) return ;
+    
+    i = low;
+    j = high;
+    if(low < high)
+    {
+        //temp=R[low];//ÉèÖÃÊàÖá
+        memcpy(temp_data, (char *)base + low*width, width);
+        
+        while( i != j )
+        {
+            //while(j>i&&R[j]>=temp)
+            while ( (j > i) && (compare((char *)base + j*width, temp_data) > 0) )
+            {
+                --j;
+            }
+            
+            if (i < j)
+            {
+                //R[i]=R[j];
+                memcpy((char *)base + i*width, (char *)base + j*width, width);  
+                ++i;
+            }
+
+            //while(i<j && R[i]<temp)
+            while ( (i < j) && (compare((char *)base + i*width, temp_data) < 0) )
+            {
+                ++i;
+            }
+            
+            if( i < j)
+            {
+                //R[j]=R[i];
+                memcpy((char *)base + j*width, (char *)base + i*width, width);  
+                --j;
+            }
+        }
+        
+        //R[i] = temp;
+        memcpy((char *)base + i*width, temp_data, width);  
+        free(temp_data);
+        
+        QuickSort(base, low, i-1, width, compare);
+        QuickSort(base, i+1, high, width, compare);
+    }
+}
+
+void my_qsort(void *base, size_t num, size_t width, int(*compare)(void*, void*))
+{
+    QuickSort(base, 0, num, width, compare);
+}
 
 #endif
 
-
-#if T_DESC("test", DEBUG_ENABLE)
+#ifndef MAKE_XLIBC
 
 #include <time.h>
 
@@ -179,6 +233,7 @@ void shell_sort(void *base, size_t num, size_t width, int(*compare)(void*, void*
 
 #define ARRAY_SIZE  40960
 int my_array[ARRAY_SIZE];
+int check_array[ARRAY_SIZE];
 
 #ifdef WIN32
 LARGE_INTEGER t1,t2,feq;
@@ -207,52 +262,66 @@ int main()
 {  
     int i;
     int sort_select;
-  
-    printf("\r\n init: ");  
-    srand(time(NULL));  
-    for(i = 0; i < ARRAY_SIZE; i++) {  
-        my_array[i] = rand()%ARRAY_SIZE;  
-    }  
-    print_array(my_array, 64);  
 
 repeat_select:
-    printf("\r\n 0) qsort");  
+    printf("\r\n 0) quit");  
     printf("\r\n 1) bubble_sort");  
     printf("\r\n 2) cocktail_sort");  
     printf("\r\n 3) select_sort");  
     printf("\r\n 4) insert_sort");  
     printf("\r\n 5) shell_sort");  
+    printf("\r\n 6) my_qsort");  
+    printf("\r\n 7) libc qsort");  
     printf("\r\n input your choice: ");  
     scanf("%d", &sort_select);
-    if( sort_select < 0 || sort_select > 5) 
-        goto repeat_select;
-    
-    printf("\r\n running...");  
+    if( sort_select == 0) {
+        return 0;
+    }
+  
+    printf("\r\n init: ");  
+    srand(time(NULL));  
+    for(i = 0; i < ARRAY_SIZE; i++) {  
+        my_array[i] = rand()%ARRAY_SIZE;  
+        check_array[i] = my_array[i];
+    }  
+    print_array(my_array, 64);  
 
+    printf("\r\n sorting ...");  
 #ifdef WIN32
     QueryPerformanceFrequency(&feq);
     QueryPerformanceCounter(&t1);
 #endif    
     
-    if (sort_select == 0) qsort(my_array, ARRAY_SIZE, sizeof(int), my_cmp);
-    else if (sort_select == 1) bubble_sort(my_array, ARRAY_SIZE, sizeof(int), my_cmp);
+    if (sort_select == 1) bubble_sort(my_array, ARRAY_SIZE, sizeof(int), my_cmp);
     else if (sort_select == 2) cocktail_sort(my_array, ARRAY_SIZE, sizeof(int), my_cmp);
     else if (sort_select == 3) select_sort(my_array, ARRAY_SIZE, sizeof(int), my_cmp);
     else if (sort_select == 4) insert_sort(my_array, ARRAY_SIZE, sizeof(int), my_cmp);
     else if (sort_select == 5) shell_sort(my_array, ARRAY_SIZE, sizeof(int), my_cmp);
+    else if (sort_select == 6) my_qsort(my_array, ARRAY_SIZE, sizeof(int), my_cmp);
+    else if (sort_select == 7) qsort(my_array, ARRAY_SIZE, sizeof(int), my_cmp);
+    else goto repeat_select;
 
 #ifdef WIN32
     QueryPerformanceCounter(&t2);
     double used_time =((double)t2.QuadPart-(double)t1.QuadPart)/((double)feq.QuadPart);
-    printf("%f", used_time);  
+    printf("used_time is %f(ms)", used_time*1000);  
 #endif    
     
     printf("\r\n show: ");  
     print_array(my_array, 64);  
-
     printf("\r\n");  
-      
-    return 0;  
+
+    printf("\r\n check ...");  
+    qsort(check_array, ARRAY_SIZE, sizeof(int), my_cmp);
+    for(i = 0; i < ARRAY_SIZE; i++) {  
+        if(my_array[i] != check_array[i]) {
+            printf("FAIL"); 
+            break;
+        }  
+    } 
+    if(i == ARRAY_SIZE) printf("PASS"); 
+
+    goto repeat_select;
 }  
 #endif
 

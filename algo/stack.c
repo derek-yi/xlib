@@ -1,35 +1,9 @@
 
-#include "xlib.h"
+#include "stack.h"
 
+#include "string.h"
+#include "stdlib.h"
 
-#if T_DESC("header", 1)
-
-typedef struct STACK_INFO_TAG
-{
-	void *stack_data;
-	int top;
-    int stack_size;
-    int data_size;
-}STACK_INFO_ST;
-
-typedef int (*FP_NODE_PROC)(void *in_data);
-
-int xlib_stack_init(STACK_INFO_ST *pStack, int stack_size, int data_size);
-
-int xlib_stack_push(STACK_INFO_ST *pStack, void *pData);
-
-void* xlib_stack_pop(STACK_INFO_ST *pStack);
-
-void* xlib_stack_get_top(STACK_INFO_ST *pStack);
-
-int xlib_stack_length(STACK_INFO_ST *pStack);
-
-int xlib_stack_iterate(STACK_INFO_ST *pStack, FP_NODE_PROC fp_proc);
-
-#endif
-
-
-#if T_DESC("source", 1)
 
 int xlib_stack_init(STACK_INFO_ST *pStack, int stack_size, int data_size)
 {
@@ -86,7 +60,7 @@ void* xlib_stack_get_top(STACK_INFO_ST *pStack)
     return p;
 }
 
-int xlib_stack_length(STACK_INFO_ST *pStack)
+int xlib_stack_depth(STACK_INFO_ST *pStack)
 {
     if(NULL == pStack) return -1;
 
@@ -107,11 +81,8 @@ int xlib_stack_iterate(STACK_INFO_ST *pStack, FP_NODE_PROC fp_proc)
     return 0;
 }
 
-#endif
 
-
-
-#if T_DESC("test", DEBUG_ENABLE)
+#ifndef MAKE_XLIBC
 
 
 typedef struct NODE_DATA_TAG
@@ -147,7 +118,7 @@ int main()
     XLIB_UT_CHECK("xlib_stack_push", 0, xlib_stack_push(&my_stack, &num[6]));
     XLIB_UT_CHECK("xlib_stack_push", 0, xlib_stack_push(&my_stack, &num[8])); 
     
-    XLIB_UT_CHECK("xlib_link_length", 4, xlib_stack_length(&my_stack));
+    XLIB_UT_CHECK("xlib_link_length", 4, xlib_stack_depth(&my_stack));
     
     printf("\r\n xlib_stack_iterate:");
     xlib_stack_iterate(&my_stack, node_data_show);
@@ -158,7 +129,7 @@ int main()
     p = xlib_stack_pop(&my_stack);
     XLIB_UT_CHECK("xlib_stack_pop", 6, p->value);
 
-    XLIB_UT_CHECK("xlib_link_length", 2, xlib_stack_length(&my_stack));
+    XLIB_UT_CHECK("xlib_link_length", 2, xlib_stack_depth(&my_stack));
     
     printf("\r\n xlib_stack_iterate:");
     xlib_stack_iterate(&my_stack, node_data_show);
