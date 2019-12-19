@@ -40,6 +40,8 @@
 #define false   0
 #endif
 
+#define __builtin_constant_p(x)
+
 #define WRITE_ONCE(dst, src)    ((dst) = (src))
  
 /* linux-2.6.38.8/include/linux/stddef.h */
@@ -675,7 +677,7 @@ EXPORT_SYMBOL(rb_first_postorder);
 #endif
 
 
-#if T_DESC("test", DEBUG_ENABLE)
+#ifndef MAKE_XLIBC
 
 struct mytype {
     struct rb_node my_node;

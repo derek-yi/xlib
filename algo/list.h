@@ -1,13 +1,15 @@
 #ifndef _LINUX_LIST_H
 #define _LINUX_LIST_H
 
-//#include <linux/types.h>
-//#include <linux/stddef.h>
-//#include <linux/poison.h>
-//#include <linux/const.h>
-//#include <linux/kernel.h>
+//from \linux-4.9.28\include\linux\hash.h
+#ifndef WIN32
+#include <linux/types.h>
+#include <linux/stddef.h>
+#include <linux/poison.h>
+#include <linux/const.h>
+#include <linux/kernel.h>
 
-#if 1 //adapter
+#else //adapter
 
 #ifndef bool
 #define bool    int
@@ -20,6 +22,8 @@ typedef unsigned long long u64;
 
 #ifndef true
 #define true    1
+#endif
+#ifndef false
 #define false   0
 #endif
 
@@ -42,24 +46,11 @@ struct hlist_node {
 #define LIST_POISON1            NULL
 #define LIST_POISON2            NULL
 
-#ifdef WIN32
+/* linux-2.6.38.8/include/linux/stddef.h */
+#define offsetof(TYPE, MEMBER) ((size_t) &((TYPE *)0)->MEMBER)
+
 #define container_of(ptr, type, member) \
     (type *)( (char *)ptr - offsetof(type, member) )
-    
-#else
-#define offsetof(TYPE, MEMBER)	((size_t)&((TYPE *)0)->MEMBER)
-/**
- * container_of - cast a member of a structure out to the containing structure
- * @ptr:	the pointer to the member.
- * @type:	the type of the container struct this is embedded in.
- * @member:	the name of the member within the struct.
- *
- */
-#define container_of(ptr, type, member) ({			\
-	const typeof( ((type *)0)->member ) *__mptr = (ptr);	\
-	(type *)( (char *)__mptr - offsetof(type,member) );})
-
-#endif
 
     
 #endif

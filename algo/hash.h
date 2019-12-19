@@ -3,8 +3,13 @@
 /* Fast hashing routine for ints,  longs and pointers.
    (C) 2002 Nadia Yvette Chambers, IBM */
 
-//#include <asm/types.h>
-//#include <linux/compiler.h>
+#ifndef WIN32
+#include <asm/types.h>
+#include <linux/compiler.h>
+#else
+#define __always_inline inline
+#endif
+
 #define BITS_PER_LONG   64
 
 /*

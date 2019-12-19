@@ -6,11 +6,16 @@
 #ifndef _LINUX_HASHTABLE_H
 #define _LINUX_HASHTABLE_H
 
-//#include <linux/list.h>
-//#include <linux/types.h>
-//#include <linux/kernel.h>
-//#include <linux/hash.h>
-//#include <linux/rculist.h>
+//from \linux-4.9.28\include\linux\hashtable.h
+#ifndef WIN32
+#include <linux/list.h>
+#include <linux/types.h>
+#include <linux/kernel.h>
+#include <linux/hash.h>
+#include <linux/rculist.h>
+#else
+#define ilog2   log2
+#endif
 
 #define DEFINE_HASHTABLE(name, bits)						\
 	struct hlist_head name[1 << (bits)] =					\
@@ -24,8 +29,7 @@
 	struct hlist_head name[1 << (bits)]
 
 #define HASH_SIZE(name) (ARRAY_SIZE(name))
-//#define HASH_BITS(name) ilog2(HASH_SIZE(name))
-#define HASH_BITS(name) log2(HASH_SIZE(name))
+#define HASH_BITS(name) ilog2(HASH_SIZE(name))
 
 /* Use hash_32 when possible to allow for fast 32bit hashing in 64bit kernels. */
 #define hash_min(val, bits)							\
