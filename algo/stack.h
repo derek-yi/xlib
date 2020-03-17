@@ -2,9 +2,6 @@
 #ifndef _XLIB_STACK_H_
 #define _XLIB_STACK_H_
 
-#include <stdio.h>
-#include "xlib.h"
-
 typedef struct STACK_INFO_TAG
 {
 	void *stack_data;

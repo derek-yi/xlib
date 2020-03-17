@@ -2,9 +2,11 @@
 #ifndef _XXX_LIB_H_
 #define _XXX_LIB_H_
 
+#include <stdio.h>
+#include <stdlib.h>
 
 #ifndef bool
-#define bool        int
+#define bool                int
 #endif
 
 #define XLIB_OK             0
@@ -26,7 +28,7 @@
     if(exp != wanted) printf("\r\n %d: %s FAILED! \r\n", __LINE__, desc); \
     else printf("\r\n %d: %s PASS! \r\n", __LINE__, desc);
 
-#define XLIB_RET_CHECK(desc, ret, wanted)  \
+#define XLIB_UT_CHECK2(desc, ret, wanted)  \
     if(ret != wanted) printf("\r\n %d: %s FAILED! ret=0x%x\r\n", __LINE__, desc, ret); 
 
 

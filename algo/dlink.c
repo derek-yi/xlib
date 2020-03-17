@@ -1,11 +1,8 @@
 
-#include "dlink.h"
+#include <stdio.h>
+#include <stdlib.h>
 
-#if 0
-#define xDEBUG(...)         printf(__VA_ARGS__)
-#else
-#define xDEBUG(...)  
-#endif
+#include "dlink.h"
 
 void* dlink_new(int elmsize)  
 {  

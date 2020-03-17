@@ -1,3 +1,4 @@
+/* SPDX-License-Identifier: GPL-2.0 */
 /*
  * Statically sized hash table implementation
  * (C) 2012  Sasha Levin <levinsasha928@gmail.com>
@@ -6,16 +7,16 @@
 #ifndef _LINUX_HASHTABLE_H
 #define _LINUX_HASHTABLE_H
 
-//from \linux-4.9.28\include\linux\hashtable.h
 #ifndef WIN32
-#include <linux/list.h>
+//#include <linux/list.h>
 #include <linux/types.h>
 #include <linux/kernel.h>
-#include <linux/hash.h>
-#include <linux/rculist.h>
-#else
-#define ilog2   log2
+//#include <linux/hash.h>
+//#include <linux/rculist.h>
 #endif
+
+//redirect to log2
+#define ilog2   log2
 
 #define DEFINE_HASHTABLE(name, bits)						\
 	struct hlist_head name[1 << (bits)] =					\
@@ -172,7 +173,6 @@ static inline void hash_del_rcu(struct hlist_node *node)
 /**
  * hash_for_each_possible_rcu - iterate over all possible objects hashing to the
  * same bucket in an rcu enabled hashtable
- * in a rcu enabled hashtable
  * @name: hashtable to iterate
  * @obj: the type * to use as a loop cursor for each entry
  * @member: the name of the hlist_node within the struct

@@ -1,5 +1,4 @@
 
-#include <stdio.h>
 #include "xlib.h"
 
 #include "list.h"
@@ -53,11 +52,12 @@ int main()
     }  
 
     printf("\r\n dump  : ");  
-    hash_for_each(my_hash_table, bkt, obj, node)
+    hash_for_each(my_hash_table, bkt, obj, node) {
         if(obj->key%3 == 0) {
             printf("\r\n key=%d param=%d", obj->key, obj->param);
         }
-
+    }
+    
     return 0;  
 } 
 

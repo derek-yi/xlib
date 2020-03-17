@@ -1,8 +1,13 @@
 
+#ifdef WIN32
+#include <windows.h>
+#else  
+#include <stdio.h>
+#include <stdlib.h>
+#endif
+
 #include "sort.h"
 
-#include "string.h"
-#include "stdlib.h"
 
 #if 1
 

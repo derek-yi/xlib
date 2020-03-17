@@ -5,7 +5,7 @@
 
 #ifndef WIN32
 #include <asm/types.h>
-#include <linux/compiler.h>
+//#include <linux/compiler.h>
 #else
 #define __always_inline inline
 #endif

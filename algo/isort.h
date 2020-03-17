@@ -3,10 +3,6 @@
 #define _XLIB_SORT_H_
 
 
-#include <stdio.h>
-#include "xlib.h"
-
-
 #define elemType int /*ÔªËØÀàĞÍ*/
 
 void bubble_sort(elemType arr[], int len);

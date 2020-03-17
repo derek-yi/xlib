@@ -8,7 +8,7 @@
 
 
 
-#if T_DESC("test", DEBUG_ENABLE)
+#ifndef MAKE_XLIBC
 
 
 

@@ -1,19 +1,21 @@
 
-#include "isort.h"
 
-#include "string.h"
-#include "stdlib.h"
+#include <stdio.h>
+
+#include "isort.h"
 
 #if 1
 
-void bubble_sort (elemType arr[], int len) 
+void bubble_sort (elemType arr[], int num) 
 {
     elemType temp;
     int i, j;
+
+    if( num < 1 ) { return ; }
     
-    for (i=0; i<len-1; i++) /* 外循环为排序趟数，len个数进行len-1趟 */
-        for (j=0; j<len-1-i; j++) { /* 内循环为每趟比较的次数，第i趟比较len-i次 */
-            if (arr[j] > arr[j+1]) { /* 相邻元素比较，若逆序则交换（升序为左大于右，降序反之） */
+    for (i=0; i<num-1; i++)             /* 外循环为排序趟数，len个数进行len-1趟 */
+        for (j=0; j<num-1-i; j++) {     /* 内循环为每趟比较的次数，第i趟比较len-i次 */
+            if (arr[j] > arr[j+1]) {    /* 相邻元素比较，若逆序则交换（升序为左大于右，降序反之） */
                 temp = arr[j];
                 arr[j] = arr[j+1];
                 arr[j+1] = temp;
@@ -132,7 +134,6 @@ void insert_sort2(int *array,unsigned int n)
     }
 }
 
-
 void shell_sort(elemType array[], int num)
 {
     int i, j, get;
@@ -202,7 +203,6 @@ void QuickSort(elemType *base, int low, int high)
         }
         
         base[i] = temp;
-        
         QuickSort(base, low, i-1);
         QuickSort(base, i+1, high);
     }

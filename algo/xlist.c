@@ -240,19 +240,19 @@ int main()
 
 //table test
     ret = xlist_init(1, 100, sizeof(xlib_demo_data_s)); //init t1
-    XLIB_RET_CHECK("xlist_init", ret, XLIB_OK);
+    XLIB_UT_CHECK2("xlist_init", ret, XLIB_OK);
 
     ret = xlist_init(1, 200, sizeof(xlib_demo_data_s)); //re-init t1
-    XLIB_RET_CHECK("xlist_init", ret, XLIB_ERROR);
+    XLIB_UT_CHECK2("xlist_init", ret, XLIB_ERROR);
 
     ret = xlist_init(2, 100, sizeof(xlib_demo_data_s)); //init t2
-    XLIB_RET_CHECK("xlist_init", ret, XLIB_OK);
+    XLIB_UT_CHECK2("xlist_init", ret, XLIB_OK);
 
     ret = xlist_free(1); //free t1
-    XLIB_RET_CHECK("xlist_free", ret, XLIB_OK);
+    XLIB_UT_CHECK2("xlist_free", ret, XLIB_OK);
 
     ret = xlist_init(1, 200, sizeof(xlib_demo_data_s)); //re-init t1
-    XLIB_RET_CHECK("xlist_init", ret, XLIB_OK);
+    XLIB_UT_CHECK2("xlist_init", ret, XLIB_OK);
 
 //entry test
     demo_data.port = 100;
