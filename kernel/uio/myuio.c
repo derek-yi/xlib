@@ -33,7 +33,8 @@ static irqreturn_t my_interrupt(int irq, struct uio_info *dev_id)
 
     disable_irq_nosync(info->irq);
     
-    uio_event_notify(info);
+    //uio_event_notify(info);
+    printk("my_interrupt called\n");
 
 	return IRQ_RETVAL(IRQ_HANDLED);
 }
@@ -45,6 +46,7 @@ static int irq_control(struct uio_info *info, s32 irq_on)
     else 
         disable_irq_nosync(info->irq);
 
+    printk("irq_control called, irq_on %d\n", irq_on);
     return 0;
 }
 
@@ -52,7 +54,7 @@ struct uio_info irq_info = {
 	.name = "uio_irq",
 	.version = "0.1",
 	.irq = 10, 
-	.handler = my_interrupt,
+//	.handler = my_interrupt,
 	.irq_flags = IRQ_TYPE_EDGE_RISING, 
     .irqcontrol = irq_control, 
 };
@@ -66,6 +68,7 @@ struct uio_info irq_info = {
 static int user_cmd_proc(char *user_cmd, char *out_str)
 {
     if(strncmp(user_cmd, "sendsig", 7) == 0) {
+        printk("user_cmd_proc called\n");
         uio_event_notify(&irq_info);
         sprintf(out_str, "send ok\n");
     }
@@ -86,7 +89,7 @@ int mem_release(struct inode *inode, struct file *filp)
 char user_cmd[IO_CMD_LEN] = {0};
 char out_str[IO_CMD_LEN] = {0};
 
-static int mem_ioctl( struct file *file, unsigned int cmd, unsigned long arg)
+static long mem_ioctl( struct file *file, unsigned int cmd, unsigned long arg)
 {    
     printk("mem_ioctl: %d \n", cmd);    
     

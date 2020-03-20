@@ -3,8 +3,6 @@
 
 #include "list.h"
 
-#if T_DESC("test", DEBUG_ENABLE)
-
 #include <time.h>
 
 typedef struct user_data_s
@@ -76,6 +74,4 @@ int main()
     return 0;  
 } 
 
-
-#endif
 

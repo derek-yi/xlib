@@ -18,6 +18,8 @@
  
 char global_buffer[STRING_LEN] = {0};
 
+int intr_cnt = 0;
+
 #if 1
 
 static irqreturn_t my_interrupt(int irq, struct uio_info *dev_id)
@@ -26,6 +28,7 @@ static irqreturn_t my_interrupt(int irq, struct uio_info *dev_id)
 	unsigned long *ret_val_add = (unsigned long *)(info->mem[0].addr);
 	*ret_val_add = 222;
 	printk("my_interrupt: %d \n" ,(int)(*ret_val_add));
+    intr_cnt++;
 
 	return IRQ_RETVAL(IRQ_HANDLED);
 }
@@ -92,9 +95,11 @@ static int drv_kpart_probe(struct device *dev)
 	*ret_val_addr = 222;
 
 	if(uio_register_device(dev, &kpart_info)){
+        printk("uio_register_device fail \n");
 		kfree((void *)kpart_info.mem[0].addr);
 		return -ENODEV;
 	}
+    printk("uio_register_device ok \n");
 
 #ifdef HW_ENABLE
 	int i = 0 ,err = 0;
@@ -123,6 +128,7 @@ static int drv_kpart_remove(struct device *dev)
 static int user_cmd_proc(char *user_cmd)
 {
     if(strncmp(user_cmd, "sendsig", 7) == 0) {
+        printk("user_cmd: sendsig \n");
     	unsigned long *ret_val_add = (unsigned long *)(kpart_info.mem[0].addr);
     	*ret_val_add = 333;
         uio_event_notify(&kpart_info);
@@ -134,7 +140,8 @@ static int user_cmd_proc(char *user_cmd)
 static int my_proc_show(struct seq_file *seq, void *v)
 {
     seq_printf(seq, "current kernel time is %ld\n", jiffies);  
-    seq_printf(seq, "last cmd: %s", global_buffer);
+    seq_printf(seq, "last cmd: %s\n", global_buffer);
+    seq_printf(seq, "intr_cnt: %d\n", intr_cnt);
 
     return 0;        
 }
