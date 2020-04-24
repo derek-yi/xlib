@@ -127,8 +127,10 @@ int main(int argc, char **argv)
 
 #if T_DESC("readme", 1)
 /*
-1, how to compile 
+
 gcc -o shm.out shm.c -lrt
+./shm.out 0
+./shm.out 1 //shm_unlink
 
 */
 #endif

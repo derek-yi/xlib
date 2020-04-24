@@ -30,7 +30,7 @@ int tu1_proc(void)
 
     for( ; ; )
     {
-        printf("\n input write buffer: ");
+        printf("\n input write buffer(exit to break): ");
         fgets(buffer, sizeof(buffer), stdin);
 
         if(strncmp(buffer, "exit", 4) == 0) break;
@@ -77,8 +77,8 @@ int tu2_proc(void)
 void usage()
 {
     printf("\n Usage: <cmd> <tu> <p1> <...>");
-    printf("\n   1 -- create thread 1");
-    printf("\n   2 -- create thread 2");
+    printf("\n   1 -- create write fifo");
+    printf("\n   2 -- create read fifo");
     printf("\n");
 }
 

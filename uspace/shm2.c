@@ -64,8 +64,8 @@ int tu1_proc()
             sleep(1);
             shared->written = 0;
             
-            //输入了end，退出循环（程序）
-            if(strncmp(shared->text, "end", 3) == 0)
+            //输入了exit，退出循环（程序）
+            if(strncmp(shared->text, "exit", 3) == 0)
                 running = 0;
         }
     }
@@ -131,8 +131,8 @@ int tu2_proc()
 		//写完数据，设置written使共享内存段可读
 		shared->written = 1;
         
-		//输入了end，退出循环（程序）
-		if(strncmp(buffer, "end", 3) == 0)
+		//输入了exit，退出循环（程序）
+		if(strncmp(buffer, "exit", 4) == 0)
 			running = 0;
 	}
     

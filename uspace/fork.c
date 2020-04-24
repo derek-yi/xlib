@@ -60,11 +60,13 @@ int main(int argc, char **argv)
      }
      else if(pid == 0)
      {
-         printf("child: \n");
+         printf("child: 11\n");
+         
          // 执行/bin目录下的ls, 第一参数为程序名ls, 第二个参数为"-al", 第三个参数为"/etc/passwd"
          execl("/bin/ls", "ls", "-al", "/etc/passwd", (char *) 0);
-         
          //system("ls -a");
+         
+         printf("child: 22\n");
          _exit(127);
      }
      else

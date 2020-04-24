@@ -35,10 +35,10 @@ int msgctl(int msqid, int cmd, struct mspid_ds *buf);
 int msg_qid;
 
 typedef struct msgbuf
-    {
-        long msgtype;
-        char msgtext[128];
-    } PRIV_MSG_INFO;
+{
+    long msgtype;
+    char msgtext[128];
+} PRIV_MSG_INFO;
 
 int send_task(void)  
 {
@@ -125,7 +125,7 @@ int send_task2(void)
 
     for(;;)
     {
-        sndmsg.msgtype=10;
+        sndmsg.msgtype = 10;
         sprintf(sndmsg.msgtext, "type %ld", sndmsg.msgtype);
         if(msgsnd(msg_qid, (PRIV_MSG_INFO *)&sndmsg, sizeof(PRIV_MSG_INFO), 0)==-1)
         {
@@ -133,7 +133,7 @@ int send_task2(void)
             exit(254);
         }
         
-        sndmsg.msgtype=20;
+        sndmsg.msgtype = 20;
         sprintf(sndmsg.msgtext, "type %ld", sndmsg.msgtype);
         if(msgsnd(msg_qid, (PRIV_MSG_INFO *)&sndmsg, sizeof(PRIV_MSG_INFO), 0)==-1)
         {
@@ -204,6 +204,7 @@ void usage()
 {
     printf("\n Usage: <cmd> <tu> <p1> <...>");
     printf("\n   1 -- msgQ between thread");
+    printf("\n     => no param");
     printf("\n   2 -- msgQ between process");
     printf("\n     => P1: 0 - create pid 0; 1 - create pid 1");
     printf("\n");
@@ -228,4 +229,18 @@ int main(int argc, char **argv)
 
 
 
+#if T_DESC("readme", 1)
+/*
+## build
+gcc -o msg.out msgq.c -lpthread
+
+## case1
+./msg.out 1
+
+## case2
+term1: ./msg.out 2 0
+term2: ./msg.out 2 1
+
+*/
+#endif
 

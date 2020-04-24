@@ -38,7 +38,7 @@ void terminate_handler(int signumber)
 {
     printf("catch signal %d", signumber);
     sleep(5);
-    //exit(0);
+    exit(0);
 }
 
 int tu1_proc(void)

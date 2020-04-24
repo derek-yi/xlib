@@ -18,6 +18,7 @@
 
 char *flock_name1 = "/tmp/flock1";
 char *flock_name2 = "/tmp/flock2";
+
 int flock_fd1;
 int flock_fd2;
 
@@ -76,23 +77,22 @@ int file_unlock(int fd)
 }
 #endif
 
-#if T_DESC("flock", 1)
-
-#endif
 
 
 #if T_DESC("tu", 1)
 
+#if 1
 void thread_11(void)  
 {  
     int i;  
     for(i=0; i<100; i++)  {
         write_lock(flock_fd1);
-        printf("This is pthread_111...");  
-        sleep(2);  
-        printf("111.\n");
-        file_unlock(flock_fd1);
-        sleep(1);
+        //write_lock(flock_fd2);
+        printf("This is thread_11...");  
+        sleep(1);  
+        printf("file_unlock.\n");
+        file_unlock(flock_fd2);
+        //file_unlock(flock_fd1);
     }  
     pthread_exit(0);  
 }  
@@ -101,43 +101,46 @@ void thread_12(void)
 {  
     int i;  
     for(i=0; i<100; i++) {
+        //write_lock(flock_fd1);
         write_lock(flock_fd2);
-        printf("This is pthread_222...");  
+        printf("This is thread_12...");  
         sleep(2);  
-        printf("222.\n");
+        printf("file_unlock.\n");
+        //file_unlock(flock_fd2);
         file_unlock(flock_fd1);
-        sleep(1);  
     }  
     pthread_exit(0);  
 }  
 
-void thread_21(void)  
+#else
+void thread_11(void)  
 {  
     int i;  
     for(i=0; i<100; i++)  {
         flock(flock_fd1, LOCK_EX);
-        printf("This is pthread_111...");  
+        printf("This is thread_11...");  
         sleep(2);  
-        printf("111.\n");
+        printf("flock.\n");
         flock(flock_fd1, LOCK_UN);
         sleep(1);  
     }  
     pthread_exit(0);  
 }  
   
-void thread_22(void)  
+void thread_12(void)  
 {  
     int i;  
     for(i=0; i<100; i++) {
         flock(flock_fd1, LOCK_EX);
-        printf("This is pthread_222...");  
+        printf("This is thread_12...");  
         sleep(2);  
-        printf("222.\n");
+        printf("flock.\n");
         flock(flock_fd1, LOCK_UN);
         sleep(1);  
     }  
     pthread_exit(0);  
 }  
+#endif
 
 int tu1_proc(int tu_id)  
 {  
@@ -151,11 +154,8 @@ int tu1_proc(int tu_id)
     flock_fd2 = open(flock_name2, O_RDWR| O_CREAT, 0600);
     if (flock_fd2 < 0) return -1;
 
-    if (tu_id == 1) {
-        ret = pthread_create(&id_1, NULL, (void *)thread_11, NULL);  
-    } else {
-        ret = pthread_create(&id_2, NULL, (void *)thread_12, NULL);  
-    }
+    ret = pthread_create(&id_1, NULL, (void *)thread_11, NULL);  
+    ret |= pthread_create(&id_2, NULL, (void *)thread_12, NULL);  
     if(ret != 0)  
     {  
         printf("Create pthread error!\n");  
@@ -163,11 +163,8 @@ int tu1_proc(int tu_id)
     }  
     
     /*等待线程结束*/  
-    if (tu_id == 1) {
-        pthread_join(id_1, NULL);  
-    } else {
-        pthread_join(id_2, NULL);  
-    }
+    pthread_join(id_1, NULL);  
+    pthread_join(id_2, NULL);  
 
     close(flock_fd1);
     close(flock_fd2);
@@ -178,11 +175,11 @@ int tu1_proc(int tu_id)
 #endif
 
 #if T_DESC("global", 1)
+
 void usage()
 {
-    printf("\n Usage: <cmd> <tu> <p1> <...>");
-    printf("\n   1 -- create task 1");
-    printf("\n   2 -- create task 2");
+    printf("\n Usage: <cmd> <tc>");
+    printf("\n   1 -- tc 1");
     printf("\n");
 }
 
@@ -209,8 +206,9 @@ int main(int argc, char **argv)
 
 #if T_DESC("readme", 1)
 /*
-1, how to compile 
+1,case1
 gcc -o flock.out flock.c -lpthread
+./flock.out 1
 
 */
 #endif

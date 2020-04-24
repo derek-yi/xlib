@@ -1,6 +1,6 @@
 ifneq ($(KERNELRELEASE),)
 
-obj-m:=klog.o
+obj-m:=plat_dev.o plat_drv.o
 
 else
 

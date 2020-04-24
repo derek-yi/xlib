@@ -28,7 +28,7 @@ void thread_1(void)
 
     for(i=0; i<10; i++)  {
         printf("thread_1: pid=0x%x tid=0x%x self=0x%x\n", getpid(), gettid(), (int)pthread_self());
-        my_var += 2;
+        my_var += 1;
         printf("thread_1: my_var=%d addr=0x%x \n", my_var, &my_var);
         sleep(1);  
     }  
@@ -41,7 +41,7 @@ void thread_2(void)
     
     for(i=0; i<5; i++) {
         printf("thread_2: pid=0x%x tid=0x%x self=0x%x\n", getpid(), gettid(), (int)pthread_self());
-        my_var += 3;
+        my_var += 100;
         printf("thread_2: my_var=%d addr=0x%x \n", my_var, &my_var);
         sleep(1);  
     }  
@@ -101,7 +101,6 @@ void usage()
 {
     printf("\n Usage: <cmd> <tu>");
     printf("\n    1 -- base case");
-    printf("\n    2 -- todo ");
     printf("\n");
 }
 
@@ -123,8 +122,8 @@ int main(int argc, char **argv)
 
 #if T_DESC("readme", 1)
 /*
-1, compile command
-gcc -o thread.out pthread.c -lpthread
+gcc pthread.c -lpthread
+./a.out 1
 
 */
 #endif

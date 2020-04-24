@@ -31,19 +31,19 @@ int pthread_mutex_unlock(pthread_mutex_t *mutex);
 
 #if T_DESC("TU1", 1)
 
-pthread_mutex_t mutex1=PTHREAD_MUTEX_INITIALIZER;
-pthread_mutex_t mutex2=PTHREAD_MUTEX_INITIALIZER;
+pthread_mutex_t mutex1 = PTHREAD_MUTEX_INITIALIZER;
 
 void thread_1(void)  
 {  
-    int i;  
+    int i; 
+    
     for(i=0; i<10; i++)  {
         pthread_mutex_lock(&mutex1);
-        printf("This is pthread_111...");  
+        printf("This is thread_1...");  
         sleep(2);  
         printf("111.\n");
         pthread_mutex_unlock(&mutex1);
-        sleep(1);  
+        //sleep(1);  
     }  
     pthread_exit(0);  
 }  
@@ -53,11 +53,11 @@ void thread_2(void)
     int i;  
     for(i=0; i<10; i++) {
         pthread_mutex_lock(&mutex1);
-        printf("This is pthread_222...");  
+        printf("This is thread_2...");  
         sleep(2);  
         printf("222.\n");
         pthread_mutex_unlock(&mutex1);
-        sleep(1);  
+        //sleep(1);  
     }  
     pthread_exit(0);  
 }  
@@ -87,28 +87,34 @@ int tu1_proc(void)
 
     return 0;  
 }  
+
 #endif
 
 #if T_DESC("TU2", 1)
 
 pthread_mutex_t mutex3;
 
-void common_proc(char *thread_name)
-{
-    pthread_mutex_lock(&mutex3);
-    printf("This is %s.\n", thread_name);  
-    sleep(2);  
-    printf("%s sleep ok.\n", thread_name);
-    pthread_mutex_unlock(&mutex3);
-}
-
 void thread_3(void)  
 {  
     int i;  
     for(i=0; i<10; i++)  {
-        common_proc("thread_3");
+        pthread_mutex_lock(&mutex3);
+        printf("This is thread_3...");  
+        sleep(2);  
+        printf("sleep done.\n");
+        
+        pthread_mutex_lock(&mutex3);
+        printf("This is thread_3...");  
+        sleep(2);  
+        printf("sleep done.\n");
+        
+        pthread_mutex_unlock(&mutex3);
         sleep(1);  
-        common_proc("thread_3");
+        printf("pthread_mutex_unlock 1.\n");
+        
+        pthread_mutex_unlock(&mutex3);
+        sleep(1);  
+        printf("pthread_mutex_unlock 2.\n");
     }  
     pthread_exit(0);  
 }  
@@ -117,7 +123,11 @@ void thread_4(void)
 {  
     int i;  
     for(i=0; i<10; i++) {
-        common_proc("thread_4");
+        pthread_mutex_lock(&mutex3);
+        printf("This is thread_4...");  
+        sleep(2);  
+        printf("sleep done.\n");
+        pthread_mutex_unlock(&mutex3);
         sleep(1);  
     }  
     pthread_exit(0);  
@@ -159,7 +169,7 @@ int tu2_proc(void)
 
 void usage()
 {
-    printf("\n Usage: <cmd> <tu> <p1> <...>");
+    printf("\n Usage: <cmd> <tu>");
     printf("\n   1 -- NORMAL_MUTEX");
     printf("\n   2 -- RECURSIVE_MUTEX");
     printf("\n");
