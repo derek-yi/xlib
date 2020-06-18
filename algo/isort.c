@@ -1,12 +1,13 @@
 
 
 #include <stdio.h>
+#include <stdlib.h>
 
 #include "isort.h"
 
 #if 1
 
-void bubble_sort (elemType arr[], int num) 
+void bubble_isort (elemType arr[], int num) 
 {
     elemType temp;
     int i, j;
@@ -23,7 +24,7 @@ void bubble_sort (elemType arr[], int num)
         }
 }
 
-void cocktail_sort(elemType array[], int num)
+void cocktail_isort(elemType array[], int num)
 {
     elemType temp_data;    
     int left = 0;  
@@ -61,7 +62,7 @@ void cocktail_sort(elemType array[], int num)
     return ;
 }
 
-void select_sort(elemType array[], int num)
+void select_isort(elemType array[], int num)
 {
     int i, j, min;
     elemType temp_data;    
@@ -92,7 +93,7 @@ void select_sort(elemType array[], int num)
     return ;
 }
 
-void insert_sort(elemType array[], int len)
+void insert_isort(elemType array[], int len)
 {
     int i,j;
     elemType temp;
@@ -116,7 +117,7 @@ void insert_sort(elemType array[], int len)
     }
 }
 
-void insert_sort2(int *array,unsigned int n)
+void insert_isort2(int *array,unsigned int n)
 {
     int i,j;
     int temp;
@@ -134,7 +135,7 @@ void insert_sort2(int *array,unsigned int n)
     }
 }
 
-void shell_sort(elemType array[], int num)
+void shell_isort(elemType array[], int num)
 {
     int i, j, get;
     int h = 0;
@@ -166,7 +167,7 @@ void shell_sort(elemType array[], int num)
     return ;
 }
 
-void QuickSort(elemType *base, int low, int high)
+void quick_isort(elemType *base, int low, int high)
 {
     int i,j;
     elemType temp;
@@ -203,14 +204,14 @@ void QuickSort(elemType *base, int low, int high)
         }
         
         base[i] = temp;
-        QuickSort(base, low, i-1);
-        QuickSort(base, i+1, high);
+        quick_isort(base, low, i-1);
+        quick_isort(base, i+1, high);
     }
 }
 
-void my_qsort(elemType array[], int num)
+void my_iqsort(elemType array[], int num)
 {
-    QuickSort(array, 0, num - 1);
+    quick_isort(array, 0, num - 1);
 }
 
 #endif
@@ -231,7 +232,7 @@ int check_array[ARRAY_SIZE];
 LARGE_INTEGER t1,t2,feq;
 #endif  
 
-int my_cmp(void *data1, void *data2)
+int my_cmp(const void *data1, const void *data2)
 {
     int node1 = *(int *)data1;
     int node2 = *(int *)data2;
@@ -284,12 +285,12 @@ repeat_select:
     QueryPerformanceCounter(&t1);
 #endif    
     
-    if (sort_select == 1) bubble_sort(my_array, ARRAY_SIZE);
-    else if (sort_select == 2) cocktail_sort(my_array, ARRAY_SIZE);
-    else if (sort_select == 3) select_sort(my_array, ARRAY_SIZE);
-    else if (sort_select == 4) insert_sort2(my_array, ARRAY_SIZE);
-    else if (sort_select == 5) shell_sort(my_array, ARRAY_SIZE);
-    else if (sort_select == 6) my_qsort(my_array, ARRAY_SIZE);
+    if (sort_select == 1) bubble_isort(my_array, ARRAY_SIZE);
+    else if (sort_select == 2) cocktail_isort(my_array, ARRAY_SIZE);
+    else if (sort_select == 3) select_isort(my_array, ARRAY_SIZE);
+    else if (sort_select == 4) insert_isort2(my_array, ARRAY_SIZE);
+    else if (sort_select == 5) shell_isort(my_array, ARRAY_SIZE);
+    else if (sort_select == 6) my_iqsort(my_array, ARRAY_SIZE);
     else if (sort_select == 7) qsort(my_array, ARRAY_SIZE, sizeof(int), my_cmp);
     else goto repeat_select;
 

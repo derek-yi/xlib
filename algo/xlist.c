@@ -1,12 +1,23 @@
 
 
+#ifdef WIN32
+#include <windows.h>
+#else  
+#include <stdio.h>
+#include <stdlib.h>
+#endif
+
 #include "xlist.h"
 
-#include "string.h"
-#include "stdlib.h"
 
 
-#if T_DESC("source", 1)
+#if 1 //
+
+#define FALSE               0
+#define TRUE                1
+#define XLIB_OK             0
+#define XLIB_ERROR          1
+
 
 xlib_table_s glb_xlib_table[MAX_XLIB_TABLE_SIZE] = {0};
 
@@ -211,6 +222,10 @@ int xlist_entry_delete_index(int type, int entry_index)
 
 #ifndef MAKE_XLIBC
 
+#define XLIB_UT_CHECK(desc, exp, wanted)  \
+    if(exp != wanted) printf("\r\n %d: %s FAILED! \r\n", __LINE__, desc); \
+    else printf("\r\n %d: %s PASS! \r\n", __LINE__, desc);
+
 typedef struct xlib_demo_data_t
 {
     int port;
@@ -240,19 +255,19 @@ int main()
 
 //table test
     ret = xlist_init(1, 100, sizeof(xlib_demo_data_s)); //init t1
-    XLIB_UT_CHECK2("xlist_init", ret, XLIB_OK);
+    XLIB_UT_CHECK("xlist_init", ret, XLIB_OK);
 
     ret = xlist_init(1, 200, sizeof(xlib_demo_data_s)); //re-init t1
-    XLIB_UT_CHECK2("xlist_init", ret, XLIB_ERROR);
+    XLIB_UT_CHECK("xlist_init", ret, XLIB_ERROR);
 
     ret = xlist_init(2, 100, sizeof(xlib_demo_data_s)); //init t2
-    XLIB_UT_CHECK2("xlist_init", ret, XLIB_OK);
+    XLIB_UT_CHECK("xlist_init", ret, XLIB_OK);
 
     ret = xlist_free(1); //free t1
-    XLIB_UT_CHECK2("xlist_free", ret, XLIB_OK);
+    XLIB_UT_CHECK("xlist_free", ret, XLIB_OK);
 
     ret = xlist_init(1, 200, sizeof(xlib_demo_data_s)); //re-init t1
-    XLIB_UT_CHECK2("xlist_init", ret, XLIB_OK);
+    XLIB_UT_CHECK("xlist_init", ret, XLIB_OK);
 
 //entry test
     demo_data.port = 100;

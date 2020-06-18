@@ -67,7 +67,7 @@ int main(int argc, char **argv)
          //system("ls -a");
          
          printf("child: 22\n");
-         _exit(127);
+         //_exit(127);
      }
      else
      {
@@ -82,7 +82,8 @@ int main(int argc, char **argv)
          }
          printf("father: 22\n");
      }
-     
+
+     printf("status: %d\n", status);
      return status;
  } 
 

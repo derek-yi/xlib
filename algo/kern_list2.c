@@ -1,9 +1,16 @@
 
-#include "xlib.h"
+#ifdef WIN32
+#include <windows.h>
+#else  
+#include <stdio.h>
+#include <stdlib.h>
+#endif
 
 #include "list.h"
 
 #include <time.h>
+
+#ifndef MAKE_XLIBC
 
 typedef struct user_data_s
 {  
@@ -25,7 +32,7 @@ int main()
     struct list_head *tmp2;
     user_data_t *pstListNode = NULL;
   
-    printf("\r\n init  : ");  
+    printf("\r\n init: ");  
     INIT_LIST_HEAD(&my_list);
     srand(time(NULL));    
     for(i = 0; i < ARRAY_SIZE; i++) {  
@@ -45,7 +52,7 @@ int main()
         printf("[%d]=%d ", pstListNode->key, pstListNode->param);
     }
 
-    printf("\r\n delete: ");  
+    printf("\r\n delete: 3N");  
     list_for_each_safe(tmp, tmp2, &my_list)
     {
         pstListNode = list_entry(tmp, user_data_t, list);
@@ -74,4 +81,5 @@ int main()
     return 0;  
 } 
 
+#endif
 

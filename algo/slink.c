@@ -1,10 +1,18 @@
 
-#include "xlib.h"
+#ifdef WIN32
+#include <windows.h>
+#else  
+#include <stdio.h>
+#include <stdlib.h>
+#endif
 
 #include "slink.h"
 
 
-#if T_DESC("source", 1)
+#if 1 //source
+
+#define XLIB_OK             0
+#define XLIB_ERROR          1
 
 #if 1
 #define xDEBUG(...)         printf(__VA_ARGS__)
@@ -15,7 +23,7 @@
 fp_malloc xlib_malloc_fp = NULL;
 fp_free xlib_free_fp = NULL;
 
-int xlib_link_init(fp_malloc fpMalloc, fp_free fpFree)
+int slink_init(fp_malloc fpMalloc, fp_free fpFree)
 {
     xlib_malloc_fp = fpMalloc;
     xlib_free_fp = fpFree;
@@ -43,7 +51,7 @@ void xlib_free(void *ptr)
     free(ptr);
 }
 
-int xlib_link_add(link_node_t **slink, void *data, int data_size)
+int slink_add(link_node_t **slink, void *data, int data_size)
 {
     link_node_t *new_node;
 
@@ -67,7 +75,7 @@ int xlib_link_add(link_node_t **slink, void *data, int data_size)
     return 0;
 }
 
-int xlib_link_add_sorted(link_node_t **slink, void *data, int data_size, fp_node_cmp fp_cmp)
+int slink_add_sorted(link_node_t **slink, void *data, int data_size, fp_node_cmp fp_cmp)
 {
     link_node_t *new_node;
     link_node_t *p = *slink;
@@ -77,7 +85,7 @@ int xlib_link_add_sorted(link_node_t **slink, void *data, int data_size, fp_node
     if (NULL == data) return XLIB_ERROR;
 
     if (NULL == fp_cmp) {
-        return xlib_link_add(slink, data, data_size);
+        return slink_add(slink, data, data_size);
     }
 
     new_node = (link_node_t *)xlib_malloc(sizeof(link_node_t));
@@ -122,7 +130,7 @@ int xlib_link_add_sorted(link_node_t **slink, void *data, int data_size, fp_node
     return 0;
 }
 
-int xlib_link_delete(link_node_t **slink, void *data, fp_node_cmp fp_cmp)
+int slink_delete(link_node_t **slink, void *data, fp_node_cmp fp_cmp)
 {
     link_node_t *p = *slink;
     link_node_t *prev = NULL;
@@ -154,7 +162,7 @@ int xlib_link_delete(link_node_t **slink, void *data, fp_node_cmp fp_cmp)
     return count;
 }
 
-int xlib_link_walk(link_node_t *pLink, fp_node_proc fp_proc)
+int slink_walk(link_node_t *pLink, fp_node_proc fp_proc)
 {
     link_node_t *p = pLink;
     
@@ -170,7 +178,7 @@ int xlib_link_walk(link_node_t *pLink, fp_node_proc fp_proc)
     return 0;
 }
 
-int xlib_link_count(link_node_t *pLink)
+int slink_count(link_node_t *pLink)
 {
     link_node_t *p = pLink;
     int count = 0;
@@ -189,6 +197,10 @@ int xlib_link_count(link_node_t *pLink)
 #endif
 
 #ifndef MAKE_XLIBC
+
+#define XLIB_UT_CHECK(desc, wanted, exp)  \
+    if(exp != wanted) printf("\r\n %d: %s FAILED! \r\n", __LINE__, desc); \
+    else printf("\r\n %d: %s PASS! \r\n", __LINE__, desc);
 
 link_node_t *my_link = NULL;
 
@@ -231,38 +243,38 @@ int main()
         demo_data[i].value = i;
     }
 
-    XLIB_UT_CHECK("xlib_link_add_sorted", 0, xlib_link_add_sorted(&my_link, &demo_data[8], sizeof(demo_data_t), link_node_cmp)); 
-    XLIB_UT_CHECK("xlib_link_add_sorted", 0, xlib_link_add_sorted(&my_link, &demo_data[2], sizeof(demo_data_t), link_node_cmp));
-    XLIB_UT_CHECK("xlib_link_add_sorted", 0, xlib_link_add_sorted(&my_link, &demo_data[6], sizeof(demo_data_t), link_node_cmp));
-    XLIB_UT_CHECK("xlib_link_add_sorted", 0, xlib_link_add_sorted(&my_link, &demo_data[4], sizeof(demo_data_t), link_node_cmp));
+    XLIB_UT_CHECK("slink_add_sorted", 0, slink_add_sorted(&my_link, &demo_data[8], sizeof(demo_data_t), link_node_cmp)); 
+    XLIB_UT_CHECK("slink_add_sorted", 0, slink_add_sorted(&my_link, &demo_data[2], sizeof(demo_data_t), link_node_cmp));
+    XLIB_UT_CHECK("slink_add_sorted", 0, slink_add_sorted(&my_link, &demo_data[6], sizeof(demo_data_t), link_node_cmp));
+    XLIB_UT_CHECK("slink_add_sorted", 0, slink_add_sorted(&my_link, &demo_data[4], sizeof(demo_data_t), link_node_cmp));
     
-    XLIB_UT_CHECK("xlib_link_count", 4, xlib_link_count(my_link));
+    XLIB_UT_CHECK("slink_count", 4, slink_count(my_link));
     
-    printf("\r\n xlib_link_walk: ");
-    xlib_link_walk(my_link, link_node_show);
+    printf("\r\n slink_count: ");
+    slink_walk(my_link, link_node_show);
     printf("\r\n");
 
     demo_data[0].value = 2;
-    XLIB_UT_CHECK("xlib_link_delete", 1, xlib_link_delete(&my_link, &demo_data[0], link_node_cmp));
-    XLIB_UT_CHECK("xlib_link_count", 3, xlib_link_count(my_link));
+    XLIB_UT_CHECK("slink_delete", 1, slink_delete(&my_link, &demo_data[0], link_node_cmp));
+    XLIB_UT_CHECK("slink_count", 3, slink_count(my_link));
     
-    printf("\r\n xlib_link_walk: ");
-    xlib_link_walk(my_link, link_node_show);
+    printf("\r\n slink_count: ");
+    slink_walk(my_link, link_node_show);
     printf("\r\n");
 
     demo_data[0].value = 4;
-    XLIB_UT_CHECK("xlib_link_delete", 1, xlib_link_delete(&my_link, &demo_data[0], link_node_cmp));
-    XLIB_UT_CHECK("xlib_link_count", 2, xlib_link_count(my_link));
+    XLIB_UT_CHECK("slink_delete", 1, slink_delete(&my_link, &demo_data[0], link_node_cmp));
+    XLIB_UT_CHECK("slink_count", 2, slink_count(my_link));
     
-    printf("\r\n xlib_link_walk: ");
-    xlib_link_walk(my_link, link_node_show);
+    printf("\r\n slink_walk: ");
+    slink_walk(my_link, link_node_show);
     printf("\r\n");
 
-    XLIB_UT_CHECK("xlib_link_add", 0, xlib_link_add(&my_link, &demo_data[1], sizeof(demo_data_t)));
-    XLIB_UT_CHECK("xlib_link_add", 0, xlib_link_add(&my_link, &demo_data[9], sizeof(demo_data_t)));
+    XLIB_UT_CHECK("slink_add", 0, slink_add(&my_link, &demo_data[1], sizeof(demo_data_t)));
+    XLIB_UT_CHECK("slink_add", 0, slink_add(&my_link, &demo_data[9], sizeof(demo_data_t)));
 
-    printf("\r\n xlib_link_walk: ");
-    xlib_link_walk(my_link, link_node_show);
+    printf("\r\n slink_walk: ");
+    slink_walk(my_link, link_node_show);
     printf("\r\n");
 
     return 0;

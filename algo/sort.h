@@ -3,11 +3,6 @@
 #define _XLIB_SORT_H_
 
 
-#include <stdio.h>
-#include "xlib.h"
-
-
-
 void bubble_sort(void *base, size_t num, size_t width, int(*compare)(void*, void*));
 
 void cocktail_sort(void *base, size_t num, size_t width, int(*compare)(void*, void*));

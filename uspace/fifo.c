@@ -12,19 +12,16 @@
 #include <sys/stat.h>
 
 
-#ifndef T_DESC
-#define T_DESC(x, y)   (y)
-#endif
 
-#if T_DESC("TU1", 1)
-
-int tu1_proc(void)
+int write_proc(void)
 {
     int fifo_fd;
     int ret;
     char buffer[128];
     
-    mkfifo("my_fifo", 0644);
+    ret = mkfifo("my_fifo", 0644);
+    printf("mkfifo: %d\n", fifo_fd);
+
     fifo_fd = open("my_fifo", O_WRONLY);
     printf("fifo_fd: %d\n", fifo_fd);
 
@@ -45,17 +42,16 @@ int tu1_proc(void)
     return 0;
 }
 
-#endif
 
-#if T_DESC("TU2", 1)
-
-int tu2_proc(void)
+int read_proc(void)
 {
     int fifo_fd;
     int ret;
     char buffer[128];
     
-    //mkfifo("my_fifo", 0644);
+    ret = mkfifo("my_fifo", 0644);
+    printf("mkfifo: %d\n", fifo_fd);
+    
     fifo_fd = open("my_fifo", O_RDONLY);
     printf("fifo_fd: %d\n", fifo_fd);
 
@@ -63,40 +59,35 @@ int tu2_proc(void)
     {
         ret = read(fifo_fd, buffer, 128);
         if(ret > 0) {
-            printf("read: %s\n", buffer);
+            printf("\nread: %s\n", buffer);
         }
     }
 
     return 0;
 }
 
-#endif
-
-#if T_DESC("global", 1)
-
-void usage()
-{
-    printf("\n Usage: <cmd> <tu> <p1> <...>");
-    printf("\n   1 -- create write fifo");
-    printf("\n   2 -- create read fifo");
-    printf("\n");
-}
 
 int main(int argc, char **argv)
 {
-    int ret;
-    
-    if(argc < 2) {
-        usage();
-        return 0;
-    }
+    pid_t pid;
 
-    int tu = atoi(argv[1]);
-    if (tu == 1) ret = tu1_proc();
-    if (tu == 2) ret = tu2_proc();
+    pid = fork();
+    if (pid < 0)
+    {
+        perror("fork()");
+    }
+    else if (pid > 0)
+    {
+        printf("parent pid %d\n", getpid());
+        write_proc();
+    }
+    else
+    {
+        printf("child pid %d\n", getpid());
+        read_proc();
+    }
     
-    return ret;
+    return 0;
 }
-#endif
 
 

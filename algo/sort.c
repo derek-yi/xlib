@@ -169,7 +169,7 @@ void shell_sort(void *base, size_t num, size_t width, int(*compare)(void*, void*
     return ;
 }
 
-void QuickSort(void *base, int low, int high, size_t width, int(*compare)(void*, void*))
+void quick_sort(void *base, int low, int high, size_t width, int(*compare)(void*, void*))
 {
     int i,j;
     char *temp_data = (char *)malloc(width);    
@@ -216,8 +216,8 @@ void QuickSort(void *base, int low, int high, size_t width, int(*compare)(void*,
         memcpy((char *)base + i*width, temp_data, width);  
         free(temp_data);
         
-        QuickSort(base, low, i-1, width, compare);
-        QuickSort(base, i+1, high, width, compare);
+        quick_sort(base, low, i-1, width, compare);
+        quick_sort(base, i+1, high, width, compare);
     }
 }
 

@@ -1,10 +1,13 @@
 
 
-#include "xlib.h"
-
-#if T_DESC("source", 1)
-    
+#ifdef WIN32
+#include <windows.h>
+#else  
+#include <stdio.h>
+#include <stdlib.h>
 #endif
+
+
 
 
 

@@ -25,10 +25,12 @@ int flock_fd2;
 int read_lock(int fd)
 {
     struct flock lock;  
+    
     lock.l_start = 0;  
     lock.l_len = 0x10;  
     lock.l_type = F_RDLCK;  
     lock.l_whence = SEEK_SET;  
+    
     int result = fcntl(fd, F_SETLK, &lock);  
     if(result<0){  
         perror("lockR:");  
@@ -39,6 +41,7 @@ int read_lock(int fd)
 int read_lock_wait(int fd)
 {
     struct flock lock;  
+    
     lock.l_start = 0;  
     lock.l_len = 0x10;  
     lock.l_type = F_RDLCK;  
@@ -49,6 +52,7 @@ int read_lock_wait(int fd)
 int write_lock(int fd)
 {
     struct flock lock;  
+    
     lock.l_start = 0;  
     lock.l_len = 0x10;  
     lock.l_type = F_WRLCK;  
@@ -69,6 +73,7 @@ int write_lock_wait(int fd)
 int file_unlock(int fd)
 {
     struct flock lock;  
+    
     lock.l_start = 0;  
     lock.l_len = 0x10;  
     lock.l_type = F_UNLCK;  
@@ -81,10 +86,10 @@ int file_unlock(int fd)
 
 #if T_DESC("tu", 1)
 
-#if 1
 void thread_11(void)  
 {  
     int i;  
+    
     for(i=0; i<100; i++)  {
         write_lock(flock_fd1);
         //write_lock(flock_fd2);
@@ -94,12 +99,14 @@ void thread_11(void)
         file_unlock(flock_fd2);
         //file_unlock(flock_fd1);
     }  
+    
     pthread_exit(0);  
 }  
   
 void thread_12(void)  
 {  
     int i;  
+    
     for(i=0; i<100; i++) {
         //write_lock(flock_fd1);
         write_lock(flock_fd2);
@@ -109,38 +116,9 @@ void thread_12(void)
         //file_unlock(flock_fd2);
         file_unlock(flock_fd1);
     }  
+    
     pthread_exit(0);  
 }  
-
-#else
-void thread_11(void)  
-{  
-    int i;  
-    for(i=0; i<100; i++)  {
-        flock(flock_fd1, LOCK_EX);
-        printf("This is thread_11...");  
-        sleep(2);  
-        printf("flock.\n");
-        flock(flock_fd1, LOCK_UN);
-        sleep(1);  
-    }  
-    pthread_exit(0);  
-}  
-  
-void thread_12(void)  
-{  
-    int i;  
-    for(i=0; i<100; i++) {
-        flock(flock_fd1, LOCK_EX);
-        printf("This is thread_12...");  
-        sleep(2);  
-        printf("flock.\n");
-        flock(flock_fd1, LOCK_UN);
-        sleep(1);  
-    }  
-    pthread_exit(0);  
-}  
-#endif
 
 int tu1_proc(int tu_id)  
 {  
@@ -176,35 +154,29 @@ int tu1_proc(int tu_id)
 
 #if T_DESC("global", 1)
 
-void usage()
-{
-    printf("\n Usage: <cmd> <tc>");
-    printf("\n   1 -- tc 1");
-    printf("\n");
-}
 
 int main(int argc, char **argv)
 {
     int ret;
     int tu_id;
     
-    if(argc < 2) {
-        usage();
+    if (argc < 2) {
+        printf("\n Usage: %s <index>", argv[0]);
+        printf("\n   1 -- case1");
+        printf("\n");
         return 0;
     }
 
     tu_id = atoi(argv[1]);
-    if (tu_id < 1 || tu_id > 2)  {
-        usage();
-        return 0;
-    }
-    
+   
     ret = tu1_proc(tu_id);
+    printf("%d: tu1_proc ret %d\n", __LINE__, ret);
+    
     return ret;
 }
 #endif
 
-#if T_DESC("readme", 1)
+#if T_DESC("unit test", 1)
 /*
 1,case1
 gcc -o flock.out flock.c -lpthread

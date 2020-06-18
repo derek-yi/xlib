@@ -21,9 +21,14 @@
   linux/lib/rbtree.c
 */
 
-#include "xlib.h"
+#ifdef WIN32
+#include <windows.h>
+#else  
+#include <stdio.h>
+#include <stdlib.h>
+#endif
 
-#if T_DESC("source", 1)
+#if 1 //T_DESC("source", 1)
 
 #define EXPORT_SYMBOL(x)
 
@@ -809,25 +814,24 @@ int main(int argc, char *argv[])
     struct mytype *tmp;
  
     if (argc < 2) {
-	fprintf(stderr, "Usage: %s num\n", argv[0]);
-	exit(-1);
+    	fprintf(stderr, "Usage: %s num\n", argv[0]);
+    	exit(-1);
     }
  
     num = atoi(argv[1]);
  
     printf("Please enter %d integers:\n", num);
     for (i = 0; i < num; i++) {
-	tmp = malloc(sizeof(struct mytype));
-	if (!tmp)
-	    perror("Allocate dynamic memory");
- 
-	scanf("%d", &tmp->num);
-	
-	ret = my_insert(&mytree, tmp);
-	if (ret < 0) {
-	    fprintf(stderr, "The %d already exists.\n", tmp->num);
-	    free(tmp);
-	}
+    	tmp = malloc(sizeof(struct mytype));
+    	if (!tmp)
+    	    perror("Allocate dynamic memory");
+     
+    	scanf("%d", &tmp->num);
+    	ret = my_insert(&mytree, tmp);
+    	if (ret < 0) {
+    	    fprintf(stderr, "The %d already exists.\n", tmp->num);
+    	    free(tmp);
+    	}
     }
  
     printf("\nthe first test\n");

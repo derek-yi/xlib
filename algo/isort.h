@@ -3,19 +3,19 @@
 #define _XLIB_SORT_H_
 
 
-#define elemType int /*元素类型*/
+typedef int elemType; /*元素类型*/
 
-void bubble_sort(elemType arr[], int len);
+void bubble_isort(elemType arr[], int len);
 
-void cocktail_sort(elemType arr[], int len);
+void cocktail_isort(elemType arr[], int len);
 
-void select_sort(elemType arr[], int len);
+void select_isort(elemType arr[], int len);
 
-void insert_sort(elemType arr[], int len);
+void insert_isort(elemType arr[], int len);
 
-void shell_sort(elemType arr[], int len);
+void shell_isort(elemType arr[], int len);
 
-void my_qsort(elemType arr[], int len);
+void my_iqsort(elemType arr[], int len);
 
 #endif //_XLIB_SORT_H_
 

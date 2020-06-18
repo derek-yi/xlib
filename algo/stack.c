@@ -1,5 +1,10 @@
 
-#include "xlib.h"
+#ifdef WIN32
+#include <windows.h>
+#else  
+#include <stdio.h>
+#include <stdlib.h>
+#endif
 
 #include "stack.h"
 
@@ -83,6 +88,9 @@ int xlib_stack_iterate(STACK_INFO_ST *pStack, FP_NODE_PROC fp_proc)
 
 #ifndef MAKE_XLIBC
 
+#define XLIB_UT_CHECK(desc, wanted, exp)  \
+    if(exp != wanted) printf("\r\n %d: %s FAILED! \r\n", __LINE__, desc); \
+    else printf("\r\n %d: %s PASS! \r\n", __LINE__, desc);
 
 typedef struct NODE_DATA_TAG
 {

@@ -1,12 +1,17 @@
 
-#include "xlib.h"
+#ifdef WIN32
+#include <windows.h>
+#else  
+#include <stdio.h>
+#include <stdlib.h>
+#endif
 
 #include "list.h"
 #include "hash.h"
 #include "hashtable.h"
 
 
-#if 1
+#ifndef MAKE_XLIBC
 
 #include <time.h>
 
@@ -21,7 +26,9 @@ typedef struct user_data_tag
 #define ENTRY_SIZE          32
 #define MY_HASH_TABLE_BITS  8
 
-static DECLARE_HASHTABLE(my_hash_table, MY_HASH_TABLE_BITS);
+//static DECLARE_HASHTABLE(my_hash_table, MY_HASH_TABLE_BITS);
+struct hlist_head my_hash_table[1 << (MY_HASH_TABLE_BITS)];
+
 
 
 static inline unsigned int my_hash_func(int aa, int bb)
@@ -57,7 +64,24 @@ int main()
             printf("\r\n key=%d param=%d", obj->key, obj->param);
         }
     }
-    
+    printf("\r\n");  
+
+    printf("\r\n del  : ");  
+    hash_for_each(my_hash_table, bkt, obj, node) {
+        if(obj->key%6 == 0) {
+            printf("\r\n key=%d param=%d", obj->key, obj->param);
+            hash_del(&obj->node);
+        }
+    }
+    printf("\r\n");     
+
+    printf("\r\n dump  : ");  
+    hash_for_each(my_hash_table, bkt, obj, node) {
+        if(obj->key%3 == 0) {
+            printf("\r\n key=%d param=%d", obj->key, obj->param);
+        }
+    }
+    printf("\r\n");  
     return 0;  
 } 
 
