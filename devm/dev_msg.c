@@ -16,6 +16,17 @@
 #include "dev_msg.h"
 
 #if 1
+
+typedef struct 
+{
+    uint32  app_id;
+    char    app_name[DEV_NAME_MAX];
+    uint32  dev_state;
+    uint32  dev_type;
+    int     socket_id;
+    pthread_t thread_id;
+}DEV_INFO_T;
+
 DEV_INFO_T dev_list[MAX_DEV_NUM] = {0};
 
 #define APP_NAME_FMT    "app%04d"
@@ -32,7 +43,7 @@ typedef struct
     MSG_PROC    func;
 }MSG_PROC_T;
 
-int dev_msg_echo(DEV_INFO_T *dev_info, char *msg_buf, int buf_len)
+int dev_msg_echo(uint32 dev_id, char *msg_buf, int buf_len)
 {
     DEV_MSG_T *dev_msg = (DEV_MSG_T *)msg_buf;
 
@@ -50,7 +61,7 @@ MSG_PROC_T msg_proc_list[128] = {
     {0, NULL},
 };
 
-int dev_msg_proc(DEV_INFO_T *dev_info, char *msg_buf, int buf_len)
+int dev_msg_proc(uint32 dev_id, char *msg_buf, int buf_len)
 {
     DEV_MSG_T *dev_msg = (DEV_MSG_T *)msg_buf;
     int i, ret = 0;
@@ -64,7 +75,7 @@ int dev_msg_proc(DEV_INFO_T *dev_info, char *msg_buf, int buf_len)
     for (i = 0; i < sizeof(msg_proc_list)/sizeof(MSG_PROC_T); i++) {
         if ( (msg_proc_list[i].cmd_id == dev_msg->cmd_id) 
             && (msg_proc_list[i].func != NULL) ) {
-            ret = msg_proc_list[i].func(dev_info, msg_buf, buf_len);
+            ret = msg_proc_list[i].func(dev_id, msg_buf, buf_len);
             break;
         }
     }
@@ -86,7 +97,7 @@ void client_rx_task(void *param)
             break;
         }
         
-        dev_msg_proc(dev_info, buffer, rx_len);
+        dev_msg_proc(dev_info->app_id, buffer, rx_len);
     }
 
     close(socket_id);
@@ -313,7 +324,7 @@ int dev_msg_init(int app_id, int listen_port)
     } 
 
     if (listen_port > 0) {
-        ret = dev_inet_init(listen_port, DEV_FLAGS_NEED_REG);
+        ret = dev_inet_init(listen_port, DEV_FLAGS_INET | DEV_FLAGS_NEED_REG);
         if (ret < 0){
             xprintf("uds create failed\n");
             return -1;
@@ -347,7 +358,7 @@ int dev_msg_send(int app_id, uint32 cmd_id, uint32 need_ack, char *msg_buf, int 
     memcpy(buffer + sizeof(DEV_MSG_T), msg_buf, msg_len);
 
     if (dev_list[i].dev_type == DEV_TYPE_SELF) {
-        ret = dev_msg_proc(&dev_list[i], buffer, sizeof(DEV_MSG_T) + msg_len);
+        ret = dev_msg_proc(dev_local_appid(), buffer, sizeof(DEV_MSG_T) + msg_len);
         return ret;
     }
     
@@ -451,7 +462,7 @@ int dev_cmd_connect(int argc, char **argv)
 
     dev_msg.magic_num = DEV_MAGIC_NUM;
     dev_msg.cmd_id = DEV_CMD_REGISTER;
-    dev_msg.app_id = dev_list[0].app_id;
+    dev_msg.app_id = dev_local_appid();
     ret = send(sock_fd, &dev_msg, sizeof(DEV_MSG_T), 0);
     if (ret <= 0) {
         printf("send failed!\n");

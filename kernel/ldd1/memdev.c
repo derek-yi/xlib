@@ -70,16 +70,15 @@ static ssize_t mem_read(struct file *filp, char __user *buf, size_t size, loff_t
     /*判断读位置是否有效*/  
     if (p >= MEMDEV_SIZE)  
         return 0;  
-    if (count > MEMDEV_SIZE - p)  
+    
+    if (count > MEMDEV_SIZE - p) {
         count = MEMDEV_SIZE - p;  
+    }
 
     /*读数据到用户空间*/  
-    if (copy_to_user(buf, (void*)(dev->data + p), count))  
-    {  
+    if (copy_to_user(buf, (void*)(dev->data + p), count))  {  
         ret = - EFAULT;  
-    }  
-    else  
-    {  
+    } else {  
         *ppos += count;  
         ret = count;  
         printk(KERN_INFO "read %d bytes(s) from %d\n", count, p);  
@@ -98,14 +97,14 @@ static ssize_t mem_write(struct file *filp, const char __user *buf, size_t size,
     /*分析和获取有效的写长度*/  
     if (p >= MEMDEV_SIZE)  
         return 0;  
+    
     if (count > MEMDEV_SIZE - p)  
         count = MEMDEV_SIZE - p;  
 
     /*从用户空间写入数据*/  
-    if (copy_from_user(dev->data + p, buf, count))  
+    if (copy_from_user(dev->data + p, buf, count)) {
         ret = - EFAULT;  
-    else  
-    {  
+    } else {  
         *ppos += count;  
         ret = count;  
         printk(KERN_INFO "written %d bytes(s) from %d\n", count, p);  
@@ -134,6 +133,7 @@ static loff_t mem_llseek(struct file *filp, loff_t offset, int whence)
       default: /* can't happen */  
         return -EINVAL;  
     }  
+    
     if ((newpos<0) || (newpos>MEMDEV_SIZE))  
      return -EINVAL;  
        

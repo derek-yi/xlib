@@ -17,6 +17,7 @@
 #include <linux/mm.h>  
 #include <linux/cdev.h>  
 #include <linux/sched.h>
+#include <linux/sched/signal.h>
 
 #define IO_CMD_LEN      256  
 #define CHAR_DEV_NAME   "kdev"
@@ -26,7 +27,7 @@
 static int user_cmd_proc(char *user_cmd, char *out_str)
 {
     if(strncmp(user_cmd, "sendsig", 7) == 0) {
-        //send_sig(SIGUSR1, current, 0); //send SIGUSR 1
+        send_sig(SIGUSR1, current, 0); //send SIGUSR 1
     }
     
     if(strncmp(user_cmd, "showpid", 7) == 0) {

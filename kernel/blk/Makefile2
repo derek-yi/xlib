@@ -1,0 +1,13 @@
+ifneq ($(KERNELRELEASE),) 
+obj-m := ramdrv2.o
+$(info "2nd")
+else
+KDIR := /lib/modules/$(shell uname -r)/build
+PWD:=$(shell pwd)
+all:
+	$(info "1st")
+	make -C $(KDIR) M=$(PWD) modules
+clean:
+	rm -f *.ko *.o *.symvers *.mod.c *.mod.o *.order
+endif
+

@@ -115,7 +115,7 @@ void dma_init(void)
 	//dma_write_config_dword(->pci_dev,DMA write engine enable,0x1);	
 	
 	//1.2 获取msi能力寄存器的地址
-	pos =pci_find_capability(my_device.pci_dev,PCI_CAP_ID_MSI);
+	pos = pci_find_capability(my_device.pci_dev,PCI_CAP_ID_MSI);
     
 	//1.3 读取msi的协议部分，得到pci设备是32位还是64位，不同的架构msi data寄存器地址同
 	pci_read_config_word(my_device.pci_dev,pos+2,&msi_control);
@@ -129,7 +129,7 @@ void dma_init(void)
 	//1.6 设置 DMA write abort IMWr Address Low.这里请根据自己的芯片填写
 	//dma_write_config_dword(my_device.pci_dev,DMA write abort IMWr Address Low,msi_addr_l);
 	
-	if(msi_control&0x80){
+	if (msi_control&0x80){
 		//64位的
 		//1.7 读取msi能力寄存器组中的高32位地址寄存器的值
 		pci_read_config_dword(my_device.pci_dev,pos+0x8,&msi_addr_h);
@@ -169,32 +169,32 @@ static int hello_probe(struct pci_dev *pdev, const struct pci_device_id *id)
 	}
 	
 	pci_set_master(pdev);	
-	my_device.pci_dev=pdev;
+	my_device.pci_dev = pdev;
  
-	if(unlikely(pci_request_regions(pdev,DEV_NAME))){
+	if (unlikely(pci_request_regions(pdev, DEV_NAME))) {
 		DEBUG_ERR("failed:pci_request_regions\n");
 		result = -EIO;
 		goto enable_device_err;
 	}
 	
 	//获得bar0的物理地址和虚拟地址
-	bar0_phy = pci_resource_start(pdev,0);
-	if(bar0_phy<0){
+	bar0_phy = pci_resource_start(pdev, 0);
+	if (bar0_phy<0) {
 		DEBUG_ERR("failed:pci_resource_start\n");
 		result =-EIO;
 		goto request_regions_err;
 	}
 	
 	//假设bar0是作为内存，流程是这样的，但是在本程序中不对bar0进行任何操作。
-	bar0_length = pci_resource_len(pdev,0);
-	if(bar0_length!=0){
-		bar0_vir = (unsigned long)ioremap(bar0_phy,bar0_length);
+	bar0_length = pci_resource_len(pdev, 0);
+	if (bar0_length!=0) {
+		bar0_vir = (unsigned long)ioremap(bar0_phy, bar0_length);
 	}
 	
 	//申请一块DMA内存，作为源地址，在进行DMA读写的时候会用到。
-	dma_src_vir=(dma_addr_t)pci_alloc_consistent(pdev, DMA_BUFFER_SIZE, &dma_src_phy);
-	if(dma_src_vir != 0){
-		for(i=0;i<DMA_BUFFER_SIZE/PAGE_SIZE;i++){
+	dma_src_vir = (dma_addr_t)pci_alloc_consistent(pdev, DMA_BUFFER_SIZE, &dma_src_phy);
+	if (dma_src_vir != 0) {
+		for (i=0; i<DMA_BUFFER_SIZE/PAGE_SIZE; i++){
 			SetPageReserved(virt_to_page(dma_src_phy+i*PAGE_SIZE));
 		}
 	} else {
@@ -202,9 +202,9 @@ static int hello_probe(struct pci_dev *pdev, const struct pci_device_id *id)
 	}
 	
 	//申请一块DMA内存，作为目的地址，在进行DMA读写的时候会用到。
-	dma_dst_vir=(dma_addr_t)pci_alloc_consistent(pdev, DMA_BUFFER_SIZE, &dma_dst_phy);
-	if(dma_dst_vir!=0){
-		for(i=0;i<DMA_BUFFER_SIZE/PAGE_SIZE;i++){
+	dma_dst_vir = (dma_addr_t)pci_alloc_consistent(pdev, DMA_BUFFER_SIZE, &dma_dst_phy);
+	if (dma_dst_vir!=0) {
+		for (i=0; i<DMA_BUFFER_SIZE/PAGE_SIZE; i++) {
 			SetPageReserved(virt_to_page(dma_dst_phy+i*PAGE_SIZE));
 		}
 	} else {
@@ -219,7 +219,7 @@ static int hello_probe(struct pci_dev *pdev, const struct pci_device_id *id)
     }
 	
 	result = request_irq(pdev->irq, hello_interrupt, 0, DEV_NAME, my_device.pci_dev);
-    if (unlikely(result)){
+    if (unlikely(result)) {
        DEBUG_ERR("failed:request_irq\n");
 	   goto enable_msi_error;
     }
@@ -254,18 +254,18 @@ static void hello_remove(struct pci_dev *pdev)
 {
 	int i;
 	
-	free_irq(pdev->irq,my_device.pci_dev);
+	free_irq(pdev->irq, my_device.pci_dev);
 	pci_disable_msi(pdev);
  
-	for(i=0;i<DMA_BUFFER_SIZE/PAGE_SIZE;i++){
+	for (i=0; i<DMA_BUFFER_SIZE/PAGE_SIZE; i++) {
 		ClearPageReserved(virt_to_page(dma_dst_phy+i*PAGE_SIZE));
 	}
-	pci_free_consistent(pdev,DMA_BUFFER_SIZE,(void *)dma_dst_vir,dma_dst_phy);
+	pci_free_consistent(pdev, DMA_BUFFER_SIZE, (void *)dma_dst_vir,dma_dst_phy);
  
-	for(i=0;i<DMA_BUFFER_SIZE/PAGE_SIZE;i++){
+	for (i=0; i<DMA_BUFFER_SIZE/PAGE_SIZE; i++) {
 		ClearPageReserved(virt_to_page(dma_src_phy+i*PAGE_SIZE));
 	}
-	pci_free_consistent(pdev,DMA_BUFFER_SIZE,(void *)dma_src_vir,dma_src_phy);
+	pci_free_consistent(pdev, DMA_BUFFER_SIZE, (void *)dma_src_vir,dma_src_phy);
  
 	iounmap((void *)bar0_vir);
 	pci_release_regions(pdev);
@@ -279,13 +279,14 @@ static irqreturn_t hello_interrupt(int irq, void * dev)
 	//2.根据DMA Channel control 1 register寄存器的状态，判断读写状态，读失败，写失败，读成功，写成功，做出不同的处理。
 	return 0;
 }
+
 static struct pci_driver hello_driver = {
     .name = DEV_NAME,
     .id_table = hello_ids,
     .probe = hello_probe,
     .remove = hello_remove,
 };
- 
+
 static int hello_open(struct inode *inode, struct file *file)
 {
 	printk("driver: hello_open\n");

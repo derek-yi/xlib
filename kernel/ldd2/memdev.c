@@ -21,7 +21,6 @@
 
 #define MEMDEV_MAJOR        260     /*预设的mem的主设备号*/  
 #define MEMDEV_NR_DEVS      2       /*设备数*/  
-#define MEMDEV_SIZE         4096  
 #define CHAR_DEV_NAME       "memdev"
   
 static int mem_major = 0; //MEMDEV_MAJOR;  

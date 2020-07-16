@@ -47,20 +47,14 @@ typedef struct
 #define DEV_TYPE_CLIENT         0x3
 
 #define MAX_DEV_NUM             128
-typedef struct 
-{
-    uint32  app_id;
-    char    app_name[DEV_NAME_MAX];
-    uint32  dev_state;
-    uint32  dev_type;
-    int     socket_id;
-    pthread_t thread_id;
-}DEV_INFO_T;
 
-typedef int (* MSG_PROC)(DEV_INFO_T *dev_info, char *msg_buf, int buf_len);
 
-#define DEV_FLAGS_UDS           0x01    //default is INET
-#define DEV_FLAGS_NEED_REG      0x02
+typedef int (* MSG_PROC)(uint32 dev_id, char *msg_buf, int buf_len);
+
+#define DEV_FLAGS_UDS           0x01
+#define DEV_FLAGS_INET          0x02
+#define DEV_FLAGS_NEED_REG      0x04
+#define DEV_FLAGS_CHECK_APPID   0x08
 
 int dev_msg_init(int app_id, int port);
 int dev_msg_send(int app_id, uint32 cmd_id, uint32 need_ack, char *msg_buf, int msg_len);

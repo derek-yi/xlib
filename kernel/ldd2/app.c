@@ -20,7 +20,7 @@ int main()
 
     fd = open("/dev/memdev", O_RDWR);
     if( fd < 0 ) {
-        printf("open memdev WRONG£¡\n");
+        printf("open memdev WRONG\n");
         return 0;
     }
 
