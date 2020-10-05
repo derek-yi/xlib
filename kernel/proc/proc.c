@@ -82,13 +82,14 @@ static int my_proc_open(struct inode *inode, struct file *file)
 
 static ssize_t my_proc_write(struct file *file, const char __user *buffer, size_t count, loff_t *pos)
 {
-    printk("my_proc_write called\n");
+    printk("my_proc_write called, count=%d\n", count);
+    
     if (count < 1 || count >= MAX_CMD_LEN ) {
         printk("invalid user cmd\n");
         return 0;
     }
 
-    copy_from_user(global_buffer, buffer, count);  
+    copy_from_user(global_buffer, buffer, count + 1);  
     user_cmd_proc(global_buffer);
 
     return count;
@@ -143,5 +144,12 @@ MODULE_LICENSE("GPL");
 /*
 echo "Hello from kernel" > /proc/my_proc/buffer
 cat /proc/my_proc/buffer
+
+echo "tasklet" > /proc/my_proc/buffer
+dmesg
+
+echo "workqueue" > /proc/my_proc/buffer
+dmesg
+
 */
 

@@ -1,173 +1,145 @@
 
-/*
-https://blog.csdn.net/u013420428/article/details/78115512
 
-*/
 
-/*********************************************************************************
- *      Copyright:  (C) 2016 Guo Wenxue<guowenxue@gmail.com>  
- *                  All rights reserved.
- *
- *       Filename:  at91_keyled.c
- *    Description:  This is a sample driver for GPIO operation with DTS linux on at91,
- *                  which willl turn led on when a button pressed.
- *                 
- *        Version:  1.0.0(2016-6-29~)
- *         Author:  Guo Wenxue <guowenxue@gmail.com>
- *      ChangeLog:  1, Release initial version on "Wed Jun 29 12:00:44 CST 2016"
- *
- *
- *    DTS Changes:
- *                 add keyleds support in arch/arm/boot/dts/at91sam9x5cm.dtsi
- *
- *                   keyleds{
- *                          compatible = "key-leds";
- *                          gpios = <&pioB 18 GPIO_ACTIVE_LOW     priv->pin_key=of_get_gpio(pdev->dev.of_node, 0);
- *                                   &pioB 16 GPIO_ACTIVE_LOW>;   priv->pin_key=of_get_gpio(pdev->dev.of_node, 1);
- *                          status = "okay";
- *                   }
- *
- *                   1wire_cm {
- *                      ... ...
- *                      ... ...
- *                   }
- *                 
- ********************************************************************************/
+/**
+ * @file   foo_drv.c
+ * @author Late Lee <latelee@163.com>
+ * @date   Wed Jun  7 22:21:19 2019
+ * 
+ * @brief  测试dts示例
+ * 
+ * @note   读取dts的值，学习dts。代码有部分警告，不影响
+ */
 
 #include <linux/module.h>
-#include <linux/moduleparam.h>
-#include <linux/platform_device.h>
+#include <linux/kernel.h>       /**< printk() */
+#include <linux/init.h>
+
+#include <linux/types.h>        /**< size_t */
+#include <linux/errno.h>        /**< error codes */
+#include <linux/string.h>
 
 #include <linux/of.h>
 #include <linux/of_device.h>
-#include <linux/of_gpio.h>
-#include <linux/delay.h>
-#include <linux/gpio.h>
-#include <linux/interrupt.h>
 
-typedef struct keyled_priv_s 
+static int foo_remove(struct platform_device *dev)
 {
-    int       pin_key;  
-    int       pin_led; 
-    int       led_status;
-} keyled_priv_t;  /*---  end of struct keyled_priv_s  ---*/
-
-
-static const struct of_device_id of_key_leds_match[] = {
-        { .compatible = "key-leds", },
-        {},
-};
-
-MODULE_DEVICE_TABLE(of, of_key_leds_match);
-
-
-static irqreturn_t key_detect_interrupt(int irq, void *dev_id)
-{
-    keyled_priv_t    *priv = (keyled_priv_t *)dev_id;
-
-    priv->led_status ^= 1;
-    gpio_set_value(priv->pin_led, priv->led_status);
-
-    return IRQ_HANDLED;
-}
-
-
-static int at91_keyled_probe(struct platform_device *pdev)
-{
-    int              res;
-    keyled_priv_t    *priv;
-
-    printk(KERN_INFO "at91_keyled driver probe\n");
-
-    if( 2 != of_gpio_count(pdev->dev.of_node) )
-    {
-        printk(KERN_ERR "keyled pins definition in dts invalid\n");
-        return -EINVAL;
-    }
-
-    priv = devm_kzalloc(&pdev->dev, sizeof(*priv), GFP_KERNEL);
-    if(!priv)
-        return -ENOMEM;
-
-    platform_set_drvdata(pdev, priv);
-
-    priv->pin_key = of_get_gpio(pdev->dev.of_node, 0);
-    priv->pin_led = of_get_gpio(pdev->dev.of_node, 1);
-
-    if( gpio_is_valid(priv->pin_key) )
-    {
-        if( (res=devm_gpio_request(&pdev->dev, priv->pin_key, "keyled_key")) < 0 )
-        {
-            dev_err(&pdev->dev, "can't request key gpio %d\n", priv->pin_key);
-            return res;
-        }
-        dev_info(&pdev->dev, "request key gpio %d ok\n", priv->pin_key);
-
-        if( (res=gpio_direction_input(priv->pin_key)) < 0 )
-        {
-            dev_err(&pdev->dev, "can't request input direction key gpio %d\n", priv->pin_key);
-            return res;
-        }
-        dev_info(&pdev->dev, "request input direction key gpio %d ok\n", priv->pin_key);
-
-        printk(KERN_INFO "Key gpio current status: %d\n", gpio_get_value(priv->pin_key));
-
-        res = request_irq( gpio_to_irq(priv->pin_key), key_detect_interrupt, IRQF_TRIGGER_FALLING, "keyled", priv);
-        if( res )
-        {
-            dev_err(&pdev->dev, "can't request IRQ<%d> for key gpio %d\n", gpio_to_irq(priv->pin_key), priv->pin_key);
-            return -EBUSY;
-        }
-        dev_info(&pdev->dev, "request IRQ<%d> for key gpio %d ok\n", gpio_to_irq(priv->pin_key), priv->pin_key);
-    }
-
-    if( gpio_is_valid(priv->pin_led) )
-    {
-        if( (res = devm_gpio_request(&pdev->dev, priv->pin_led, "keyled_led")) < 0 )
-        {
-            dev_err(&pdev->dev, "can't request key gpio %d\n", priv->pin_led);
-            return res;
-        }
-
-        if( (res = gpio_direction_output(priv->pin_led, 0)) < 0 )
-        {
-            dev_err(&pdev->dev, "can't request output direction key gpio %d\n", priv->pin_led);
-            return res;
-        }
-    }
+    printk(KERN_NOTICE "remove...\n");
 
     return 0;
 }
 
-static int at91_keyled_remove(struct platform_device *pdev)
+static int foo_probe(struct platform_device *dev)
 {
-    keyled_priv_t    *priv = platform_get_drvdata(pdev);
+    int ret = 0;
+    struct device_node* np = dev->dev.of_node;
+    struct device_node* child = NULL;
+    const char* str = NULL;
+    bool enable = false;
+    u8 value = 0;
+    u16 value16 = 0;
+    u32 value32 = 0;
+    
+    // 测试dts读取API
+    if(np == NULL)
+    {
+        pr_info("of_node is NULL\n");
+        return 0;
+    }
+    
+    of_property_read_string(np, "status", &str); // 读字符串
 
-    printk(KERN_INFO "at91_keyled driver remove\n");
-
-    devm_gpio_free(&pdev->dev, priv->pin_led);
-    devm_gpio_free(&pdev->dev, priv->pin_key);
-
-    free_irq(gpio_to_irq(priv->pin_key), priv);
-
-    devm_kfree(&pdev->dev, priv);
-
-    return 0;
+    enable = of_property_read_bool(np, "enable"); // bool类型，可判断某字段存在不存在
+    of_property_read_u32(np, "myvalue", &value32); // 一般地，都使用u32读取数值
+    of_property_read_u8(np, "value", &value);
+    of_property_read_u16(np, "value16", &value16);
+    
+    u32 data[3] = {0};
+	u32 tag = 0;
+    // a-cell是一个数组，默认读第1个。
+    of_property_read_u32(np, "a-cell", &tag);
+    // 也可以读取指定大小的数组（不一定是全部的）
+    of_property_read_u32_array(np, "a-cell", data, ARRAY_SIZE(data));
+    
+    printk("of read status: %s enable: %d value: %d %d %d\n", str, enable, value, value16, value32);
+    printk("of read tag: %d data: %d %d %d\n", tag, data[0], data[1], data[2]);
+    
+    // 获取子节点个数
+    int count = of_get_available_child_count(np);
+    
+    // 遍历所有子节点，按格式读取属性
+    int index = 0;
+    for_each_available_child_of_node(np,child)
+    {
+        const char* label = of_get_property(child,"label",NULL) ? : child->name;
+        const char* note = of_get_property(child,"note",NULL) ? : child->name;
+        printk("of read: label: %s note: %s\n", label, note);
+    }
+    return ret;
 }
 
-static struct platform_driver at91_keyled_driver = {
-    .probe      = at91_keyled_probe,
-    .remove     = at91_keyled_remove,
-    .driver     = {
-        .name   = "key-leds",
-        .of_match_table = of_key_leds_match,
-    },
+static struct of_device_id foo_of_match[] = {
+	{ .compatible = "ll,jimkent-foo", },
+	{ /* sentinel */ }
 };
 
-module_platform_driver(at91_keyled_driver);
+static struct platform_driver foo_driver = {
+	.driver = {
+		.name = "foo",
+		.of_match_table = of_match_ptr(foo_of_match),
+	},
+	.probe  = foo_probe,
+    .remove = foo_remove,
+};
 
-MODULE_AUTHOR("guowenxue <guowenxue@gmail.com>");
-MODULE_DESCRIPTION("AT91 Linux DTS GPIO driver for Key and LED");
+static int __init foo_drv_init(void)
+{
+    int ret = 0;
+
+    ret = platform_driver_register(&foo_driver);
+    if (ret)
+    {
+        pr_info("platform_driver_register failed!\n");
+        return ret;
+    }
+    
+    pr_info("Init OK!\n");
+    
+    return ret;
+}
+
+static void __exit foo_drv_exit(void)
+{
+    platform_driver_unregister(&foo_driver);
+}
+
+module_init(foo_drv_init);
+module_exit(foo_drv_exit);
+
+MODULE_AUTHOR("Late Lee");
+MODULE_DESCRIPTION("Simple platform driver");
 MODULE_LICENSE("GPL");
-MODULE_ALIAS("platform:key-leds");
+MODULE_ALIAS("platform:foo");
 
+
+#ifdef xxx
+myfoo {
+    compatible = "ll,jimkent-foo";
+    status = "okay"; // string
+    enable; // bool，无须值
+    myvalue = <250>; // 默认是32位，如果使用8位读取，结果为0
+    value = /bits/ 8 <88>; // 8位单独赋值
+    value16 = /bits/ 16 <166>; // 16位单独赋值
+    a-cell = <1 2 3 4 5>; // 数组
+    // 子节点
+    foo {
+        label = "foo";
+        note = "this is foo";
+    };
+    bar {
+        label = "bar";
+        note = "this is bar";
+    };
+};
+
+#endif
