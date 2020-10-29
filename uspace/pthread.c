@@ -26,11 +26,11 @@ void thread_1(void)
 {  
     int i;  
 
-    for(i=0; i<10; i++)  {
+    for(i=0; i<100; i++)  {
         printf("thread_1: pid=0x%x tid=0x%x self=0x%x\n", getpid(), gettid(), (int)pthread_self());
         my_var += 1;
         printf("thread_1: my_var=%d addr=0x%x \n", my_var, &my_var);
-        sleep(1);  
+        pthread_yield();  
     }  
     pthread_exit(0);  
 }  
@@ -39,11 +39,11 @@ void thread_2(void)
 {  
     int i;  
     
-    for(i=0; i<5; i++) {
+    for(i=0; i<100; i++) {
         printf("thread_2: pid=0x%x tid=0x%x self=0x%x\n", getpid(), gettid(), (int)pthread_self());
-        my_var += 100;
+        my_var += 1000;
         printf("thread_2: my_var=%d addr=0x%x \n", my_var, &my_var);
-        sleep(1);  
+        pthread_yield();  
     }  
     pthread_exit(0);  
 }  
@@ -57,9 +57,9 @@ int tu1_proc(void)
     struct sched_param sched;
 
     pthread_attr_init(&attr);
-    sched.sched_priority = 80;
+    //sched.sched_priority = 80;
     //pthread_attr_setschedpolicy(&attr, SCHED_OTHER);
-    pthread_attr_setschedpolicy(&attr, SCHED_FIFO);
+    pthread_attr_setschedpolicy(&attr, SCHED_RR);
     //pthread_attr_setinheritsched(&attr, PTHREAD_EXPLICIT_SCHED); //会导致线程创建失败
     
     pthread_attr_getstacksize(&attr, &stack_size);
@@ -76,7 +76,7 @@ int tu1_proc(void)
         return -1;  
     }  
     
-    ret = pthread_create(&id_2, &attr, (void *)thread_2, NULL);  
+    ret = pthread_create(&id_2, NULL, (void *)thread_2, NULL);  
     if(ret != 0)  
     {  
         printf("Create pthread error!\n");  
@@ -85,16 +85,13 @@ int tu1_proc(void)
 
     printf("main: pid=0x%x tid=0x%x self=0x%x\n", getpid(), gettid(), (int)pthread_self());
     
-    /*等待线程结束*/  
     pthread_join(id_1, NULL);  
     pthread_join(id_2, NULL);  
     return 0;  
 }  
 #endif
 
-#if T_DESC("TU2", 1)
 
-#endif
 
 #if T_DESC("global", 1)
 void usage()
