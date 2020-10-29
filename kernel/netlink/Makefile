@@ -1,16 +1,16 @@
-ifneq ($(KERNELRELEASE),)
+#
+#Desgin of Netlink
+#
 
-obj-m:=kern.o
+MODULE_NAME :=kern
+obj-m :=$(MODULE_NAME).o
 
-else
+KERNELDIR ?= /lib/modules/$(shell uname -r)/build
+PWD := $(shell pwd)
 
-KERNELDIR:=/lib/modules/$(shell uname -r)/build
-PWD:=$(shell pwd)
-
-default:
-	$(MAKE) -C $(KERNELDIR) M=$(PWD) modules
+all:
+	$(MAKE) -C $(KERNELDIR) M=$(PWD)
 
 clean:
-	rm -rf *.o *.mod.c *.mod.o *.ko
+	$(MAKE) -C $(KERNELDIR) M=$(PWD) clean
 
-endif

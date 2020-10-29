@@ -1,8 +1,14 @@
 # Object files
 *.o
+*.out
 *.ko
 *.obj
 *.elf
+*.cmd
+*.mod
+*.mod.c
+*.symvers
+*.order
 
 # Precompiled Headers
 *.gch
