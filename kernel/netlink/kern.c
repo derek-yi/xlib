@@ -8,8 +8,7 @@
 //https://www.jianshu.com/p/6810f42b9f8f
 
 #define NETLINK_TEST        30
-#define MSG_LEN             125
-#define USER_PORT           100
+#define MSG_LEN             256
 
 MODULE_LICENSE("GPL");
 MODULE_AUTHOR("zhangwj");
@@ -18,7 +17,7 @@ MODULE_DESCRIPTION("netlink example");
 struct sock *nlsk = NULL;
 extern struct net init_net;
 
-int send_usrmsg(char *pbuf, uint16_t len)
+int send_usrmsg(int user_port, char *pbuf, uint16_t len)
 {
     struct sk_buff *nl_skb;
     struct nlmsghdr *nlh;
@@ -44,7 +43,7 @@ int send_usrmsg(char *pbuf, uint16_t len)
 
     /* 拷贝数据发送 */
     memcpy(nlmsg_data(nlh), pbuf, len);
-    ret = netlink_unicast(nlsk, nl_skb, USER_PORT, MSG_DONTWAIT);
+    ret = netlink_unicast(nlsk, nl_skb, user_port, MSG_DONTWAIT);
 
     return ret;
 }
@@ -52,17 +51,19 @@ int send_usrmsg(char *pbuf, uint16_t len)
 static void netlink_rcv_msg(struct sk_buff *skb)
 {
     struct nlmsghdr *nlh = NULL;
+    int user_port;
     char *umsg = NULL;
     char *kmsg = "hello users!!!";
 
     if(skb->len >= nlmsg_total_size(0))
     {
         nlh = nlmsg_hdr(skb);
+        user_port = nlh->nlmsg_pid;
         umsg = NLMSG_DATA(nlh);
         if(umsg)
         {
-            printk("kernel recv from user: %s\n", umsg);
-            send_usrmsg(kmsg, strlen(kmsg));
+            printk("kernel recv from %d: %s\n", user_port, umsg);
+            send_usrmsg(user_port, kmsg, strlen(kmsg));
         }
     }
 }
