@@ -34,7 +34,7 @@ int vos_print(const char * format,...)
     int len;
 
     va_start(args, format);
-    len = vsnprintf(buf, CMD_BUFF_MAX-1, format, args);
+    len = vsnprintf(buf, CMD_BUFF_MAX, format, args);
     va_end(args);
 
     printf("%s", buf);

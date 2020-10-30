@@ -37,7 +37,7 @@ int kern_xlog(const char *format, ...)
     int len;
 
     va_start(args, format);
-    len = vsnprintf(buf, XLOG_BUFF_MAX-1, format, args);
+    len = vsnprintf(buf, XLOG_BUFF_MAX, format, args);
     va_end(args);
 
     if (log_fd == NULL) {

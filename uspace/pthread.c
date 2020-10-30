@@ -8,20 +8,14 @@
 #include <fcntl.h>
 #include <errno.h>
 
-#ifndef T_DESC
-#define T_DESC(x, y)   (y)
-#endif
 
 __thread int my_var = 6;
 
-#if T_DESC("global", 1)
 pid_t gettid(void)
 {  
     return syscall(SYS_gettid);  
 } 
-#endif
 
-#if T_DESC("TU1", 1)
 void thread_1(void)  
 {  
     int i;  
@@ -48,7 +42,7 @@ void thread_2(void)
     pthread_exit(0);  
 }  
   
-int tu1_proc(void)  
+int pthread_test1(void)  
 {  
     pthread_t id_1,id_2;  
     int ret;  
@@ -60,7 +54,7 @@ int tu1_proc(void)
     //sched.sched_priority = 80;
     //pthread_attr_setschedpolicy(&attr, SCHED_OTHER);
     pthread_attr_setschedpolicy(&attr, SCHED_RR);
-    //pthread_attr_setinheritsched(&attr, PTHREAD_EXPLICIT_SCHED); //会导致线程创建失败
+    //pthread_attr_setinheritsched(&attr, PTHREAD_EXPLICIT_SCHED);
     
     pthread_attr_getstacksize(&attr, &stack_size);
     printf("default stack size is %ld(k)\n", stack_size/1024);
@@ -89,40 +83,13 @@ int tu1_proc(void)
     pthread_join(id_2, NULL);  
     return 0;  
 }  
-#endif
 
-
-
-#if T_DESC("global", 1)
-void usage()
-{
-    printf("\n Usage: <cmd> <tu>");
-    printf("\n    1 -- base case");
-    printf("\n");
-}
 
 int main(int argc, char **argv)
 {
-    int ret;
-    
-    if(argc < 2) {
-        usage();
-        return 0;
-    }
-
-    int tu = atoi(argv[1]);
-    if (tu == 1) ret = tu1_proc();
-    
-    return ret;
+    pthread_test1();
+    return 0;
 }
-#endif
 
-#if T_DESC("readme", 1)
-/*
-gcc pthread.c -lpthread
-./a.out 1
-
-*/
-#endif
 
 
