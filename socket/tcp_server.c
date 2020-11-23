@@ -56,7 +56,6 @@ int main(int argc, char *argv[])
             DieWithSystemMessage("accept() failed");
         
         // clntSock is connected to a client!
-        
         char clntName[INET_ADDRSTRLEN];        // String to contain client address
         if (inet_ntop(AF_INET, &clntAddr.sin_addr.s_addr, clntName, sizeof(clntName)) != NULL )
             printf("Handling client %s/%d\n", clntName, ntohs(clntAddr.sin_port));
@@ -64,7 +63,6 @@ int main(int argc, char *argv[])
             puts("Unable to get client address");
  
         HandleTCPClient(clntSock);
-        
     }
 }
  

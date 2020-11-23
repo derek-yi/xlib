@@ -1,72 +1,85 @@
 
+//http://lionoggo.com/2016/10/01/%E8%B0%88Unix%20Domain%20Socket/
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <sys/stat.h>
-#include <sys/socket.h>
-#include <sys/types.h>
-#include <sys/un.h>
-#include <errno.h>
-#include <stddef.h>
-#include <unistd.h>
-
-#define MAX_CONNECT_NUM     8
-#define BUFFER_SIZE         512
-
-const char *filename = "uds-tmp";
-
-int main()
-{
-    int fd,new_fd,len,i;
-    struct sockaddr_un un;
+#include <stdlib.h>  
+#include <stdio.h>  
+#include <stddef.h>  
+#include <sys/socket.h>  
+#include <sys/un.h>  
+#include <errno.h>  
+#include <string.h>  
+#include <unistd.h>  
+#include <ctype.h>   
+ 
+#define MAXLINE 80  
+ 
+char *socket_path = "server.socket";  
+ 
+int main(void)  
+{  
+    struct sockaddr_un server_addr, client_addr;  
+    socklen_t client_addr_len;  
+    int serverfd; 
+    int clientfd;
+    int size;  
+    char buf[MAXLINE];  
+    int i, n;  
     
-    fd = socket(AF_UNIX,SOCK_STREAM,0);
-    if(fd < 0){
-        printf("Request socket failed!\n");
-        return -1;
-    }
+    // 1. 创建Socket
+    if ((serverfd = socket(AF_UNIX, SOCK_STREAM, 0)) < 0) {  
+        perror("Socket创建错误");  
+        exit(1);  
+    }  
+    printf("Socket创建完成\n");
+    memset(&server_addr, 0, sizeof(server_addr));  
+    server_addr.sun_family = AF_UNIX;  
+    strcpy(server_addr.sun_path, socket_path);  
+    size = offsetof(struct sockaddr_un, sun_path) + strlen(server_addr.sun_path);  
+    unlink(socket_path);  
     
-    un.sun_family = AF_UNIX;
-    unlink(filename);
-    strcpy(un.sun_path,filename);
-    if(bind(fd,(struct sockaddr *)&un,sizeof(un)) <0 ){
-        printf("bind failed!\n");
-        return -1;
-    }
+    // 2. 绑定Socket
+    if (bind(serverfd, (struct sockaddr *)&server_addr, size) < 0) {  
+        perror("Socket绑定错误");  
+        exit(1);  
+    }  
+    printf("Socket绑定成功\n");  
     
-    if(listen(fd, MAX_CONNECT_NUM) < 0){
-        printf("listen failed!\n");
-        return -1;
-    }
-    
-    while(1){
-        struct sockaddr_un client_addr;
-        char buffer[BUFFER_SIZE];
-        
-        bzero(buffer, BUFFER_SIZE);
-        len = sizeof(client_addr);
-        //new_fd = accept(fd,(struct sockaddr *)&client_addr,&len);
-        new_fd = accept(fd, NULL, NULL);
-        if(new_fd < 0){
-            printf("accept failed\n");
-            return -1;
-        }
-        
-        int ret = recv(new_fd, buffer, BUFFER_SIZE, 0);
-        if(ret < 0){
-            printf("recv failed\n");
-        } else {
-            printf("recv: %s\n", buffer);
-        }
-        
-        close(new_fd);
-        if(!memcmp(buffer, "quit", 4)) {
-            break;
-        }
-    }
-    
-    close(fd);
-    return 0;
+    // 3. 监听Socket  
+    if (listen(serverfd, 10) < 0) {  
+        perror("Socket监听错误");  
+        exit(1);          
+    }  
+    printf("Socket开始监听\n");  
+ 
+    while(1) {  
+        client_addr_len = sizeof(client_addr);         
+        if ((clientfd = accept(serverfd, (struct sockaddr *)&client_addr, &client_addr_len)) < 0){  
+            perror("连接建立失败");  
+            continue;  
+        }  
+          
+        while(1) {  
+            n = read(clientfd, buf, sizeof(buf));  
+            if (n < 0) {  
+                perror("读取客户端数据错误");  
+                break;  
+            } else if(n == 0) {  
+                printf("连接断开\n");  
+                break;  
+            }  
+              
+            printf("接受客户端数据: %s", buf);  
+ 
+            for(i = 0; i < n; i++) {  
+                buf[i] = toupper(buf[i]);  
+            } 
+             
+            write(clientfd, buf, n);  
+            printf("向客户端发送数据: %s", buf); 
+        }  
+        close(clientfd);  
+    }  
+    close(serverfd);  
+    return 0;  
 }
 

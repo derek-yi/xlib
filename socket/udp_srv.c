@@ -9,15 +9,14 @@
 #include<string.h>
  
 #define MYPORT 8887
- 
- 
+  
 #define ERR_EXIT(m) \
-    do { \
+do { \
     perror(m); \
     exit(EXIT_FAILURE); \
-    } while (0)
+} while (0)
  
-void echo_ser(int sock)
+void echo_server(int sock)
 {
     char recvbuf[1024] = {0};
     struct sockaddr_in peeraddr;
@@ -26,14 +25,11 @@ void echo_ser(int sock)
     
     while (1)
     {
-        
         peerlen = sizeof(peeraddr);
         memset(recvbuf, 0, sizeof(recvbuf));
-        n = recvfrom(sock, recvbuf, sizeof(recvbuf), 0,
-                     (struct sockaddr *)&peeraddr, &peerlen);
+        n = recvfrom(sock, recvbuf, sizeof(recvbuf), 0, (struct sockaddr *)&peeraddr, &peerlen);
         if (n <= 0)
         {
-            
             if (errno == EINTR)
                 continue;
             
@@ -41,10 +37,9 @@ void echo_ser(int sock)
         }
         else if(n > 0)
         {
-            printf("接收到的数据：%s\n",recvbuf);
-            sendto(sock, recvbuf, n, 0,
-                   (struct sockaddr *)&peeraddr, peerlen);
-            printf("回送的数据：%s\n",recvbuf);
+            printf("recv: %s\n", recvbuf);
+            sendto(sock, recvbuf, n, 0, (struct sockaddr *)&peeraddr, peerlen);
+            printf("send back: %s\n", recvbuf);
         }
     }
     close(sock);
@@ -53,6 +48,7 @@ void echo_ser(int sock)
 int main(void)
 {
     int sock;
+	
     if ((sock = socket(PF_INET, SOCK_DGRAM, 0)) < 0)
         ERR_EXIT("socket error");
     
@@ -62,11 +58,11 @@ int main(void)
     servaddr.sin_port = htons(MYPORT);
     servaddr.sin_addr.s_addr = htonl(INADDR_ANY);
     
-    printf("监听%d端口\n",MYPORT);
+    printf("listen port %d\n",MYPORT);
     if (bind(sock, (struct sockaddr *)&servaddr, sizeof(servaddr)) < 0)
         ERR_EXIT("bind error");
     
-    echo_ser(sock);
+    echo_server(sock);
     
     return 0;
 }

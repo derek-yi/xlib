@@ -10,18 +10,20 @@
 #include <string.h>
  
 #define MYPORT 8887
+
 char* SERVERIP = "127.0.0.1";
  
 #define ERR_EXIT(m) \
-    do \
+do \
 { \
     perror(m); \
     exit(EXIT_FAILURE); \
-    } while(0)
+} while(0)
  
 void echo_cli(int sock)
 {
     struct sockaddr_in servaddr;
+	
     memset(&servaddr, 0, sizeof(servaddr));
     servaddr.sin_family = AF_INET;
     servaddr.sin_port = htons(MYPORT);
@@ -32,8 +34,7 @@ void echo_cli(int sock)
     char recvbuf[1024] = {0};
     while (fgets(sendbuf, sizeof(sendbuf), stdin) != NULL)
     {
-        
-        printf("向服务器发送：%s\n",sendbuf);
+        printf("send to srv: %s\n",sendbuf);
         sendto(sock, sendbuf, strlen(sendbuf), 0, (struct sockaddr *)&servaddr, sizeof(servaddr));
         
         ret = recvfrom(sock, recvbuf, sizeof(recvbuf), 0, NULL, NULL);
@@ -43,20 +44,19 @@ void echo_cli(int sock)
                 continue;
             ERR_EXIT("recvfrom");
         }
-        printf("从服务器接收：%s\n",recvbuf);
+        printf("recv: %s\n",recvbuf);
         
         memset(sendbuf, 0, sizeof(sendbuf));
         memset(recvbuf, 0, sizeof(recvbuf));
     }
     
     close(sock);
-    
-    
 }
  
 int main(void)
 {
     int sock;
+	
     if ((sock = socket(PF_INET, SOCK_DGRAM, 0)) < 0)
         ERR_EXIT("socket");
     
