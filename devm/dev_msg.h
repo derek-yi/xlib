@@ -10,7 +10,9 @@
 #define BUFFER_SIZE             1024
 #define MAX_CONNECT             128
 
-#ifndef XDEBUG_OFF
+#define _DEBUG
+
+#ifdef _DEBUG
 #define xprintf(...)     printf(__VA_ARGS__)
 #else
 #define xprintf(...)
@@ -30,11 +32,12 @@ typedef unsigned int uint32;
 typedef struct 
 {
     uint32  magic_num;
-    uint32  app_id; //source app_id
+    uint32  app_id; //src app_id
     uint32  cmd_id;
     uint32  need_ack;
     int     ack_ret;
-    int     param;
+    int     param[4];
+    int     payload_len;
     char    payload[0];
 }DEV_MSG_T;
 
@@ -42,9 +45,8 @@ typedef struct
 #define DEV_STATE_OFFLINE       0x1
 #define DEV_STATE_ONLINE        0x2
 
-#define DEV_TYPE_SELF           0x1
-#define DEV_TYPE_SERVER         0x2
-#define DEV_TYPE_CLIENT         0x3
+#define DEV_TYPE_SERVER         0x1
+#define DEV_TYPE_CLIENT         0x2
 
 #define MAX_DEV_NUM             128
 
@@ -57,12 +59,16 @@ typedef int (* MSG_PROC)(uint32 dev_id, char *msg_buf, int buf_len);
 #define DEV_FLAGS_CHECK_APPID   0x08
 
 int dev_msg_init(int app_id, int port);
-int dev_msg_send(int app_id, uint32 cmd_id, uint32 need_ack, char *msg_buf, int msg_len);
+
+int dev_msg_send(int dev_id, DEV_MSG_T *tx_msg, DEV_MSG_T *rx_msg);
+int app_msg_send(int dev_id, uint32 cmd_id, uint32 need_ack, char *tx_buf, int tx_len);
+int app_msg_send2(int dev_id, uint32 cmd_id, uint32 need_ack, char *tx_buf, int tx_len, char *rx_buf, int rx_len);
 
 int dev_cmd_register(uint32 cmd_id, MSG_PROC func);
-int dev_cmd_list(int argc, char **argv);
-int dev_cmd_connect(int argc, char **argv);
-int dev_cmd_echo(int argc, char **argv);
+
+int cli_dev_list(int argc, char **argv);
+int cli_dev_connect(int argc, char **argv);
+int cli_send_echo(int argc, char **argv);
 
 #endif
 

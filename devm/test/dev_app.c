@@ -17,16 +17,16 @@
 
 int dev_cmd_init()
 {
-    cli_cmd_reg("list",         "list device",              &dev_cmd_list);
-    cli_cmd_reg("connect",      "connect device",           &dev_cmd_connect);
-    cli_cmd_reg("send",         "send echo msg",            &dev_cmd_echo);
+    cli_cmd_reg("list",         "list device",              &cli_dev_list);
+    cli_cmd_reg("connect",      "connect device",           &cli_dev_connect);
+    cli_cmd_reg("echo",         "send echo msg",            &cli_send_echo);
     
     return 0;
 }
 
 int main(int argc, char **argv)
 {
-    int listen_port = 0;
+    int listen_port = -1;
     int flags = 0;
     int ret;
     

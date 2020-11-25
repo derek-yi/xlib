@@ -19,10 +19,10 @@
 
 typedef struct 
 {
-    uint32  app_id;
-    char    app_name[DEV_NAME_MAX];
-    uint32  dev_state;
-    uint32  dev_type;
+    uint32  dev_id; 
+    uint32  app_id;     //for UDS
+    uint32  dev_state;  //DEV_STATE_NULL..
+    uint32  dev_type;   //DEV_TYPE_SERVER
     int     socket_id;
     pthread_t thread_id;
 }DEV_INFO_T;
@@ -50,16 +50,39 @@ int dev_msg_echo(uint32 dev_id, char *msg_buf, int buf_len)
     xprintf("echo cmd dev %d: %s \n", dev_msg->app_id, dev_msg->payload);
     
     if (dev_msg->need_ack) {
-        dev_msg_send(dev_msg->app_id, DEV_CMD_ECHO, FALSE, "echo ACK", 16);
+        app_msg_send(dev_id, DEV_CMD_ECHO, FALSE, "echo ACK", 16);
     }
 
     return 0;
 }
 
+//dev_cmd_register
 MSG_PROC_T msg_proc_list[128] = {
     {DEV_CMD_ECHO, dev_msg_echo},
     {0, NULL},
 };
+
+
+int dev_cmd_register(uint32 cmd_id, MSG_PROC func)
+{
+    int i;
+    int free_idx = -1;
+    
+    for (i = 0; i < sizeof(msg_proc_list)/sizeof(MSG_PROC_T); i++) {
+        if (msg_proc_list[i].cmd_id == 0) {
+            if (free_idx < 0) free_idx = i;
+        } else if (msg_proc_list[i].cmd_id == cmd_id) {
+            return -1;
+        }
+    }
+    
+    if (free_idx < 0) return -1;//full
+    msg_proc_list[free_idx].cmd_id = cmd_id;
+    msg_proc_list[free_idx].func = func;
+    
+    return 0;
+}
+
 
 int dev_msg_proc(uint32 dev_id, char *msg_buf, int buf_len)
 {
@@ -97,11 +120,20 @@ void client_rx_task(void *param)
             break;
         }
         
-        dev_msg_proc(dev_info->app_id, buffer, rx_len);
+        dev_msg_proc(dev_info->dev_id, buffer, rx_len);
     }
 
     close(socket_id);
     dev_info->dev_state = DEV_STATE_NULL;
+}
+
+int set_sock_timeout(int sockfd, int msec)
+{
+    struct timeval  tv;
+     
+    tv.tv_sec = msec/1000;
+    tv.tv_usec = (msec%1000)*1000;
+    return setsockopt(sockfd, SOL_SOCKET, SO_RCVTIMEO, &tv, sizeof(tv));
 }
 
 int create_rx_task(uint32 dev_type, int app_id, int socket_id)
@@ -123,12 +155,12 @@ int create_rx_task(uint32 dev_type, int app_id, int socket_id)
         return -1;
     }
 
-    dev_list[free_idx].dev_state = DEV_STATE_ONLINE;
+    dev_list[free_idx].dev_state = DEV_STATE_ONLINE; //todo: need lock
     dev_list[free_idx].dev_type = dev_type;
+    dev_list[free_idx].dev_id = free_idx;
     dev_list[free_idx].app_id = app_id;
-    snprintf(dev_list[free_idx].app_name, DEV_NAME_MAX, APP_NAME_FMT, app_id);
     dev_list[free_idx].socket_id = socket_id;
-    
+
     ret = pthread_create(&thread_id, NULL, (void *)client_rx_task, &dev_list[free_idx]);  
     if (ret != 0)  {
         printf("pthread_create failed!\n");  
@@ -174,19 +206,14 @@ void dev_listen_task(void *param)
             continue;
         } 
 
-        //first msg should be register cmd
         dev_msg = (DEV_MSG_T *)buffer;
         if (dev_msg->magic_num != DEV_MAGIC_NUM) {
             xprintf("wrong magic num 0x%x\n", dev_msg->magic_num);
             close(new_fd);
             continue;
         }
-        if ( (task_param->flags&DEV_FLAGS_NEED_REG) && (dev_msg->cmd_id != DEV_CMD_REGISTER)) {
-            xprintf("need reg cmd 0x%x\n", dev_msg->cmd_id);
-            close(new_fd);
-            continue;
-        }
 
+        xprintf("%d: app_id=%d new_fd=%d\r\n", __LINE__, dev_msg->app_id, new_fd);
         ret = create_rx_task(DEV_TYPE_CLIENT, dev_msg->app_id, new_fd);
         if (ret < 0){
             xprintf("client create failed\n");
@@ -210,7 +237,7 @@ int dev_uds_init(int app_id, int flags)
 
     listen_fd = socket(AF_UNIX, SOCK_STREAM, 0);
     if (listen_fd < 0){
-        xprintf("request socket failed!\n");
+        xprintf("socket failed!\n");
         return -1;
     }
 
@@ -243,12 +270,14 @@ int dev_uds_init(int app_id, int flags)
         return -1;  
     }  
 
+    //UDS-SERVER
     dev_list[0].dev_state = DEV_STATE_ONLINE;
-    dev_list[0].dev_type = DEV_TYPE_SELF;
+    dev_list[0].dev_type = DEV_TYPE_SERVER;
+    dev_list[0].dev_id = 0;
     dev_list[0].app_id = app_id;
-    snprintf(dev_list[0].app_name, DEV_NAME_MAX, APP_NAME_FMT, app_id);
     dev_list[0].socket_id = listen_fd;
     dev_list[0].thread_id = thread_id;
+    xprintf("%d: app_id=%d listen_fd=%d\r\n", __LINE__, app_id, listen_fd);
 
     return 0;
 }
@@ -295,11 +324,14 @@ int dev_inet_init(int listen_port, int flags)
         return -1;  
     }  
 
+    //INET-SERVER
     dev_list[1].dev_state = DEV_STATE_ONLINE;
-    dev_list[1].dev_type = DEV_TYPE_SELF;
-    snprintf(dev_list[1].app_name, DEV_NAME_MAX, "%s", "inet");
+    dev_list[1].dev_type = DEV_TYPE_SERVER;
+    dev_list[1].dev_id = 1;
+    dev_list[1].app_id = 0;
     dev_list[1].socket_id = listen_fd;
     dev_list[1].thread_id = thread_id;
+    xprintf("%d: app_id=%d listen_fd=%d\r\n", __LINE__, dev_list[1].app_id, listen_fd);
 
     return 0;
 }
@@ -309,22 +341,19 @@ uint32 dev_local_appid()
     return dev_list[0].app_id;
 }
 
-#endif
-
-#if 1
-
 int dev_msg_init(int app_id, int listen_port)
 {
     int ret;
 
-    ret = dev_uds_init(app_id, DEV_FLAGS_UDS | DEV_FLAGS_NEED_REG);
+    xprintf("%d: app_id %d, listen_port %d\n", __LINE__, app_id, listen_port);
+    ret = dev_uds_init(app_id, DEV_FLAGS_UDS);
     if (ret < 0){
         xprintf("uds create failed\n");
         return -1;
     } 
 
     if (listen_port > 0) {
-        ret = dev_inet_init(listen_port, DEV_FLAGS_INET | DEV_FLAGS_NEED_REG);
+        ret = dev_inet_init(listen_port, DEV_FLAGS_INET);
         if (ret < 0){
             xprintf("uds create failed\n");
             return -1;
@@ -334,19 +363,53 @@ int dev_msg_init(int app_id, int listen_port)
     return 0;
 }
 
-int dev_msg_send(int app_id, uint32 cmd_id, uint32 need_ack, char *msg_buf, int msg_len)
+int dev_msg_send(int dev_id, DEV_MSG_T *tx_msg, DEV_MSG_T *rx_msg)
 {
-    int i, ret;
+    int ret;
+    
+    if (dev_id >= MAX_DEV_NUM ) {
+        printf("invalid dev_id\n");
+        return 0;
+    }
+    if (dev_list[dev_id].dev_state != DEV_STATE_ONLINE) {
+        printf("dev offline\n");
+        return 0;
+    }
+
+    if (dev_list[dev_id].dev_type == DEV_TYPE_SERVER) {
+        ret = dev_msg_proc(0, (char *)tx_msg, sizeof(DEV_MSG_T));
+        return ret;
+    }
+    
+    tx_msg->magic_num = DEV_MAGIC_NUM;
+    tx_msg->app_id = dev_local_appid();
+    ret = send(dev_list[dev_id].socket_id, tx_msg, sizeof(DEV_MSG_T), 0);
+    if (ret <= 0) {
+        printf("send failed!\n");
+        return -1;
+    }
+
+    ret = recv(dev_list[dev_id].socket_id, rx_msg, sizeof(DEV_MSG_T), 0);
+    if (ret <= 0) {
+        printf("recv failed!\n");
+        return -1;
+    }
+
+    return 0;
+}
+
+int app_msg_send(int dev_id, uint32 cmd_id, uint32 need_ack, char *tx_buf, int tx_len)
+{
+    int ret;
     char buffer[BUFFER_SIZE];
     DEV_MSG_T *dev_msg;
     
-    for(i = 0; i < MAX_DEV_NUM; i++) {
-        if (dev_list[i].dev_state && dev_list[i].app_id == app_id) {
-            break;
-        }
+    if (dev_id >= MAX_DEV_NUM ) {
+        printf("invalid dev_id\n");
+        return 0;
     }
-    if (i == MAX_DEV_NUM ) {
-        printf("invalid app_id\n");
+    if (dev_list[dev_id].dev_state != DEV_STATE_ONLINE) {
+        printf("dev offline\n");
         return 0;
     }
 
@@ -355,14 +418,14 @@ int dev_msg_send(int app_id, uint32 cmd_id, uint32 need_ack, char *msg_buf, int 
     dev_msg->cmd_id = cmd_id;
     dev_msg->app_id = dev_local_appid();
     dev_msg->need_ack = need_ack; 
-    memcpy(buffer + sizeof(DEV_MSG_T), msg_buf, msg_len);
+    memcpy(buffer + sizeof(DEV_MSG_T), tx_buf, tx_len);
 
-    if (dev_list[i].dev_type == DEV_TYPE_SELF) {
-        ret = dev_msg_proc(dev_local_appid(), buffer, sizeof(DEV_MSG_T) + msg_len);
+    if (dev_list[dev_id].dev_type == DEV_TYPE_SERVER) {
+        ret = dev_msg_proc(0, buffer, sizeof(DEV_MSG_T) + tx_len);
         return ret;
     }
     
-    ret = send(dev_list[i].socket_id, buffer, sizeof(DEV_MSG_T) + msg_len, 0);
+    ret = send(dev_list[dev_id].socket_id, buffer, sizeof(DEV_MSG_T) + tx_len, 0);
     if (ret <= 0) {
         printf("send failed!\n");
         return -1;
@@ -371,61 +434,64 @@ int dev_msg_send(int app_id, uint32 cmd_id, uint32 need_ack, char *msg_buf, int 
     return 0;
 }
 
-
-int dev_cmd_register(uint32 cmd_id, MSG_PROC func)
+int app_msg_send2(int dev_id, uint32 cmd_id, uint32 need_ack, char *tx_buf, int tx_len, char *rx_buf, int rx_len)
 {
-    int i;
-    int free_idx = -1;
+    int ret;
+    char buffer[BUFFER_SIZE];
     
-    for (i = 0; i < sizeof(msg_proc_list)/sizeof(MSG_PROC_T); i++) {
-        if (msg_proc_list[i].cmd_id == 0) {
-            if (free_idx < 0) free_idx = i;
-        } else if (msg_proc_list[i].cmd_id == cmd_id) {
-            return -1;
-        }
+    ret = app_msg_send(dev_id, cmd_id, need_ack, tx_buf, tx_len);
+    if (ret <= 0) {
+        printf("app_msg_send failed!\n");
+        return -1;
     }
-    
-    if (free_idx < 0) return -1;//full
-    msg_proc_list[free_idx].cmd_id = cmd_id;
-    msg_proc_list[free_idx].func = func;
-    
+
+    ret = recv(dev_list[dev_id].socket_id, buffer, sizeof(DEV_MSG_T) + rx_len, 0);
+    if (ret <= 0) {
+        printf("recv failed!\n");
+        return -1;
+    }
+
+    memcpy(rx_buf, buffer + sizeof(DEV_MSG_T), rx_len);
     return 0;
 }
 
-int dev_cmd_list(int argc, char **argv)
+#endif
+
+#if 1
+
+int cli_dev_list(int argc, char **argv)
 {
     int i;
 
     for(i = 0; i < MAX_DEV_NUM; i++) {
         if(dev_list[i].dev_state) {
-            printf("%d: type=%d state=%d appid=%d(%s)\n", i, 
-                    dev_list[i].dev_type, dev_list[i].dev_state, 
-                    dev_list[i].app_id, dev_list[i].app_name);
+            printf("devid.%d: type=%d state=%d appid=%d\n",
+                    i, dev_list[i].dev_type, dev_list[i].dev_state, dev_list[i].app_id);
         }
     }
     return 0;
 }
 
-int dev_cmd_connect(int argc, char **argv)
+int cli_dev_connect(int argc, char **argv)
 {
     struct sockaddr_un un;
     struct sockaddr_in servAddr;
     int sock_fd = 0;
     int ret, app_id;
     DEV_MSG_T dev_msg;
+    int i, free_idx;
 
     if (argc < 3) {
         printf("Usage: \n");
         printf("  %s uds <app-id>\n", argv[0]);
-        printf("  %s inet <app-id> <ip> <port>\n", argv[0]);
+        printf("  %s inet <ip> <port>\n", argv[0]);
         return 0;
     }
 
-    app_id = atoi(argv[2]);
     if (!memcmp(argv[1], "uds", 3)) {
         un.sun_family = AF_UNIX;
-        //strcpy(un.sun_path, argv[2]);
-         sprintf(un.sun_path, APP_NAME_FMT, app_id);
+        app_id = atoi(argv[2]);
+        sprintf(un.sun_path, APP_NAME_FMT, app_id);
         sock_fd = socket(AF_UNIX, SOCK_STREAM, 0);
         if (sock_fd < 0){
             printf("request socket failed\n");
@@ -438,16 +504,16 @@ int dev_cmd_connect(int argc, char **argv)
             return -1;
         }
     } else if (!memcmp(argv[1], "inet", 4)) {
-        if (argc < 5) {
-            printf("usage: %s inet <app-name> <ip> <port>\n", argv[0]);
+        if (argc < 4) {
+            printf("usage: %s inet <ip> <port>\n", argv[0]);
             return 0;
         }
 
         memset(&servAddr, 0, sizeof(servAddr) );
         servAddr.sin_family = AF_INET;
-        servAddr.sin_port = htons(atoi(argv[4]));
-        inet_pton(AF_INET, argv[3], &servAddr.sin_addr.s_addr);
-        sock_fd = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP );
+        servAddr.sin_port = htons(atoi(argv[3]));
+        inet_pton(AF_INET, argv[2], &servAddr.sin_addr.s_addr);
+        sock_fd = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
         if(sock_fd < 0){
             printf("request socket failed\n");
             return -1;
@@ -470,30 +536,39 @@ int dev_cmd_connect(int argc, char **argv)
         return -1;
     }
     
-    ret = create_rx_task(DEV_TYPE_SERVER, app_id, sock_fd);
-    if (ret < 0)  {
-        printf("create_rx_task failed!\n");  
-        close(sock_fd);
+    for (i = 0, free_idx = -1; i < MAX_DEV_NUM; i++) {
+        if (!dev_list[i].dev_state && free_idx < 0) {
+            free_idx = i;
+        } 
+    }
+    if (free_idx < 0) {
+        xprintf("full dev_list\n");
         return -1;
-    }  
+    }
+
+    dev_list[free_idx].dev_state = DEV_STATE_ONLINE; //todo: need lock
+    dev_list[free_idx].dev_type = DEV_TYPE_CLIENT;
+    dev_list[free_idx].app_id = 0;
+    dev_list[free_idx].socket_id = sock_fd;
+    printf("alloc devid %d\n", free_idx);
 
     return 0;
 }
 
-int dev_cmd_echo(int argc, char **argv)
+int cli_send_echo(int argc, char **argv)
 {
-    int ret, app_id;
+    int ret, dev_id;
     
-    if (argc < 3) {
+    if (argc < 2) {
         printf("Usage: \n");
-        printf("  %s <app-id> <s1> ...\n", argv[0]);
+        printf("  %s <devid> <s1>\n", argv[0]);
         return 0;
     }
 
-    app_id = atoi(argv[1]);
-    ret = dev_msg_send(app_id, DEV_CMD_ECHO, TRUE, "say hello", 16);
+    dev_id = atoi(argv[1]);
+    ret = app_msg_send(dev_id, DEV_CMD_ECHO, TRUE, "say hello", 16);
     if (ret < 0)  {
-        printf("dev_msg_send failed!\n");  
+        printf("app_msg_send failed!\n");  
         return -1;
     }  
 
