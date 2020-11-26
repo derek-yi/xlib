@@ -1,6 +1,4 @@
 
-
-
 #include <sys/types.h>
 #include <sys/ipc.h>
 #include <sys/msg.h>
@@ -31,15 +29,12 @@ typedef struct msgbuf
     char msgtext[128];
 } PRIV_MSG_INFO;
 
-
-
 int send_task2(void)  
 {
     PRIV_MSG_INFO sndmsg;
 
     msg_qid = msgget((key_t)1234, 0666 | IPC_CREAT);  
-    if(msg_qid == -1)
-    {
+    if(msg_qid == -1) {
         printf("msgget error\n");
         exit(254);
     }
@@ -48,16 +43,14 @@ int send_task2(void)
     {
         sndmsg.msgtype = 10;
         sprintf(sndmsg.msgtext, "type %ld", sndmsg.msgtype);
-        if(msgsnd(msg_qid, (PRIV_MSG_INFO *)&sndmsg, sizeof(PRIV_MSG_INFO), 0)==-1)
-        {
+        if(msgsnd(msg_qid, (PRIV_MSG_INFO *)&sndmsg, sizeof(PRIV_MSG_INFO), 0)==-1) {
             printf("msgsnd error\n");
             exit(254);
         }
         
         sndmsg.msgtype = 20;
         sprintf(sndmsg.msgtext, "type %ld", sndmsg.msgtype);
-        if(msgsnd(msg_qid, (PRIV_MSG_INFO *)&sndmsg, sizeof(PRIV_MSG_INFO), 0)==-1)
-        {
+        if(msgsnd(msg_qid, (PRIV_MSG_INFO *)&sndmsg, sizeof(PRIV_MSG_INFO), 0)==-1) {
             printf("msgsnd error\n");
             exit(254);
         }
@@ -70,16 +63,14 @@ int recv_task2(void)
     PRIV_MSG_INFO rcvmsg;
 
     msg_qid = msgget((key_t)1234, 0666 | IPC_CREAT);  
-    if(msg_qid == -1)
-    {
+    if(msg_qid == -1) {
         printf("msgget error\n");
         exit(254);
     }
 
     for(;;)
     {
-        if(msgrcv(msg_qid, (PRIV_MSG_INFO *)&rcvmsg, sizeof(PRIV_MSG_INFO), 10, 0) == -1)
-        {
+        if(msgrcv(msg_qid, (PRIV_MSG_INFO *)&rcvmsg, sizeof(PRIV_MSG_INFO), 10, 0) == -1) {
             printf("msgrcv error\n");
             exit(254);
         }
@@ -87,43 +78,36 @@ int recv_task2(void)
     }
 }
 
-int tu2_proc(int param)  
+int create_task(int param)  
 {  
-    pthread_t id_1,id_2;  
+    pthread_t thread_id;  
     int ret;  
 
     if (!param) {
-        ret = pthread_create(&id_1, NULL, (void *)send_task2, NULL);  
+        ret = pthread_create(&thread_id, NULL, (void *)send_task2, NULL);  
     } else {
-        ret = pthread_create(&id_2, NULL, (void *)recv_task2, NULL);  
+        ret = pthread_create(&thread_id, NULL, (void *)recv_task2, NULL);  
     }
-    if(ret != 0)  
-    {  
+    if(ret != 0)  {  
         printf("Create pthread error!\n");  
         return -1;  
     }  
     
-    if (!param) {
-        pthread_join(id_1, NULL);  
-    } else {
-        pthread_join(id_2, NULL);  
-    }
-    
+    pthread_join(thread_id, NULL);  
     return 0;  
 }  
-  
-
+ 
 
 int main(int argc, char **argv)
 {
     int ret;
     
     if(argc < 2) {
-        printf("usage: %s <0|1> \n", argv[1]);  
+        printf("usage: %s <0|1> \n", argv[0]);  
         return 0;
     }
 
-    ret = tu2_proc(atoi(argv[1]));
+    ret = create_task(atoi(argv[1]));
     
     return ret;
 }

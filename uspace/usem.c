@@ -67,39 +67,33 @@ int case1_proc(void)
 
     //int sem_init(sem_t *sem, int pshared, unsigned int value);
     ret = sem_init(&my_sem1, 1, 1);
-    if(ret != 0)  
-    {  
+    if(ret != 0)  {  
         printf("sem_init error!\n");  
         return -1;  
     } 
 
     ret = sem_init(&my_sem2, 1, 1);
-    if(ret != 0)  
-    {  
+    if(ret != 0) {  
         printf("sem_init error!\n");   
         return -1;  
     } 
     
     ret = pthread_create(&id_1, NULL, (void *)thread_1, NULL);  
-    if(ret != 0)  
-    {  
+    if(ret != 0)  {  
         printf("Create pthread error!\n");  
         return -1;  
     }  
     
     ret = pthread_create(&id_2, NULL, (void *)thread_2, NULL);  
-    if(ret != 0)  
-    {  
+    if(ret != 0)  {  
         printf("Create pthread error!\n");  
         return -1;  
     }  
     
     pthread_join(id_1, NULL);  
     pthread_join(id_2, NULL);  
-
     sem_destroy(&my_sem1);
     sem_destroy(&my_sem2);
-    
     return 0;  
 }  
 

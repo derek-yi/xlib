@@ -40,8 +40,7 @@ int send_task(void)
     {
         sndmsg.msgtype++;
         sprintf(sndmsg.msgtext, "type %ld", sndmsg.msgtype);
-        if(msgsnd(msg_qid, (PRIV_MSG_INFO *)&sndmsg, sizeof(PRIV_MSG_INFO), 0)==-1)
-        {
+        if(msgsnd(msg_qid, (PRIV_MSG_INFO *)&sndmsg, sizeof(PRIV_MSG_INFO), 0)==-1) {
             printf("msgsnd error\n");
             exit(254);
         }
@@ -55,8 +54,7 @@ int recv_task(void)
 
     for(;;)
     {
-        if(msgrcv(msg_qid, (PRIV_MSG_INFO *)&rcvmsg, sizeof(PRIV_MSG_INFO), 0, 0) == -1)
-        {
+        if(msgrcv(msg_qid, (PRIV_MSG_INFO *)&rcvmsg, sizeof(PRIV_MSG_INFO), 0, 0) == -1) {
             printf("msgrcv error\n");
             exit(254);
         }
@@ -64,35 +62,31 @@ int recv_task(void)
     }
 }
 
-int tu1_proc(void)  
+int create_task(void)  
 {  
     pthread_t id_1,id_2;  
     int i,ret;  
 
     msg_qid = msgget(IPC_PRIVATE, 0666);
-    if(msg_qid == -1)
-    {
+    if(msg_qid == -1) {
         printf("msgget error\n");
         exit(254);
     }
 
     ret = pthread_create(&id_1, NULL, (void *)send_task, NULL);  
-    if(ret != 0)  
-    {  
+    if(ret != 0)  {  
         printf("Create pthread error!\n");  
         return -1;  
     }  
     
     ret = pthread_create(&id_2, NULL, (void *)recv_task, NULL);  
-    if(ret != 0)  
-    {  
+    if(ret != 0)  {  
         printf("Create pthread error!\n");  
         return -1;  
     }  
     
     pthread_join(id_1, NULL);  
     pthread_join(id_2, NULL);  
-
     msgctl(msg_qid, IPC_RMID, 0);
 
     return 0;  
@@ -102,7 +96,7 @@ int tu1_proc(void)
 
 int main(int argc, char **argv)
 {
-    tu1_proc();
+    create_task();
     return 0;
 }
 
