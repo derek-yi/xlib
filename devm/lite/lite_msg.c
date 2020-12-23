@@ -211,10 +211,7 @@ int get_socket(char *app_id)
     return socket_id;
 }
 
-int app_send_msg(char *dst_id, DEVM_MSG_S *tx_msg, DEVM_MSG_S *rx_msg)
-{
-    return VOS_OK;
-}
+
 
 int send_raw_msg(char *dst_id, DEVM_MSG_S *tx_msg, DEVM_MSG_S *rx_msg)
 {

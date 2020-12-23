@@ -406,7 +406,7 @@ void cli_prompt(void)
     vos_print("\r\nDaemon>");
 }
 
-void cli_main_task(void)
+void* cli_main_task(void *param)
 {
     char ch;
     int ret;

@@ -11,7 +11,7 @@
 #include <unistd.h>
 #include <time.h>
 
-#define MCAST_PORT    50001
+#define MCAST_PORT    5001
 #define MCAST_ADDR    "239.0.0.1"
 
 #define error_exit(_errmsg_)    error(EXIT_FAILURE, errno, _errmsg_)
@@ -26,27 +26,23 @@ int main()
     int nbytes;
     time_t time_sec;
     
-    /**创建用户数据包套接字**/
     if (-1 == (sockfd = socket(AF_INET, SOCK_DGRAM, 0))) 
         error_exit("socket");
         
-    /**指定接收方地址为组播地址**/
     mcastaddr.sin_family = AF_INET;
     mcastaddr.sin_port = htons(MCAST_PORT);
     mcastaddr.sin_addr.s_addr = inet_addr(MCAST_ADDR);
     
-    /**连接到组播地址**/
     if (-1 == connect(sockfd, (struct sockaddr *)&mcastaddr, sizeof(mcastaddr)))
         error_exit("bind");
 
     time(&time_sec);
-    while (2)  {
-        sleep(1);
+    while (1)  {
+        sleep(10);
         time_sec ++;
         buff = ctime(&time_sec);
         printf("%s", buff);
         
-        /**数据发送**/
         if (-1 == send(sockfd, buff, strlen(buff), 0))
             error_exit("send");
     }

@@ -51,6 +51,23 @@ void timer_thread(union sigval v)
     msgsnd(msg_qid, (PRIV_MSG_INFO *)&sndmsg, sizeof(PRIV_MSG_INFO), 0);
 }
 
+pid_t gettid(void)
+{  
+    return syscall(SYS_gettid);  
+} 
+
+int task_cnt = 0;
+void timer_test_cb(union sigval v)
+{
+    static int timer_cnt = 0;
+    
+    task_cnt++;
+    printf("timer_thread(%d) start: %d\n", gettid(), task_cnt);
+    sleep(10);
+    timer_cnt++;
+    printf("timer_thread(%d) end: %d, timer_cnt %d\n", gettid(), task_cnt, timer_cnt);
+    task_cnt--;
+}
 
 int main()
 {
@@ -73,7 +90,8 @@ int main()
 	memset(&evp, 0, sizeof(struct sigevent));
 	evp.sigev_value.sival_int = 111; // param for timer_thread
 	evp.sigev_notify = SIGEV_THREAD;
-	evp.sigev_notify_function = timer_thread;
+	//evp.sigev_notify_function = timer_thread;
+	evp.sigev_notify_function = timer_test_cb;
 	if (timer_create(CLOCK_REALTIME, &evp, &timerid) == -1) {
 		perror("fail to timer_create");
 		exit(-1);
