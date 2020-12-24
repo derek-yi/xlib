@@ -17,7 +17,7 @@ CC := gcc
 LD := ld
 
 # 编译宏
-DEFINES := -DMAKE_XLIBC
+DEFINES := -DMAKE_XLIB
 
 # 头文件路径
 INCLUDE := -I$(ROOT_DIR)/include  

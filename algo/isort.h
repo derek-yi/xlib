@@ -3,7 +3,7 @@
 #define _XLIB_SORT_H_
 
 
-typedef int elemType; /*ÔªËØÀàĞÍ*/
+typedef int elemType;
 
 void bubble_isort(elemType arr[], int len);
 

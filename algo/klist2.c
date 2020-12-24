@@ -1,16 +1,11 @@
-
-#ifdef WIN32
-#include <windows.h>
-#else  
 #include <stdio.h>
 #include <stdlib.h>
-#endif
-
-#include "list.h"
-
 #include <time.h>
 
-#ifndef MAKE_XLIBC
+#include "klist.h"
+
+
+#ifndef MAKE_XLIB
 
 typedef struct user_data_s
 {  
@@ -23,7 +18,7 @@ typedef struct user_data_s
 //LIST_HEAD(my_list);
 struct list_head my_list;
 
-#define ARRAY_SIZE 32
+#define LIST_SIZE 32
 
 int main()
 {  
@@ -35,24 +30,23 @@ int main()
     printf("\r\n init: ");  
     INIT_LIST_HEAD(&my_list);
     srand(time(NULL));    
-    for(i = 0; i < ARRAY_SIZE; i++) {  
+    for(i = 0; i < LIST_SIZE; i++) {  
         pstListNode = malloc(sizeof(user_data_t));
         if (NULL == pstListNode) return 0;
 
         pstListNode->key = i;
-        pstListNode->param = rand()%ARRAY_SIZE;  
+        pstListNode->param = rand()%LIST_SIZE;  
         list_add_tail(&pstListNode->list, &my_list);
     }  
 
     printf("\r\n walk: ");  
     list_for_each(tmp, &my_list)
     {
-        //(struct USER_DATA *)( (char *)tmp - offsetof(struct USER_DATA, list) )
         pstListNode = list_entry(tmp, user_data_t, list);
         printf("[%d]=%d ", pstListNode->key, pstListNode->param);
     }
 
-    printf("\r\n delete: 3N");  
+    printf("\r\n delete 3N: ");  
     list_for_each_safe(tmp, tmp2, &my_list)
     {
         pstListNode = list_entry(tmp, user_data_t, list);

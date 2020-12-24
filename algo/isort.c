@@ -1,5 +1,3 @@
-
-
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -7,16 +5,16 @@
 
 #if 1
 
-void bubble_isort (elemType arr[], int num) 
+void bubble_isort (elemType arr[], int num)
 {
     elemType temp;
     int i, j;
 
     if( num < 1 ) { return ; }
-    
-    for (i=0; i<num-1; i++)             /* 外循环为排序趟数，len个数进行len-1趟 */
-        for (j=0; j<num-1-i; j++) {     /* 内循环为每趟比较的次数，第i趟比较len-i次 */
-            if (arr[j] > arr[j+1]) {    /* 相邻元素比较，若逆序则交换（升序为左大于右，降序反之） */
+
+    for (i=0; i<num-1; i++)
+        for (j=0; j<num-1-i; j++) {
+            if (arr[j] > arr[j+1]) {
                 temp = arr[j];
                 arr[j] = arr[j+1];
                 arr[j+1] = temp;
@@ -26,31 +24,29 @@ void bubble_isort (elemType arr[], int num)
 
 void cocktail_isort(elemType array[], int num)
 {
-    elemType temp_data;    
-    int left = 0;  
+    elemType temp_data;
+    int left = 0;
     int right = num - 1;
 
     if( num < 1 ) { return ; }
-    
+
     while (left < right)
     {
         for (int i = left; i < right; i++)
         {
-            if ( array[i] > array[i+1] ) 
+            if ( array[i] > array[i+1] )
             {
-                // 交换A[i]和A[i+1]
                 temp_data = array[i];
                 array[i] = array[i+1];
                 array[i+1] = temp_data;
             }
         }
         right--;
-        
-        for (int i = right; i > left; i--) 
+
+        for (int i = right; i > left; i--)
         {
-            if ( array[i-1] > array[i] )                 
+            if ( array[i-1] > array[i] )
             {
-                // 交换A[i-1]和A[i]
                 temp_data = array[i];
                 array[i] = array[i-1];
                 array[i-1] = temp_data;
@@ -65,25 +61,23 @@ void cocktail_isort(elemType array[], int num)
 void select_isort(elemType array[], int num)
 {
     int i, j, min;
-    elemType temp_data;    
+    elemType temp_data;
 
     if( num < 1 ) { return ; }
-    
-    for (i = 0; i <= num - 2; i++)              
+
+    for (i = 0; i <= num - 2; i++)
     {
-        min = i;    
-        for (j = i + 1; j <= num - 1; j++)     
+        min = i;
+        for (j = i + 1; j <= num - 1; j++)
         {
-            // 依次找出未排序序列中的最小值,存放到已排序序列的末尾
             if (array[min] > array[j])
             {
                 min = j;
             }
         }
-        
+
         if (min != i)
         {
-            // 交换A[min]和A[i]
             temp_data = array[i];
             array[i] = array[min];
             array[min] = temp_data;
@@ -97,20 +91,18 @@ void insert_isort(elemType array[], int len)
 {
     int i,j;
     elemType temp;
-    
+
     for (i=1; i<len-1; i++)
     {
         temp = array[i];
         j = i-1;
-        
-        //与已排序的数逐一比较，大于temp时，该数移后
+
         while( (j>=0) && (array[j]>temp) )
         {
             array[j+1] = array[j];
             j--;
         }
-        
-        //存在大于temp的数
+
         if(j != i-1) {
             array[j+1] = temp;
         }
@@ -121,47 +113,47 @@ void insert_isort2(int *array,unsigned int n)
 {
     int i,j;
     int temp;
-    
+
     for(i=1; i<n; i++)
     {
         temp = *(array+i);
-        
+
         for(j=i; j>0 && *(array+j-1) > temp; j--)
         {
             *(array+j) = *(array+j-1);
         }
-        
+
         *(array+j) = temp;
     }
 }
 
 void shell_isort(elemType array[], int num)
 {
-    int i, j, get;
+    int i, j;
     int h = 0;
-    elemType temp_data;    
+    elemType temp_data;
 
     if( num < 1 ) { return ; }
-    
-    while (h <= num)   // 生成初始增量
+
+    while (h <= num)
     {
         h = 3*h + 1;
     }
-    
+
     while (h >= 1)
     {
         for (i = h; i < num; i++)
         {
             j = i - h;
             temp_data = array[i];
-            while ( (j >= 0) && (array[j] > temp_data) ) 
+            while ( (j >= 0) && (array[j] > temp_data) )
             {
                 array[j+h] = array[j];
                 j = j - h;
             }
             array[j+h] = temp_data;
         }
-        h = (h - 1) / 3; // 递减增量
+        h = (h - 1) / 3;
     }
 
     return ;
@@ -176,15 +168,15 @@ void quick_isort(elemType *base, int low, int high)
     j = high;
     if(low < high)
     {
-        temp = base[low];//设置枢轴
-        
+        temp = base[low];
+
         while( i != j )
         {
             while(j>i && base[j]>=temp)
             {
                 --j;
             }
-            
+
             if (i < j)
             {
                 base[i] = base[j];
@@ -195,14 +187,14 @@ void quick_isort(elemType *base, int low, int high)
             {
                 ++i;
             }
-            
+
             if( i < j)
             {
                 base[j] = base[i];
                 --j;
             }
         }
-        
+
         base[i] = temp;
         quick_isort(base, low, i-1);
         quick_isort(base, i+1, high);
@@ -216,21 +208,14 @@ void my_iqsort(elemType array[], int num)
 
 #endif
 
-#ifndef MAKE_XLIBC
+#ifndef MAKE_XLIB
 
 #include <time.h>
 
-#ifdef WIN32
-#include <windows.h>
-#endif  
-
 #define ARRAY_SIZE  40960
+
 int my_array[ARRAY_SIZE];
 int check_array[ARRAY_SIZE];
-
-#ifdef WIN32
-LARGE_INTEGER t1,t2,feq;
-#endif  
 
 int my_cmp(const void *data1, const void *data2)
 {
@@ -242,7 +227,7 @@ int my_cmp(const void *data1, const void *data2)
 void print_array(int array[], int print_cnt)
 {
     int i;
-    
+
     printf("\r\n ================================================ ");
     for(i = 0; i <= print_cnt; i++) {
         if (i%16 == 0) printf("\r\n");
@@ -252,39 +237,34 @@ void print_array(int array[], int print_cnt)
 }
 
 int main()
-{  
+{
     int i;
     int sort_select;
 
 repeat_select:
-    printf("\r\n 0) quit");  
-    printf("\r\n 1) bubble_sort");  
-    printf("\r\n 2) cocktail_sort");  
-    printf("\r\n 3) select_sort");  
-    printf("\r\n 4) insert_sort");  
-    printf("\r\n 5) shell_sort");  
-    printf("\r\n 6) my_qsort");  
-    printf("\r\n 7) libc qsort");  
-    printf("\r\n input your choice: ");  
+    printf("\r\n 0) quit");
+    printf("\r\n 1) bubble_sort");
+    printf("\r\n 2) cocktail_sort");
+    printf("\r\n 3) select_sort");
+    printf("\r\n 4) insert_sort");
+    printf("\r\n 5) shell_sort");
+    printf("\r\n 6) my_qsort");
+    printf("\r\n 7) libc qsort");
+    printf("\r\n input your choice: ");
     scanf("%d", &sort_select);
     if( sort_select == 0) {
         return 0;
     }
-  
-    printf("\r\n init: ");  
-    srand(time(NULL));  
-    for(i = 0; i < ARRAY_SIZE; i++) {  
-        my_array[i] = rand()%ARRAY_SIZE;  
-        check_array[i] = my_array[i];
-    }  
-    print_array(my_array, 64);  
 
-    printf("\r\n sorting ...");  
-#ifdef WIN32
-    QueryPerformanceFrequency(&feq);
-    QueryPerformanceCounter(&t1);
-#endif    
-    
+    printf("\r\n init: ");
+    srand(time(NULL));
+    for(i = 0; i < ARRAY_SIZE; i++) {
+        my_array[i] = rand()%ARRAY_SIZE;
+        check_array[i] = my_array[i];
+    }
+    print_array(my_array, 64);
+
+    printf("\r\n sorting ...");
     if (sort_select == 1) bubble_isort(my_array, ARRAY_SIZE);
     else if (sort_select == 2) cocktail_isort(my_array, ARRAY_SIZE);
     else if (sort_select == 3) select_isort(my_array, ARRAY_SIZE);
@@ -294,28 +274,21 @@ repeat_select:
     else if (sort_select == 7) qsort(my_array, ARRAY_SIZE, sizeof(int), my_cmp);
     else goto repeat_select;
 
-#ifdef WIN32
-    QueryPerformanceCounter(&t2);
-    double used_time =((double)t2.QuadPart-(double)t1.QuadPart)/((double)feq.QuadPart);
-    printf("used_time is %f(ms)", used_time*1000);  
-#endif    
-    
-    printf("\r\n show: ");  
-    print_array(my_array, 64);  
-    printf("\r\n");  
+    printf("\r\n show: ");
+    print_array(my_array, 64);
+    printf("\r\n");
 
-    printf("\r\n check ...");  
+    printf("\r\n check ...");
     qsort(check_array, ARRAY_SIZE, sizeof(int), my_cmp);
-    for(i = 0; i < ARRAY_SIZE; i++) {  
+    for(i = 0; i < ARRAY_SIZE; i++) {
         if(my_array[i] != check_array[i]) {
-            printf("FAIL"); 
+            printf("FAIL\r\n");
             break;
-        }  
-    } 
-    if(i == ARRAY_SIZE) printf("PASS"); 
-    printf("\r\n");  
+        }
+    }
+    if(i == ARRAY_SIZE) printf("PASS\r\n");
 
     goto repeat_select;
-}  
+}
 #endif
 

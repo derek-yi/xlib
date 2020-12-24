@@ -1,20 +1,16 @@
 
-#ifdef WIN32
-#include <windows.h>
-#else  
 #include <stdio.h>
 #include <stdlib.h>
-#endif
+#include <string.h>
 
 #include "slink.h"
-
 
 #if 1 //source
 
 #define XLIB_OK             0
 #define XLIB_ERROR          1
 
-#if 1
+#ifdef XLIB_DEBUG
 #define xDEBUG(...)         printf(__VA_ARGS__)
 #else
 #define xDEBUG(...)  
@@ -196,11 +192,8 @@ int slink_count(link_node_t *pLink)
 }
 #endif
 
-#ifndef MAKE_XLIBC
-
-#define XLIB_UT_CHECK(desc, wanted, exp)  \
-    if(exp != wanted) printf("\r\n %d: %s FAILED! \r\n", __LINE__, desc); \
-    else printf("\r\n %d: %s PASS! \r\n", __LINE__, desc);
+#ifndef MAKE_XLIB
+#include "my_assert.h"
 
 link_node_t *my_link = NULL;
 

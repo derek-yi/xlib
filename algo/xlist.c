@@ -1,11 +1,6 @@
-
-
-#ifdef WIN32
-#include <windows.h>
-#else  
 #include <stdio.h>
 #include <stdlib.h>
-#endif
+#include <string.h>
 
 #include "xlist.h"
 
@@ -35,10 +30,10 @@ int xlist_init(int type, int entry_cnt, int entry_size)
     if(glb_xlib_table[type].entry_list == NULL) {
         return XLIB_ERROR;
     }
-    
+
     memset(glb_xlib_table[type].entry_list, 0, entry_cnt*sizeof(xlib_entry_s));
     glb_xlib_table[type].valid = TRUE;
-    
+
     return XLIB_OK;
 }
 
@@ -137,7 +132,6 @@ int xlist_entry_get(int type, entry_cmp_func cmp_func, void *user_data)
     return XLIB_ERROR;
 }
 
-
 int xlist_entry_get_index(int type, void *user_data, int entry_index)
 {
     int i;
@@ -160,7 +154,6 @@ int xlist_entry_get_index(int type, void *user_data, int entry_index)
 
     return XLIB_ERROR;
 }
-
 
 int xlist_entry_delete(int type, entry_cmp_func cmp_func, void *user_data)
 {
@@ -190,7 +183,6 @@ int xlist_entry_delete(int type, entry_cmp_func cmp_func, void *user_data)
     return XLIB_ERROR;
 }
 
-
 int xlist_entry_delete_index(int type, int entry_index)
 {
     int i;
@@ -216,15 +208,11 @@ int xlist_entry_delete_index(int type, int entry_index)
     return XLIB_ERROR;
 }
 
-
-
 #endif
 
-#ifndef MAKE_XLIBC
+#ifndef MAKE_XLIB
 
-#define XLIB_UT_CHECK(desc, exp, wanted)  \
-    if(exp != wanted) printf("\r\n %d: %s FAILED! \r\n", __LINE__, desc); \
-    else printf("\r\n %d: %s PASS! \r\n", __LINE__, desc);
+#include "my_assert.h"
 
 typedef struct xlib_demo_data_t
 {
@@ -239,7 +227,7 @@ int demo_data_cmp(void *user_data, void *db_data)
     xlib_demo_data_s *db_entry = (xlib_demo_data_s *)db_data;
 
     if(user_entry == NULL || db_entry == NULL) return 1;
-    
+
     if( (user_entry->port == db_entry->port)
         && (user_entry->vlan == db_entry->vlan) )
         return 0;
@@ -248,7 +236,7 @@ int demo_data_cmp(void *user_data, void *db_data)
 }
 
 int main()
-{  
+{
     int ret;
     int entry_index;
     xlib_demo_data_s demo_data;
@@ -327,7 +315,7 @@ int main()
     ret = xlist_entry_delete(1, demo_data_cmp, &demo_data); //delete unknown
     XLIB_UT_CHECK("xlist_entry_delete", ret, XLIB_ERROR);
 
-//clean    
+//clean
     ret = xlist_free(1); //free t1
     XLIB_UT_CHECK("xlist_free", ret, XLIB_OK);
 

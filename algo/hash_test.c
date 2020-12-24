@@ -1,17 +1,14 @@
 
-#ifdef WIN32
-#include <windows.h>
-#else  
 #include <stdio.h>
 #include <stdlib.h>
-#endif
+#include <math.h>
 
-#include "list.h"
+#include "klist.h"
 #include "hash.h"
 #include "hashtable.h"
 
 
-#ifndef MAKE_XLIBC
+#ifndef MAKE_XLIB
 
 #include <time.h>
 
@@ -66,7 +63,7 @@ int main()
     }
     printf("\r\n");  
 
-    printf("\r\n del  : ");  
+    printf("\r\n del 6*N : ");  
     hash_for_each(my_hash_table, bkt, obj, node) {
         if(obj->key%6 == 0) {
             printf("\r\n key=%d param=%d", obj->key, obj->param);

@@ -1,10 +1,7 @@
 
-#ifdef WIN32
-#include <windows.h>
-#else  
 #include <stdio.h>
 #include <stdlib.h>
-#endif
+#include <string.h>
 
 #include "stack.h"
 
@@ -31,17 +28,17 @@ int xlib_stack_push(STACK_INFO_ST *pStack, void *pData)
     if(pStack->top >= pStack->stack_size) return -1;
 
     memcpy((char *)pStack->stack_data + pStack->stack_size*pStack->top, pData, pStack->stack_size);
-    pStack->top++;    
-    
+    pStack->top++;
+
     return 0;
 }
 
 void* xlib_stack_pop(STACK_INFO_ST *pStack)
 {
     void *p;
-    
+
     if(NULL == pStack) return NULL;
-    
+
     if(pStack->top < 1) return NULL;
 
     p = (char *)pStack->stack_data + pStack->stack_size*(pStack->top - 1);
@@ -53,9 +50,9 @@ void* xlib_stack_pop(STACK_INFO_ST *pStack)
 void* xlib_stack_get_top(STACK_INFO_ST *pStack)
 {
     void *p;
-    
+
     if(NULL == pStack) return NULL;
-    
+
     if(pStack->top < 1) return NULL;
 
     p = (char *)pStack->stack_data + pStack->stack_size*(pStack->top - 1);
@@ -86,11 +83,9 @@ int xlib_stack_iterate(STACK_INFO_ST *pStack, FP_NODE_PROC fp_proc)
 }
 
 
-#ifndef MAKE_XLIBC
+#ifndef MAKE_XLIB
 
-#define XLIB_UT_CHECK(desc, wanted, exp)  \
-    if(exp != wanted) printf("\r\n %d: %s FAILED! \r\n", __LINE__, desc); \
-    else printf("\r\n %d: %s PASS! \r\n", __LINE__, desc);
+#include "my_assert.h"
 
 typedef struct NODE_DATA_TAG
 {
@@ -106,7 +101,7 @@ int node_data_show(void *in_node)
 
     if(NULL == p) return -1;
     printf("%d ", p->value);
-    
+
     return 0;
 }
 
@@ -119,25 +114,25 @@ int main()
     for(i = 0; i < 10; i++) num[i] = i;
 
     XLIB_UT_CHECK("xlib_stack_init", 0, xlib_stack_init(&my_stack, 100, 4));
-    
+
     XLIB_UT_CHECK("xlib_stack_push", 0, xlib_stack_push(&my_stack, &num[2]));
     XLIB_UT_CHECK("xlib_stack_push", 0, xlib_stack_push(&my_stack, &num[4]));
     XLIB_UT_CHECK("xlib_stack_push", 0, xlib_stack_push(&my_stack, &num[6]));
-    XLIB_UT_CHECK("xlib_stack_push", 0, xlib_stack_push(&my_stack, &num[8])); 
-    
+    XLIB_UT_CHECK("xlib_stack_push", 0, xlib_stack_push(&my_stack, &num[8]));
+
     XLIB_UT_CHECK("xlib_link_length", 4, xlib_stack_depth(&my_stack));
-    
+
     printf("\r\n xlib_stack_iterate:");
     xlib_stack_iterate(&my_stack, node_data_show);
 
     p = xlib_stack_pop(&my_stack);
     XLIB_UT_CHECK("xlib_stack_pop", 8, p->value);
-    
+
     p = xlib_stack_pop(&my_stack);
     XLIB_UT_CHECK("xlib_stack_pop", 6, p->value);
 
     XLIB_UT_CHECK("xlib_link_length", 2, xlib_stack_depth(&my_stack));
-    
+
     printf("\r\n xlib_stack_iterate:");
     xlib_stack_iterate(&my_stack, node_data_show);
 
@@ -146,7 +141,7 @@ int main()
 
     p = xlib_stack_get_top(&my_stack);
     XLIB_UT_CHECK("xlib_stack_get_top", 4, p->value);
-    
+
     return 0;
 }
 

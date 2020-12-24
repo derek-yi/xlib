@@ -1,22 +1,19 @@
 
 
-#ifdef WIN32
-#include <windows.h>
-#else  
 #include <stdio.h>
 #include <stdlib.h>
-#endif
+#include <string.h>
 
 
 
 
 
-#ifndef MAKE_XLIBC
+#ifndef MAKE_XLIB
 
 
 
 int main()
-{  
+{
 
 
 }

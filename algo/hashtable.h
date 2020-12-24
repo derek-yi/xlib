@@ -118,7 +118,7 @@ static inline void hash_del(struct hlist_node *node)
  */
 static inline void hash_del_rcu(struct hlist_node *node)
 {
-	hlist_del_init_rcu(node);
+	//hlist_del_init_rcu(node);
 }
 
 /**
