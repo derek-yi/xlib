@@ -1,44 +1,48 @@
 
-#if 1
- 
-#include <stdio.h> 
-#include <fcntl.h> 
-#include <stdlib.h> 
-#include <string.h> 
-#include <sys/types.h> 
+#include <sys/types.h>
 #include <sys/stat.h>
-#include <unistd.h>
-#include <sys/ioctl.h>
+#include <stdlib.h>
+#include <stdio.h>
+#include <string.h>
+#include <fcntl.h>
+ 
+#define NODE_NAME ("/sys/kernel/debug/my_dev/node")
+
+#define TO_WRITE "1234"
+
+#define BUF_LENGTH 128
  
 int main()
 {
-    int fd;
-    int ret;
-    int wdata, rdata;
- 
-    fd = open("/dev/miscdriver", O_RDWR);
-    if( fd < 0 ) {
-        printf("open miscdriver WRONG£¡\n");
-        return 0;
-    }
-
-#if 1
-    rdata = 0;
-    ret = ioctl(fd, 0x101, &rdata);
-    printf("ioctl: ret=%d rdata=%d\n", ret, rdata);
- 
-    wdata = rdata + 10;
-    ret = ioctl(fd, 0x100, &wdata);
- #endif
- 
-    ret = ioctl(fd, 0x101, &rdata);
-    printf("ioctl: ret=%d rdata=%d\n", ret, rdata);
-     
-    close(fd);
-    return 0;
+	int filp;
+	int res = 0;
+	char buf[BUF_LENGTH];
+	
+	memset(buf, 0, BUF_LENGTH);	
+	
+	filp = open(NODE_NAME, O_RDWR);
+	
+	if(filp > 0)
+	{
+		if( (res = read(filp, buf, BUF_LENGTH) ) < 0)
+			printf("read error \n");
+		else
+			printf("first read is %s\n", buf);
+	
+		if((res = write(filp, TO_WRITE, strlen(TO_WRITE))) != strlen(TO_WRITE))
+			printf("write error \n");
+		
+		close(filp);
+		filp = open(NODE_NAME, O_RDWR);
+		memset(buf, 0, BUF_LENGTH);	
+	
+		if( (res = read(filp, buf, BUF_LENGTH) ) < 0)
+			printf("read error \n");
+		else
+			printf("second read is %s\n", buf);
+	}
+		
+	close(filp);	
+	exit(0);
 }
- 
-#endif
-
-
 
