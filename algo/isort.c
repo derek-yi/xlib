@@ -212,10 +212,10 @@ void my_iqsort(elemType array[], int num)
 
 #include <time.h>
 
-#define ARRAY_SIZE  40960
+#define ARRAY_CNT  40960
 
-int my_array[ARRAY_SIZE];
-int check_array[ARRAY_SIZE];
+int my_array[ARRAY_CNT];
+int check_array[ARRAY_CNT];
 
 int my_cmp(const void *data1, const void *data2)
 {
@@ -256,37 +256,37 @@ repeat_select:
         return 0;
     }
 
-    printf("\r\n init: ");
+    printf("\r\n init with size %d ", ARRAY_CNT);
     srand(time(NULL));
-    for(i = 0; i < ARRAY_SIZE; i++) {
-        my_array[i] = rand()%ARRAY_SIZE;
+    for(i = 0; i < ARRAY_CNT; i++) {
+        my_array[i] = rand()%ARRAY_CNT;
         check_array[i] = my_array[i];
     }
     print_array(my_array, 64);
 
     printf("\r\n sorting ...");
-    if (sort_select == 1) bubble_isort(my_array, ARRAY_SIZE);
-    else if (sort_select == 2) cocktail_isort(my_array, ARRAY_SIZE);
-    else if (sort_select == 3) select_isort(my_array, ARRAY_SIZE);
-    else if (sort_select == 4) insert_isort2(my_array, ARRAY_SIZE);
-    else if (sort_select == 5) shell_isort(my_array, ARRAY_SIZE);
-    else if (sort_select == 6) my_iqsort(my_array, ARRAY_SIZE);
-    else if (sort_select == 7) qsort(my_array, ARRAY_SIZE, sizeof(int), my_cmp);
+    if (sort_select == 1) bubble_isort(my_array, ARRAY_CNT);
+    else if (sort_select == 2) cocktail_isort(my_array, ARRAY_CNT);
+    else if (sort_select == 3) select_isort(my_array, ARRAY_CNT);
+    else if (sort_select == 4) insert_isort2(my_array, ARRAY_CNT);
+    else if (sort_select == 5) shell_isort(my_array, ARRAY_CNT);
+    else if (sort_select == 6) my_iqsort(my_array, ARRAY_CNT);
+    else if (sort_select == 7) qsort(my_array, ARRAY_CNT, sizeof(int), my_cmp);
     else goto repeat_select;
 
-    printf("\r\n show: ");
+    printf("\r\n show first 64: ");
     print_array(my_array, 64);
     printf("\r\n");
 
     printf("\r\n check ...");
-    qsort(check_array, ARRAY_SIZE, sizeof(int), my_cmp);
-    for(i = 0; i < ARRAY_SIZE; i++) {
+    qsort(check_array, ARRAY_CNT, sizeof(int), my_cmp);
+    for(i = 0; i < ARRAY_CNT; i++) {
         if(my_array[i] != check_array[i]) {
             printf("FAIL\r\n");
             break;
         }
     }
-    if(i == ARRAY_SIZE) printf("PASS\r\n");
+    if(i == ARRAY_CNT) printf("PASS\r\n");
 
     goto repeat_select;
 }

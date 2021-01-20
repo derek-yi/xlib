@@ -54,8 +54,7 @@ static ssize_t led_status_store(struct kobject *kobj, struct kobj_attribute *att
 }
 
 static struct kobj_attribute status_attr = __ATTR_RO(led);
-static struct kobj_attribute led_attr = __ATTR(led_status, 0660, led_status_show, led_status_store);  //Doesn't support 0666 in new version.
-
+static struct kobj_attribute led_attr = __ATTR(led_status, 0660, led_status_show, led_status_store);  
 
 static struct attribute *led_attrs[] = {
     &status_attr.attr,
@@ -67,7 +66,6 @@ static struct attribute_group led_attr_grp = {
     .name = "led_test",
     .attrs = led_attrs,
 };
-
 
 static int __init sysfs_ctrl_init(void)
 {

@@ -1,17 +1,15 @@
-
 /* SPDX-License-Identifier: GPL-2.0 */
 #ifndef _LINUX_LIST_H
 #define _LINUX_LIST_H
 
-#ifndef WIN32
 #include <linux/types.h>
 #include <linux/stddef.h>
-//#include <linux/poison.h>
+//#include <linux/poison.h> //MAKE_XLIB
 #include <linux/const.h>
 #include <linux/kernel.h>
-#endif
 
-#if 1 //adapter
+
+#if 1 //MAKE_XLIB
 
 typedef unsigned int u32;
 typedef int s32;
@@ -71,7 +69,7 @@ struct hlist_node {
 #define LIST_POISON1  ( 0x100 + POISON_POINTER_DELTA)
 #define LIST_POISON2  ( 0x200 + POISON_POINTER_DELTA)
 
-#endif //adapter
+#endif //MAKE_XLIB
 
 /*
  * Simple doubly linked list implementation.
@@ -188,8 +186,8 @@ static inline void __list_del_entry(struct list_head *entry)
 static inline void list_del(struct list_head *entry)
 {
 	__list_del_entry(entry);
-	entry->next = (struct list_head *)LIST_POISON1;
-	entry->prev = (struct list_head *)LIST_POISON2;
+	entry->next = (struct list_head *)LIST_POISON1; //MAKE_XLIB
+	entry->prev = (struct list_head *)LIST_POISON2; //MAKE_XLIB
 }
 
 /**
@@ -719,8 +717,8 @@ static inline void __hlist_del(struct hlist_node *n)
 static inline void hlist_del(struct hlist_node *n)
 {
 	__hlist_del(n);
-	n->next = (struct hlist_node *)LIST_POISON1;
-	n->pprev = (struct hlist_node **)LIST_POISON2;
+	n->next = (struct hlist_node *)LIST_POISON1; //MAKE_XLIB
+	n->pprev = (struct hlist_node **)LIST_POISON2; //MAKE_XLIB
 }
 
 static inline void hlist_del_init(struct hlist_node *n)

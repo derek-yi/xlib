@@ -3,7 +3,7 @@
 #include <stdlib.h>
 #include <math.h>
 
-#include "klist.h"
+#include "list.h"
 #include "hash.h"
 #include "hashtable.h"
 

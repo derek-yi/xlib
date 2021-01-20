@@ -7,16 +7,11 @@
 #ifndef _LINUX_HASHTABLE_H
 #define _LINUX_HASHTABLE_H
 
-#ifndef WIN32
-//#include <linux/list.h>
+//#include <linux/list.h> //MAKE_XLIB
 #include <linux/types.h>
 #include <linux/kernel.h>
-//#include <linux/hash.h>
-//#include <linux/rculist.h>
-#endif
-
-//redirect to log2
-#define ilog2   log2
+//#include <linux/hash.h> //MAKE_XLIB 
+//#include <linux/rculist.h> //MAKE_XLIB
 
 #define DEFINE_HASHTABLE(name, bits)						\
 	struct hlist_head name[1 << (bits)] =					\
@@ -30,7 +25,7 @@
 	struct hlist_head name[1 << (bits)]
 
 #define HASH_SIZE(name) (ARRAY_SIZE(name))
-#define HASH_BITS(name) ilog2(HASH_SIZE(name))
+#define HASH_BITS(name) log2(HASH_SIZE(name)) //MAKE_XLIB: ilog2 to log2
 
 /* Use hash_32 when possible to allow for fast 32bit hashing in 64bit kernels. */
 #define hash_min(val, bits)							\
@@ -118,7 +113,7 @@ static inline void hash_del(struct hlist_node *node)
  */
 static inline void hash_del_rcu(struct hlist_node *node)
 {
-	//hlist_del_init_rcu(node);
+	//hlist_del_init_rcu(node); //MAKE_XLIB
 }
 
 /**

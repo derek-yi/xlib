@@ -1,6 +1,6 @@
 ifneq ($(KERNELRELEASE),)
 
-obj-m:=myirq.o
+obj-m:=ramdisk_quest.o
 
 else
 

@@ -239,18 +239,21 @@ int val_cmp(const void* data1, const void* data2)
 int main(int argc, char **argv)
 {
     int i, ret;
-    int ARRAY_SIZE = 16;
+    int ARRAY_SIZE;
     demo_data_t temp;
     demo_data_t *ptr;
     dlink_st *my_list = dlink_new(sizeof(demo_data_t));
 
     MY_ASSERT(my_list != NULL);
 
-    if (argc > 1) {
-        ARRAY_SIZE = atoi(argv[1]);
+    if (argc < 2) {
+        printf("usage: %s <array_size>     -- default array_size is 16 \r\n", argv[0]);
+        return 0;
     }
+    ARRAY_SIZE = atoi(argv[1]);
+    if (ARRAY_SIZE < 1) ARRAY_SIZE = 16;
     
-    printf("%d: init \r\n", __LINE__);
+    printf("%d: init with ARRAY_SIZE(%d) \r\n", __LINE__, ARRAY_SIZE);
     srand(time(NULL));
     for(i = 0; i < ARRAY_SIZE; i++) {
         temp.key = i;

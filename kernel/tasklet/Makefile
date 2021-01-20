@@ -1,6 +1,6 @@
 ifneq ($(KERNELRELEASE),)
 
-obj-m:=myuio.o
+obj-m:=sysfs.o
 
 else
 

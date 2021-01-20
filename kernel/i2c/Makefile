@@ -1,6 +1,7 @@
 ifneq ($(KERNELRELEASE),)
 
-obj-m:=i2c_dev.o i2c_drv.o
+#obj-m:=i2c_dev.o i2c_drv.o
+obj-m:=i2c_drv.o
 
 else
 

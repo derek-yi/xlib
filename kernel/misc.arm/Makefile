@@ -1,5 +1,5 @@
-CROSS_COMPLE := arm-linux-gnueabi-
-ARCH := arm
+export CROSS_COMPLE=arm-linux-gnueabi-
+export ARCH=arm
 
 KERNELDIR = /home/derek/share/linux-3.16.45
 PWD := $(shell pwd)

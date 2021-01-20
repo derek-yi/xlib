@@ -2,7 +2,7 @@
 #include <stdlib.h>
 #include <time.h>
 
-#include "klist.h"
+#include "list.h"
 
 
 #ifndef MAKE_XLIB

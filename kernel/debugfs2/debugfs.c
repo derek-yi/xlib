@@ -15,6 +15,7 @@
  
 #define MISC_NAME   "miscdriver"
 
+#if 0
 struct dentry* debugfs_create_dir(const char *name, struct dentry *parent);
 struct dentry *debugfs_create_u8(const char *name, mode_t mode, struct dentry *parent, u8 *value);
 struct dentry *debugfs_create_u16(const char *name, mode_t mode, struct dentry *parent, u16 *value);
@@ -23,6 +24,7 @@ struct dentry *debugfs_create_u64(const char *name, mode_t mode, struct dentry *
 //struct dentry *debugfs_create_bool(const char *name, mode_t mode, struct dentry *parent, u32 *value);
 struct dentry *debugfs_create_blob(const char *name, mode_t mode, struct dentry *parent, struct debugfs_blob_wrapper *blob);
 void debugfs_remove(struct dentry *dentry);
+#endif
 
 struct dentry* dbg_root = NULL;
 
@@ -84,9 +86,9 @@ static int __init misc_init(void)
     if (dbg_root == NULL)
     {
         printk("debugfs_create_dir error\n");
-        //return ret;
+        return ret;
     }
-    debugfs_create_u32("u32", 0777, dbg_root, &temp_data);
+    debugfs_create_u32("u32", 0660, dbg_root, &temp_data);
      
     return 0;
 }
@@ -107,7 +109,6 @@ MODULE_AUTHOR("Decly");
 
 sudo insmod debugfs.ko
 sudo cat /sys/kernel/debug/misc/u32
-
 
 */
 

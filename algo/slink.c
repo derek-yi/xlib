@@ -193,6 +193,7 @@ int slink_count(link_node_t *pLink)
 #endif
 
 #ifndef MAKE_XLIB
+
 #include "my_assert.h"
 
 link_node_t *my_link = NULL;
@@ -225,7 +226,6 @@ int link_node_show(void *in_node)
     
     return 0;
 }
-
 
 int main()
 {

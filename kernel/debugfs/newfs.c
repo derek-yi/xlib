@@ -13,9 +13,10 @@
 #include <asm/uaccess.h> 
 #include <linux/debugfs.h> 
   
-#define DEVICE_NAME ("my_dev")  
-#define NODE_NAME ("node")
-#define GLOBALMEM_SIZE    512    /*全局内存最大4K字节*/  
+#define DEVICE_NAME         ("my_dev")  
+#define NODE_NAME           ("node")
+
+#define GLOBALMEM_SIZE      512   
  
 char g_val[20] = "15";  
 struct dentry *root_dentry = NULL;
@@ -43,7 +44,6 @@ static ssize_t global_write(struct file *filp, const char __user *buf, size_t le
   
     memset(val, 0, 20);  
       
-    /*分析和获取有效的写长度*/  
     if (p >= GLOBALMEM_SIZE)  
     {  
         return count ?  - ENXIO: 0;       
@@ -85,9 +85,9 @@ static int __init globalvar_init(void)
     printk(KERN_ERR "golabvar_init \n");  
     
     root_dentry = debugfs_create_dir(DEVICE_NAME, NULL);
-    if(root_dentry != NULL)
+    if (root_dentry != NULL)
     {
-    	sub_dentry = debugfs_create_file(NODE_NAME, 0666, root_dentry, NULL, &fileops);
+    	sub_dentry = debugfs_create_file(NODE_NAME, 0660, root_dentry, NULL, &fileops);
     }
       
     return 0;  
@@ -106,12 +106,12 @@ module_exit(globalvar_exit);
 
 
 /*
-pi@raspberrypi:~/debugfs $ cat /sys/kernel/debug/my_dev/node
+cat /sys/kernel/debug/my_dev/node
 1234
 
-pi@raspberrypi:~/debugfs $ echo 100 > /sys/kernel/debug/my_dev/node
+echo 100 > /sys/kernel/debug/my_dev/node
 
-pi@raspberrypi:~/debugfs $ cat /sys/kernel/debug/my_dev/node
+cat /sys/kernel/debug/my_dev/node
 100
 
 */

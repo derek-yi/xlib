@@ -21,12 +21,8 @@
   linux/lib/rbtree.c
 */
 
-#ifdef WIN32
-#include <windows.h>
-#else  
 #include <stdio.h>
 #include <stdlib.h>
-#endif
 
 #if 1 //T_DESC("source", 1)
 

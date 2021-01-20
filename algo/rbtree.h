@@ -29,14 +29,11 @@
 #ifndef	_LINUX_RBTREE_H
 #define	_LINUX_RBTREE_H
 
-#ifndef WIN32
 #include <linux/kernel.h>
 #include <linux/stddef.h>
 //#include <linux/rcupdate.h>
-#else
-#define __attribute__(x)
-#endif
 
+//MAKE_XLIB
 #ifndef bool
 typedef int bool;
 #endif

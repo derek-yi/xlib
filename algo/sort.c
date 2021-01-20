@@ -223,9 +223,10 @@ void my_qsort(void *base, size_t num, size_t width, int(*compare)(void*, void*))
 
 #include <time.h>
 
-#define ARRAY_SIZE  40960
-int my_array[ARRAY_SIZE];
-int check_array[ARRAY_SIZE];
+#define ARRAY_CNT  40960
+
+int my_array[ARRAY_CNT];
+int check_array[ARRAY_CNT];
 
 int my_cmp(void *data1, void *data2)
 {
@@ -266,37 +267,37 @@ repeat_select:
         return 0;
     }
 
-    printf("\r\n init: ");
+    printf("\r\n init with size %d ", ARRAY_CNT);
     srand(time(NULL));
-    for(i = 0; i < ARRAY_SIZE; i++) {
-        my_array[i] = rand()%ARRAY_SIZE;
+    for(i = 0; i < ARRAY_CNT; i++) {
+        my_array[i] = rand()%ARRAY_CNT;
         check_array[i] = my_array[i];
     }
     print_array(my_array, 64);
 
     printf("\r\n sorting ...");
-    if (sort_select == 1) bubble_sort(my_array, ARRAY_SIZE, sizeof(int), my_cmp);
-    else if (sort_select == 2) cocktail_sort(my_array, ARRAY_SIZE, sizeof(int), my_cmp);
-    else if (sort_select == 3) select_sort(my_array, ARRAY_SIZE, sizeof(int), my_cmp);
-    else if (sort_select == 4) insert_sort(my_array, ARRAY_SIZE, sizeof(int), my_cmp);
-    else if (sort_select == 5) shell_sort(my_array, ARRAY_SIZE, sizeof(int), my_cmp);
-    else if (sort_select == 6) my_qsort(my_array, ARRAY_SIZE, sizeof(int), my_cmp);
-    else if (sort_select == 7) qsort(my_array, ARRAY_SIZE, sizeof(int), my_cmp);
+    if (sort_select == 1) bubble_sort(my_array, ARRAY_CNT, sizeof(int), my_cmp);
+    else if (sort_select == 2) cocktail_sort(my_array, ARRAY_CNT, sizeof(int), my_cmp);
+    else if (sort_select == 3) select_sort(my_array, ARRAY_CNT, sizeof(int), my_cmp);
+    else if (sort_select == 4) insert_sort(my_array, ARRAY_CNT, sizeof(int), my_cmp);
+    else if (sort_select == 5) shell_sort(my_array, ARRAY_CNT, sizeof(int), my_cmp);
+    else if (sort_select == 6) my_qsort(my_array, ARRAY_CNT, sizeof(int), my_cmp);
+    else if (sort_select == 7) qsort(my_array, ARRAY_CNT, sizeof(int), my_cmp);
     else goto repeat_select;
 
-    printf("\r\n show: ");
+    printf("\r\n show first 64: ");
     print_array(my_array, 64);
     printf("\r\n");
 
     printf("\r\n check ...");
-    qsort(check_array, ARRAY_SIZE, sizeof(int), my_cmp);
-    for(i = 0; i < ARRAY_SIZE; i++) {
+    qsort(check_array, ARRAY_CNT, sizeof(int), my_cmp);
+    for(i = 0; i < ARRAY_CNT; i++) {
         if(my_array[i] != check_array[i]) {
             printf("FAIL");
             break;
         }
     }
-    if(i == ARRAY_SIZE) printf("PASS");
+    if(i == ARRAY_CNT) printf("PASS");
 
     goto repeat_select;
 }

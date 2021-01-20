@@ -13,6 +13,10 @@
 #define XLIB_OK             0
 #define XLIB_ERROR          1
 
+#define MAX_XLIB_TABLE_SIZE     32
+
+#define XLIB_TYPE_CHECK(type)   if(type >= MAX_XLIB_TABLE_SIZE) return 1;
+
 
 xlib_table_s glb_xlib_table[MAX_XLIB_TABLE_SIZE] = {0};
 
