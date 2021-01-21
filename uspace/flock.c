@@ -1,4 +1,3 @@
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -32,9 +31,10 @@ int read_lock(int fd)
     lock.l_whence = SEEK_SET;  
     
     int result = fcntl(fd, F_SETLK, &lock);  
-    if(result<0){  
+    if (result<0) {  
         perror("lockR:");  
     }  
+    
     return result; 
 }
 
@@ -81,8 +81,6 @@ int file_unlock(int fd)
     return fcntl(fd, F_SETLK, &lock);  
 }
 #endif
-
-
 
 #if T_DESC("tu", 1)
 
@@ -140,7 +138,6 @@ int tu1_proc(int tu_id)
         return -1;  
     }  
     
-    /*等待线程结束*/  
     pthread_join(id_1, NULL);  
     pthread_join(id_2, NULL);  
 
@@ -154,23 +151,20 @@ int tu1_proc(int tu_id)
 
 #if T_DESC("global", 1)
 
-
 int main(int argc, char **argv)
 {
     int ret;
     int tu_id;
     
     if (argc < 2) {
-        printf("\n Usage: %s <index>", argv[0]);
-        printf("\n   1 -- case1");
-        printf("\n");
+        printf("%s 1 -- case1 \n", argv[0]);
         return 0;
     }
 
     tu_id = atoi(argv[1]);
    
     ret = tu1_proc(tu_id);
-    printf("%d: tu1_proc ret %d\n", __LINE__, ret);
+    printf("%d: tu1_proc ret %d \n", __LINE__, ret);
     
     return ret;
 }

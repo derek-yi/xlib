@@ -3,9 +3,12 @@
 #include <pthread.h>
 
 int g_iFlagAtom = 1; //todo
-#define WORK_SIZE 5000000
-#define WORKER_COUNT 10
+
+#define WORK_SIZE       5000000
+#define WORKER_COUNT    10
+
 pthread_t g_tWorkerID[WORKER_COUNT];
+
 int g_iSum = 0;
 
 void * thr_worker(void *arg) {
@@ -33,15 +36,19 @@ void * thr_management (void *arg) {
 
 int main(int argc, const char* argv[]) {
    pthread_t tManagementID;
-   pthread_create (&tManagementID, NULL, thr_management, NULL);
    int i=0; 
+   
+   printf ("CREATED %d WORKER THREADS\n", i);
    for (i=0;i<WORKER_COUNT;++i) {
        pthread_create(&g_tWorkerID[i], NULL, thr_worker, NULL);
    }
-   printf ("CREATED %d WORKER THREADS\n", i);
+
+   pthread_create (&tManagementID, NULL, thr_management, NULL);
    pthread_join(tManagementID, NULL);
+   
    printf ("THE SUM: %d\n", g_iSum);
    return 0;
 }
 
 //gcc -std=gnu99 -g -Wall -o cas.bin cas.c
+

@@ -16,7 +16,7 @@ int log_to_file(char *file_path, char *data_ptr, int data_size)
         return -1;
     }
 
-    if (file_path) sprintf(name_buff, "%slog%d.dat", file_path, file_id++);
+    if (file_path) sprintf(name_buff, "%s/log%d.dat", file_path, file_id++);
     else sprintf(name_buff, "log%d.dat", file_id++);
     
     fd = open(name_buff, O_CREAT|O_RDWR, 0666);
@@ -33,7 +33,7 @@ int log_to_file(char *file_path, char *data_ptr, int data_size)
     return 0;
 }
 
-#define MAX_BLK_SIZE    102400
+#define MAX_BLK_SIZE    1024000
 char data_buff[MAX_BLK_SIZE];
 
 int main(int argc, char **argv)
@@ -44,8 +44,8 @@ int main(int argc, char **argv)
     int wr_cnt, blk_size;
     char *file_path = NULL;
 
-    if (argc < 4) {
-        printf("usange: bin <wr_cnt> <blk_size> [<path>]\n");
+    if (argc < 3) {
+        printf("usage: bin <wr_cnt> <blk_size> [<path>]\n");
         return 0;
     }
 
@@ -70,7 +70,7 @@ int main(int argc, char **argv)
     
     t_used = (t_end.tv_sec - t_start.tv_sec)*1000000+(t_end.tv_usec - t_start.tv_usec);//us
     t_used = t_used/1000; //ms
-    printf("t_used = %d\n", t_used);
+    printf("t_used = %d (ms)\n", t_used);
 
     return 0;
 }

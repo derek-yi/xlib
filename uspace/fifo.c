@@ -1,5 +1,3 @@
-
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <pthread.h>
@@ -11,8 +9,6 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 
-
-
 int write_proc(void)
 {
     int fifo_fd;
@@ -20,7 +16,7 @@ int write_proc(void)
     char buffer[128];
     
     ret = mkfifo("my_fifo", 0644);
-    printf("mkfifo: %d\n", fifo_fd);
+    printf("mkfifo: %d\n", ret);
 
     fifo_fd = open("my_fifo", O_WRONLY);
     printf("fifo_fd: %d\n", fifo_fd);
@@ -32,7 +28,7 @@ int write_proc(void)
 
         if(strncmp(buffer, "exit", 4) == 0) break;
 
-        ret = write(fifo_fd, buffer, strlen(buffer) + 1);
+        ret = write(fifo_fd, buffer, strlen(buffer));
         printf("write: %d\n", ret);
     }
 
@@ -42,7 +38,6 @@ int write_proc(void)
     return 0;
 }
 
-
 int read_proc(void)
 {
     int fifo_fd;
@@ -50,13 +45,14 @@ int read_proc(void)
     char buffer[128];
     
     ret = mkfifo("my_fifo", 0644);
-    printf("mkfifo: %d\n", fifo_fd);
+    printf("mkfifo: %d\n", ret);
     
     fifo_fd = open("my_fifo", O_RDONLY);
     printf("fifo_fd: %d\n", fifo_fd);
 
     for( ; ; )
     {
+        memset(buffer, 0, sizeof(buffer));
         ret = read(fifo_fd, buffer, 128);
         if(ret > 0) {
             printf("\nread: %s\n", buffer);
@@ -65,7 +61,6 @@ int read_proc(void)
 
     return 0;
 }
-
 
 int main(int argc, char **argv)
 {

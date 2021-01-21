@@ -1,0 +1,126 @@
+## install
+https://www.runoob.com/sqlite/sqlite-installation.html
+https://www.sqlite.org/download.html
+
+$ tar xvzf sqlite-autoconf-3071502.tar.gz
+$ cd sqlite-autoconf-3071502
+$ ./configure --prefix=/usr/local
+$ make
+$ make install
+
+
+## format
+sqlite>.header on
+sqlite>.mode column
+sqlite>.timer on
+
+
+## create db
+sqlite3 DatabaseName.db
+sqlite>.open test.db
+sqlite>.databases
+seq  name             file
+---  ---------------  ----------------------
+0    main             /home/sqlite/testDB.db
+
+
+## dump
+$sqlite3 testDB.db .dump > testDB.sql
+$sqlite3 testDB.db < testDB.sql
+
+
+## ATTACH
+sqlite> ATTACH DATABASE 'testDB.db' as 'TEST';
+sqlite> .database
+seq  name             file
+---  ---------------  ----------------------
+0    main             /home/sqlite/testDB.db
+2    test             /home/sqlite/testDB.db
+sqlite> DETACH DATABASE 'test';
+
+
+## CREATE TABLE 
+CREATE TABLE database_name.table_name(
+   column1 datatype  PRIMARY KEY(one or more columns),
+   column2 datatype,
+   column3 datatype,
+   .....
+   columnN datatype,
+);
+sqlite> CREATE TABLE COMPANY(
+   ID INT PRIMARY KEY     NOT NULL,
+   NAME           TEXT    NOT NULL,
+   AGE            INT     NOT NULL,
+   ADDRESS        CHAR(50),
+   SALARY         REAL
+);
+sqlite> CREATE TABLE DEPARTMENT(
+   ID INT PRIMARY KEY      NOT NULL,
+   DEPT           CHAR(50) NOT NULL,
+   EMP_ID         INT      NOT NULL
+);
+
+sqlite>.schema COMPANY
+
+DROP TABLE database_name.table_name;
+sqlite>DROP TABLE COMPANY;
+
+## INSERT
+INSERT INTO COMPANY (ID,NAME,AGE,ADDRESS,SALARY)
+VALUES (1, 'Paul', 32, 'California', 20000.00 );
+
+INSERT INTO COMPANY (ID,NAME,AGE,ADDRESS,SALARY)
+VALUES (2, 'Allen', 25, 'Texas', 15000.00 );
+
+INSERT INTO COMPANY (ID,NAME,AGE,ADDRESS,SALARY)
+VALUES (3, 'Teddy', 23, 'Norway', 20000.00 );
+
+INSERT INTO COMPANY (ID,NAME,AGE,ADDRESS,SALARY)
+VALUES (4, 'Mark', 25, 'Rich-Mond ', 65000.00 );
+
+INSERT INTO COMPANY (ID,NAME,AGE,ADDRESS,SALARY)
+VALUES (5, 'David', 27, 'Texas', 85000.00 );
+
+INSERT INTO COMPANY (ID,NAME,AGE,ADDRESS,SALARY)
+VALUES (6, 'Kim', 22, 'South-Hall', 45000.00 );
+
+//new
+INSERT INTO COMPANY VALUES (7, 'James', 24, 'Houston', 10000.00 );
+
+sqlite>.header on
+sqlite>.mode column
+sqlite> SELECT * FROM COMPANY;
+ID          NAME        AGE         ADDRESS     SALARY
+----------  ----------  ----------  ----------  ----------
+1           Paul        32          California  20000.0
+2           Allen       25          Texas       15000.0
+3           Teddy       23          Norway      20000.0
+
+sqlite> SELECT ID, NAME, SALARY FROM COMPANY;
+ID          NAME        SALARY
+----------  ----------  ----------
+1           Paul        20000.0
+2           Allen       15000.0
+3           Teddy       20000.0
+
+sqlite>.width 10, 20, 10
+sqlite>SELECT * FROM COMPANY;
+
+sqlite> SELECT * FROM COMPANY WHERE SALARY > 50000;
+ID          NAME        AGE         ADDRESS     SALARY
+----------  ----------  ----------  ----------  ----------
+4           Mark        25          Rich-Mond   65000.0
+5           David       27          Texas       85000.0
+
+sqlite> SELECT * FROM COMPANY WHERE AGE >= 25 AND SALARY >= 65000;
+ID          NAME        AGE         ADDRESS     SALARY
+----------  ----------  ----------  ----------  ----------
+4           Mark        25          Rich-Mond   65000.0
+5           David       27          Texas       85000.0
+
+
+
+
+
+
+

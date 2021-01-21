@@ -4,6 +4,8 @@
 #include <execinfo.h>
 #include <signal.h>
 
+//kernel: dump_stack()
+
 void dump(int signo)
 {
     void *buffer[30] = {0};
@@ -56,7 +58,7 @@ int main(int argc, const char *argv[])
 #if xxx
 
 //Брвы
-gcc -g -rdynamic test.c -o test; 
+gcc -g -rdynamic backtrace.c -o test
 
 ./test
 Obtained6stackframes.nm

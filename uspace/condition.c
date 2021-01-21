@@ -47,7 +47,7 @@ void* thread_4(void *a)
     while(1)
     {
         pthread_mutex_lock(&mutex);
-        printf("222222222\n");
+        printf("444444\n");
         pthread_mutex_unlock(&mutex);
         sleep(4);
     }
@@ -58,13 +58,13 @@ int main()
 	int i;
 	pthread_t ths[2];
 
-#if 1
+#if 0    
 	pthread_create(&ths[0], NULL,  thread_1, 0);
 	pthread_create(&ths[1], NULL,  thread_2, 0);
 #else    
-	//pthread_create(&ths[0], NULL,  thread_3, 0);
-	//pthread_create(&ths[1], NULL,  thread_4, 0);
-#endif
+	pthread_create(&ths[0], NULL,  thread_3, 0);
+	pthread_create(&ths[1], NULL,  thread_4, 0);
+#endif    
     
 	for(i = 0; i < 2; ++ i){
 		pthread_join(ths[i], NULL);

@@ -18,71 +18,59 @@
 
 #define GLOBALMEM_SIZE      512   
  
-char g_val[20] = "15";  
+char mem_buff[GLOBALMEM_SIZE];  
+
 struct dentry *root_dentry = NULL;
 struct dentry *sub_dentry = NULL;  
-  
-static ssize_t global_read(struct file *filp, char __user *buf, size_t len, loff_t *off)  
+
+static int global_open(struct inode *inode, struct file *filp) 
+{ 
+    filp->private_data = inode->i_private;
+    return 0; 
+} 
+    
+static ssize_t global_read(struct file *filp, char __user *buf, size_t count, loff_t *ppos)  
 {  
-    int ret;  
-    char val[20];  
+    printk("global_read: count %d ppos %d \n", count, *ppos);  
+    if (*ppos >= GLOBALMEM_SIZE)   
+        return 0;   
     
-    printk(KERN_ERR "###### global_read \n");  
-    sprintf(val, "%s\n", g_val);  
+    if (*ppos + count > GLOBALMEM_SIZE)   
+        count = GLOBALMEM_SIZE - *ppos;  
     
-    ret = simple_read_from_buffer(buf, len, off, val, strlen(val));  
-    return ret;  
+    if (copy_to_user(buf, mem_buff + *ppos, count))   
+        return -EFAULT;   
+    
+    *ppos += count;  
+    return count;  
 }  
   
-static ssize_t global_write(struct file *filp, const char __user *buf, size_t len, loff_t *off)  
+static ssize_t global_write(struct file *filp, const char __user *buf, size_t count, loff_t *ppos)  
 {  
-    int  ret = 0;  
-    char val[20];     
-    int i =0, j = 0;  
-    unsigned long p = *off;  
-    unsigned int count = len;  
-  
-    memset(val, 0, 20);  
-      
-    if (p >= GLOBALMEM_SIZE)  
-    {  
-        return count ?  - ENXIO: 0;       
-    }  
-    if (count > GLOBALMEM_SIZE - p)  
-    {  
-        count = GLOBALMEM_SIZE - p;  
-    }  
-      
-    if(copy_from_user(val, buf, count))  
-    {  
-        ret = -EFAULT;  
-    }  
-    else  
-    {  
-        *off += count;  
-        ret = count;  
-    }     
-    memset(g_val, 0, 20);  
-      
-    for(i = 0; i < strlen(val); i++)  
-    {  
-        if(val[i] >= '0' && val[i] <= '9')  
-        {  
-            g_val[j] = val[i];  
-            j++;  
-        }  
-    }     
-    return ret;  
+    printk("global_write: count %d ppos %d \n", count, *ppos);  
+    if (*ppos >= GLOBALMEM_SIZE)   
+        return 0;   
+    
+    if (*ppos + count > GLOBALMEM_SIZE)   
+        count = GLOBALMEM_SIZE - *ppos;  
+    
+    if(copy_from_user(mem_buff + *ppos, buf, count))   
+        return -EFAULT;   
+    
+    *ppos += count;  
+    return count; 
 }  
   
 struct file_operations fileops = {  
+    .owner = THIS_MODULE,
+    .open = global_open,
     .read = global_read,  
     .write = global_write,  
 };  
   
 static int __init globalvar_init(void)  
 {  
-    printk(KERN_ERR "golabvar_init \n");  
+    printk("golabvar_init \n");  
     
     root_dentry = debugfs_create_dir(DEVICE_NAME, NULL);
     if (root_dentry != NULL)
@@ -96,8 +84,7 @@ static int __init globalvar_init(void)
 static void __exit globalvar_exit(void)  
 {  
     printk("golabvar_exit \n");  
-  	debugfs_remove(sub_dentry);
-  	debugfs_remove(root_dentry); 
+  	debugfs_remove_recursive(root_dentry);  
 }  
 
 MODULE_LICENSE("GPL");  
