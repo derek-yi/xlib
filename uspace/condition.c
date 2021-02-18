@@ -3,6 +3,17 @@
 #include <pthread.h>
 #include <stdio.h>
 
+int pthread_cond_timedwait(pthread_cond_t *restrict cond,
+           pthread_mutex_t *restrict mutex,
+           const struct timespec *restrict abstime);
+int pthread_cond_wait(pthread_cond_t *restrict cond, pthread_mutex_t *restrict mutex);
+int pthread_cond_broadcast(pthread_cond_t *cond);
+int pthread_cond_signal(pthread_cond_t *cond);
+
+//https://www.zhihu.com/question/24116967
+
+int condition = FALSE;
+
 pthread_mutex_t lock = PTHREAD_MUTEX_INITIALIZER;
 pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
 pthread_cond_t cond = PTHREAD_COND_INITIALIZER;
@@ -12,8 +23,9 @@ void* thread_1(void *a)
     while(1)
     {
         pthread_mutex_lock(&lock);
-        pthread_cond_wait(&cond, &lock);
-        printf("1111111111111\n");
+        while (condition == FALSE)
+            pthread_cond_wait(&cond, &lock);
+        printf("thread_1111\n");
         pthread_mutex_unlock(&lock);
         sleep(1);
     }
@@ -24,9 +36,10 @@ void* thread_2(void *a)
     while(1)
     {
         pthread_mutex_lock(&lock);
-        printf("222222222\n");
-        pthread_mutex_unlock(&lock);
+        printf("thread_2222\n");
+        condition = TRUE;
         pthread_cond_signal(&cond);
+        pthread_mutex_unlock(&lock);
         sleep(2);
     }
 }  
@@ -36,7 +49,7 @@ void* thread_3(void *a)
     while(1)
     {
         pthread_mutex_lock(&mutex);
-        printf("333333333\n");
+        printf("thread_33333\n");
         pthread_mutex_unlock(&mutex);
         sleep(3);
     }
@@ -47,7 +60,7 @@ void* thread_4(void *a)
     while(1)
     {
         pthread_mutex_lock(&mutex);
-        printf("444444\n");
+        printf("thread_44444\n");
         pthread_mutex_unlock(&mutex);
         sleep(4);
     }
