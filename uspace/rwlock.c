@@ -17,4 +17,8 @@ int pthread_rwlock_unlock(pthread_rwlock_t *rwlock);
 
 pthread_rwlock_t rwlock = PTHREAD_RWLOCK_INITIALIZER;
 
+int main()
+{
+}
+
 

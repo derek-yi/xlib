@@ -35,9 +35,3 @@ int main(int argc, char **argv)
 
     return 0;
 }
-
-/*
-gcc so_app.c -ldl -L./ -ldemo
-  
-export LD_LIBRARY_PATH=./:$LD_LIBRARY_PATH && ./a.out 
-*/

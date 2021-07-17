@@ -3,6 +3,9 @@
 #include <pthread.h>
 #include <stdio.h>
 
+#define FALSE	0
+#define TRUE	1
+
 int pthread_cond_timedwait(pthread_cond_t *restrict cond,
            pthread_mutex_t *restrict mutex,
            const struct timespec *restrict abstime);

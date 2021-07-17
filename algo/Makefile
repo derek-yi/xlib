@@ -13,8 +13,8 @@ ROOT_DIR := /home/derek/share/xlib
 # 编译参数
 ############################################################################  
 # 编译器
-CC := gcc
-LD := ld
+CC := $(CROSS_COMPILE)gcc
+LD := $(CROSS_COMPILE)ld
 
 # 编译宏
 DEFINES := -DMAKE_XLIB

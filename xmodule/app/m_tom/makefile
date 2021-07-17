@@ -12,23 +12,18 @@ LN = ln -sf
 ##########################################################
 # path and flags
 ##########################################################
-TOP_PATH = $(shell pwd)
-TARGET = my_app
+APP_PATH = $(shell pwd)/..
+TARGET = test_tom
 
-## source dir
-SRC_PATH = src1 src2
+#SRC_PATH = common driver service
+SRC_PATH = .
 
-## cc flags
 CFLAGS = -std=gnu99
 CFLAGS += -Wall -Wno-unused -Wno-format
-#CFLAGS += -g
+#CFLAGS += -rdynamic -g
+CFLAGS += -g
 
-## link flags
-LINK_FLAGS += -lrt -lpthread -lzlog -lm
-
-# external lib  
-LIB_PATH += -L$(TOP_PATH)/lib
-LIBS += 
+LINK_FLAGS += -lrt -lpthread -lzlog -lhakuna
 
 ##########################################################
 # src and include
@@ -38,21 +33,20 @@ DIRS = $(SRC_PATH)
 
 SRCS_CPP += $(foreach dir, $(DIRS), $(wildcard $(dir)/*.cpp))
 SRCS_C += $(foreach dir, $(DIRS), $(wildcard $(dir)/*.c))
+#SRCS_CC += $(foreach dir, $(DIRS), $(wildcard $(dir)/*.cc))
 
-INC_PATH += -I$(TOP_PATH)/include
-INC_PATH += $(foreach dir, $(SRC_PATH), -I$(dir))
+INC_PATH += -I$(APP_PATH)/../include -I$(APP_PATH)/../src
+INC_PATH += $(foreach dir, $(DIRS), -I$(dir))
 
 OBJS_CPP = $(patsubst %.cpp, %.o, $(SRCS_CPP))
 OBJS_C = $(patsubst %.c, %.o, $(SRCS_C))
 
 ##########################################################
-# modules
+# libs
 ##########################################################
-MOD_PATH = $(TOP_PATH)/lib
-modules = libx1 libx2
-LINK_FLAGS += -lx1 -lx2
+LIB_PATH += -L$(APP_PATH)/../src
 
-MODULES_PATH = $(foreach m, $(modules), $(MOD_PATH)/$(m))
+LIBS += 
 
 ##########################################################
 # building
@@ -60,7 +54,7 @@ MODULES_PATH = $(foreach m, $(modules), $(MOD_PATH)/$(m))
 all:$(TARGET)
 
 $(TARGET) : $(OBJS_CPP) $(OBJS_C)
-	@ $(CC) $^ -o $@ $(LIB_PATH) $(LIBS) $(LINK_FLAGS)
+	@ $(CC) $^ -o $@ $(LINK_FLAGS) $(LIB_PATH) $(LIBS) 
 	@ echo Create $(TARGET) ok...
 
 $(OBJS_CPP):%.o : %.cpp
@@ -68,12 +62,6 @@ $(OBJS_CPP):%.o : %.cpp
 
 $(OBJS_C):%.o : %.c
 	$(CC) $(CFLAGS) $< -c -o $@ $(INC_PATH)
-
-modules:
-	@ for i in $(MODULES_PATH); \
-	do \
-	make -C $$i; \
-	done
 
 .PHONY : clean
 clean:

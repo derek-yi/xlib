@@ -41,6 +41,7 @@ int menu_func2()
 }
 
 int menu_run = 1;
+
 void menu_proc()
 {
     while(menu_run)
