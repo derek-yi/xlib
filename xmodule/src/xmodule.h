@@ -24,6 +24,9 @@
 
 #include "vos.h"
 #include "xlog.h"
+#include "tiny_cli.h"
+#include "cJSON.h"
+#include "syscfg.h"
 #include "xmsg.h"
 
 /****************************************************************************************
@@ -41,10 +44,6 @@ int sys_conf_geti(char *key_str);
 int sys_conf_set(char *key_str, char *value);
 
 char *get_app_name(void);
-
-char* json_read_file(const char *filename);
-
-int write_file(const char *filename, char *buff, int buff_size);
 
 /****************************************************************************************
  * xx

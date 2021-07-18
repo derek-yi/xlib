@@ -29,9 +29,6 @@ int cli_set_output_cb(CLI_OUT_CB cb, void *cookie);
 
 int cli_cmd_exec(char *buff);
 
-
-
-
 typedef int (* CMD_FUNC)(int argc, char **argv);
 
 int cli_cmd_reg(const char *cmd, const char *help, CMD_FUNC func);

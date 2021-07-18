@@ -5,12 +5,12 @@
 #include <unistd.h>
 #include <fcntl.h>
 #include <errno.h>
-#include <time.h>   //timer_t
+#include <time.h>   //time_t
 #include <signal.h>
 #include <sys/time.h>
 #include <stdarg.h>
 
-#include "vos.h"
+#include "vos.h"    //vos_run_cmd
 #include "xlog.h"
 
 #ifndef MAKE_XLIB

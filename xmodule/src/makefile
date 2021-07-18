@@ -8,10 +8,11 @@ OBJ=    \
   xmodule.o \
   cJSON.o \
   xlog.o \
+  syscfg.o \
   xmsg.o
 
 
-LIBNAME=libhakuna
+LIBNAME=libxmodule
 
 VER_MAJOR=0
 VER_MINOR=1
@@ -74,11 +75,14 @@ all: $(DYLIBNAME)
 ########################################################################################
 # Deps (use make dep to generate this)
 cJSON.o: cJSON.c cJSON.h
-tiny_cli.o: tiny_cli.c xmodule.h vos.h xlog.h xmsg.h tiny_cli.h
+syscfg.o: syscfg.c vos.h cJSON.h syscfg.h
+tiny_cli.o: tiny_cli.c vos.h tiny_cli.h
 vos.o: vos.c vos.h
-xlog.o: xlog.c xmodule.h vos.h xlog.h xmsg.h
-xmodule.o: xmodule.c xmodule.h vos.h xlog.h xmsg.h cJSON.h tiny_cli.h
-xmsg.o: xmsg.c xmodule.h vos.h xlog.h xmsg.h tiny_cli.h
+xlog.o: xlog.c vos.h xlog.h
+xmodule.o: xmodule.c xmodule.h vos.h xlog.h tiny_cli.h xmsg.h cJSON.h \
+ syscfg.h
+xmsg.o: xmsg.c xmodule.h vos.h xlog.h tiny_cli.h xmsg.h
+
 
 
 ########################################################################################

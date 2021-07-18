@@ -286,6 +286,11 @@ CJSON_PUBLIC(char*) cJSON_SetValuestring(cJSON *object, const char *valuestring)
 CJSON_PUBLIC(void *) cJSON_malloc(size_t size);
 CJSON_PUBLIC(void) cJSON_free(void *object);
 
+char* json_read_file(const char *filename);
+
+int json_write_file(const char *filename, char *buff, int buff_size);
+
+
 #ifdef __cplusplus
 }
 #endif

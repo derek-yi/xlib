@@ -3200,7 +3200,7 @@ cleanup:
     return content;
 }
 
-int write_file(const char *filename, char *buff, int buff_size) 
+int json_write_file(const char *filename, char *buff, int buff_size) 
 {
     FILE *file = NULL;
     size_t wr_chars = 0;
