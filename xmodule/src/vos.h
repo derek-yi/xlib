@@ -35,6 +35,10 @@ typedef unsigned int uint32;
 #define T_DESC(x, y)    y
 #endif
 
+int cfgfile_read_str(char *file_name, char *key_str, char *val_buf, int buf_len);
+
+int cfgfile_write_str(char *file_name, char *key_str, char *val_str);
+
 int pipe_read(char *cmd_str, char *buff, int buf_len);
 
 int sys_node_readstr(char *node_str, char *rd_buf, int buf_len);

@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <pthread.h>
+#include <sys/stat.h>
 #include <unistd.h>
 #include <fcntl.h>
 #include <errno.h>
@@ -20,6 +21,114 @@
 #define vos_print   printf
 
 #endif
+
+
+#define LINE_BUF_SZ		256
+
+/* each line: key_str=val_buf */
+int cfgfile_read_str(char *file_name, char *key_str, char *val_buf, int buf_len)
+{
+	FILE *fp;
+	char *ptr;
+	char line_str[LINE_BUF_SZ];
+	int cp_len;
+
+    if (file_name == NULL) return -1;
+    if (key_str == NULL || val_buf == NULL) return -1;
+    
+	fp = fopen(file_name, "r");
+    if (fp == NULL) {
+        return -2;
+    }
+    
+    while (fgets(line_str, LINE_BUF_SZ, fp) != NULL) { 
+		line_str[strlen(line_str)] = 0; //delete '\n'
+		
+		if (memcmp(line_str, key_str, strlen(key_str)) == 0) { //key_str must at line head
+			ptr = line_str + strlen(key_str);
+			while ( ptr != NULL) {
+				if (*ptr == '=' || *ptr == ' ') ptr++;
+				else break;
+			}
+			
+			if (ptr != NULL) {
+				cp_len = strlen(ptr);
+				if (cp_len > buf_len - 1) cp_len = buf_len - 1;
+				memcpy(val_buf, ptr, cp_len);
+				val_buf[cp_len] = 0;
+				fclose(fp);
+				return 0;
+			}
+		}
+    }
+
+	fclose(fp);
+    return -3;
+}
+
+int cfgfile_write_str(char *file_name, char *key_str, char *val_str)
+{
+	FILE *fp;
+	struct stat fs;
+	char line_str[LINE_BUF_SZ];
+	char *file_buff;
+	int find_node = 0;
+	int buf_ptr = 0;
+
+	if (file_name == NULL) return -1;
+	if (key_str == NULL || val_str == NULL) return -1;
+
+	if (stat(file_name, &fs) == -1) {
+       fs.st_size = 0;
+    }
+
+	file_buff = (char *)malloc(fs.st_size + LINE_BUF_SZ);
+	if (file_buff == NULL) {
+		//perror("malloc");
+		return -2;
+	}
+	memset(file_buff, 0, fs.st_size + LINE_BUF_SZ);
+
+	fp = fopen(file_name, "r");
+	if (fp != NULL) {
+		while (fgets(line_str, LINE_BUF_SZ, fp) != NULL) { 
+			//printf("readline: %s \n", line_str);
+			if (line_str[0] == 0) break;
+			
+			if (memcmp(line_str, key_str, strlen(key_str)) == 0) { //key_str must at line head
+				find_node = 1;
+				if (val_str == NULL) { //clear
+					//printf("clear %s\n", key_str);
+					continue; 
+				} else {  //update
+					snprintf(line_str, LINE_BUF_SZ, "%s=%s\n", key_str, val_str);
+					//printf("update %s\n", key_str);
+				}
+			} 
+			memcpy(file_buff + buf_ptr, line_str, strlen(line_str));
+			buf_ptr += strlen(line_str);
+		}
+
+		fclose(fp);
+	}
+
+	if (find_node == 0) {
+		//printf("add %s\n", key_str);
+		snprintf(line_str, LINE_BUF_SZ, "%s=%s\n", key_str, val_str);
+		memcpy(file_buff + buf_ptr, line_str, strlen(line_str));
+		buf_ptr += strlen(line_str);
+	}
+
+	fp = fopen(file_name, "w+");
+	if (fp == NULL) {
+		//perror("fopen");
+		return -2;
+	}
+	fwrite(file_buff, buf_ptr, 1, fp);
+	fclose(fp);
+	
+	return 0;
+}
 
 int pipe_read(char *cmd_str, char *buff, int buf_len)
 {

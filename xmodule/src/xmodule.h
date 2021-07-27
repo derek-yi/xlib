@@ -35,7 +35,7 @@
 #define APP_ROLE_SLAVE          0
 #define APP_ROLE_MASTER         1
 
-int xmodule_init(char *json_file);
+int xmodule_init(char *app_name, char *json_file);
 
 char* sys_conf_get(char *key_str);
 

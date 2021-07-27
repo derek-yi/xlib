@@ -7,6 +7,7 @@
 //#define INCLUDE_SYSLOG
 
 #ifdef INCLUDE_ZLOG
+
 #include <zlog.h>
 
 #define XLOG_DEBUG      ZLOG_LEVEL_DEBUG
@@ -15,6 +16,7 @@
 #define XLOG_ERROR      ZLOG_LEVEL_ERROR
 
 #elif defined (INCLUDE_SYSLOG)
+
 #include <syslog.h>
 
 #define XLOG_DEBUG      LOG_DEBUG
@@ -23,6 +25,7 @@
 #define XLOG_ERROR      LOG_ERR
 
 #else
+
 #define XLOG_DEBUG      1
 #define XLOG_INFO       2
 #define XLOG_WARN       3
@@ -48,15 +51,13 @@ extern zlog_category_t *my_cat;
 
 int _xlog(char *file, int line, int level, const char *format, ...);
 
-#define xlog(level, ...)  \
-    _xlog(__FILE__, __LINE__, level, __VA_ARGS__)
+#define xlog(level, ...)  _xlog(__FILE__, __LINE__, level, __VA_ARGS__)
 
 #else
 
-int _xlog(char *file, int line, int level, const char *format, ...);
+int _xlog(const char *func, int line, int level, const char *format, ...);
 
-#define xlog(level, ...)  \
-    _xlog(__FILE__, __LINE__, level, __VA_ARGS__)
+#define xlog(level, ...)  _xlog(__func__, __LINE__, level, __VA_ARGS__)
 
 #endif
 

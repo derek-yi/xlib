@@ -17,6 +17,8 @@
 
 int cli_telnet_active(void);
 
+int cli_task_run(void);
+
 void cli_cmd_init(void);
 
 int cli_task_init(void);

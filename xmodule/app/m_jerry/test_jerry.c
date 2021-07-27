@@ -7,12 +7,13 @@
 
 #include "xmodule.h"
 
-#define MSG_TYPE_TIMER1         (MSG_TYPE_USER_START + 1)
+#define MSG_TYPE_TIMER_MSG      (MSG_TYPE_USER_START + 1)
 #define MSG_TYPE_USER_CFG       (MSG_TYPE_USER_START + 2)
 
-int timer1_msg_proc(DEVM_MSG_S *rx_msg)
+int timer_msg_proc(DEVM_MSG_S *rx_msg)
 {
     if (!rx_msg) return VOS_ERR;
+	
     printf("%s: %s \n", __FUNCTION__, rx_msg->msg_payload);
 
     return VOS_OK;
@@ -20,9 +21,9 @@ int timer1_msg_proc(DEVM_MSG_S *rx_msg)
 
 void* demo_main_task(void *param)  
 {
-    devm_set_msg_func(MSG_TYPE_TIMER1, timer1_msg_proc);
+    devm_set_msg_func(MSG_TYPE_TIMER_MSG, timer_msg_proc);
 
-    while(1) {
+    while (1) {
         //todo
 
         vos_msleep(100);
@@ -31,20 +32,21 @@ void* demo_main_task(void *param)
     return NULL;
 }
 
-int demo_timer_1(void *param)
+int demo_timer_func(void *param)
 {
-    char usr_msg[512];
+    char usr_msg[128];
     static int timer_cnt = 100;
 
-    snprintf(usr_msg, 512, "%s %d", get_app_name(), timer_cnt++);
-    app_send_msg(0, "tom", MSG_TYPE_TIMER1, usr_msg, strlen(usr_msg) + 1);
+	//send msg to self
+    snprintf(usr_msg, sizeof(usr_msg), "%s %d", get_app_name(), timer_cnt++);
+    app_send_msg(0, get_app_name(), MSG_TYPE_TIMER_MSG, usr_msg, strlen(usr_msg) + 1);
     
     return VOS_OK;
 }
 
 TIMER_INFO_S my_timer_list[] = 
 {
-    {1, 30, 0, demo_timer_1, NULL}, 
+    {1, 30, 0, demo_timer_func, NULL}, 
 };
 
 int demo_timer_callback(void *param)
@@ -70,19 +72,23 @@ int demo_timer_callback(void *param)
 
 int main(int argc, char **argv)
 {
-    char *cfg_file = "./top_cfg.json";
-    int ret = VOS_OK;
+    int ret;
+    char cfg_file[128];
     pthread_t threadid;
     timer_t timer_id;
 
-    if (access(cfg_file, F_OK) != 0) {
-        if (argc < 2) {
-            xlog(XLOG_ERROR, "no cfg file\r\n");
-            return VOS_ERR;
-        }
-        cfg_file = argv[1];  //as init cfg
+    if (argc < 2) {
+		printf("usage: %s <app_name> <cfg_file> \r\n", argv[0]);
+		return VOS_ERR;  
     }
-    xmodule_init(cfg_file);
+
+    if (argc > 2) {
+		snprintf(cfg_file, sizeof(cfg_file), "%s", argv[2]);
+    } else {
+		snprintf(cfg_file, sizeof(cfg_file), "%s_cfg.txt", argv[1]);
+	}
+	
+    xmodule_init(argv[1], cfg_file);
 
     ret = pthread_create(&threadid, NULL, demo_main_task, NULL);  
     if (ret != 0)  {  
@@ -96,7 +102,7 @@ int main(int argc, char **argv)
         return -1;  
     } 
     
-    while(1) sleep(1);
+    pthread_join(threadid, NULL);
 }
 
 

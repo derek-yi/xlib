@@ -93,7 +93,7 @@ int _xlog(char *file, int line, int level, const char *format, ...)
     return len;    
 }
 
-int xlog_init(char *app_name)
+int xlog_init(char *log_file)
 {
     return 0;
 }
@@ -159,7 +159,7 @@ int xlog_init(char *app_name)
 int xlog_init(char *log_file)
 {
     if (log_file != NULL) {
-        snprintf(my_log_file, 128, "%s", log_file);
+        snprintf(my_log_file, sizeof(my_log_file), "%s", log_file);
     } else {
         strcpy(my_log_file, "xlog.txt");
     }
@@ -174,29 +174,31 @@ int xlog_set_level(uint32 log_level, uint32 print_level)
     return 0;
 }
 
-int _xlog(char *file, int line, int level, const char *format, ...)
+int _xlog(const char *func, int line, int level, const char *format, ...)
 {
     va_list args;
-    char buf[XLOG_BUFF_MAX];
-    int len;
+    char buff[XLOG_BUFF_MAX];
+	int ptr = 0;
 
+	ptr = sprintf(buff, "<%s,%d> ", func, line);
     va_start(args, format);
-    len = vsnprintf(buf, XLOG_BUFF_MAX, format, args);
+    vsnprintf(buff + ptr, XLOG_BUFF_MAX - ptr, format, args);
     va_end(args);
-
+	strcat(buff, "\r\n");
+	
     if ( level >= my_print_level ){
-        printf("%s", buf);
+        printf("%s", buff);
     } 
 
     if ( level >= my_log_level ){
         int fd = open(my_log_file, O_RDWR|O_CREAT|O_APPEND, 0666);
         if (fd > 0) {
-            write(fd, buf, len);
+            write(fd, buff, strlen(buff));
             close(fd);
         }
     } 
 
-    return len;    
+    return 0;    
 }
 
 #endif

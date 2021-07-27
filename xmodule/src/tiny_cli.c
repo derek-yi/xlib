@@ -77,6 +77,7 @@ int vos_print(const char * format,...)
         write(telnet_fd, print_buff, len);
     } else {
         printf("%s", print_buff);
+		fflush(stdout);
     }
 
     sem_post(&print_sem);

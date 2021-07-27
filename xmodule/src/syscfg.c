@@ -140,6 +140,8 @@ int store_json_cfg(char *file_name)
     char * out;
     SYS_CFG_S *p;
 
+	if (file_name == NULL) return VOS_ERR;
+	
     root_tree = cJSON_CreateObject();
     if (root_tree == NULL) return VOS_ERR;
 
