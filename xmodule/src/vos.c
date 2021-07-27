@@ -9,6 +9,7 @@
 #include <errno.h>
 #include <signal.h>
 #include <time.h>   //timer_t
+#include <sys/mman.h>
 #include <sys/time.h>
 #include <sys/types.h>
 #include <sys/wait.h>
@@ -16,12 +17,13 @@
 
 #include "vos.h"
 
-#ifndef MAKE_XLIB
-
-#define vos_print   printf
-
+#ifdef __DEBUG
+#define x_perror(x)   perror(x)
+#else
+#define x_perror(x)	 
 #endif
 
+#if 1
 
 #define LINE_BUF_SZ		256
 
@@ -38,6 +40,7 @@ int cfgfile_read_str(char *file_name, char *key_str, char *val_buf, int buf_len)
     
 	fp = fopen(file_name, "r");
     if (fp == NULL) {
+		//x_perror("fopen");
         return -2;
     }
     
@@ -84,7 +87,7 @@ int cfgfile_write_str(char *file_name, char *key_str, char *val_str)
 
 	file_buff = (char *)malloc(fs.st_size + LINE_BUF_SZ);
 	if (file_buff == NULL) {
-		//perror("malloc");
+		//x_perror("malloc");
 		return -2;
 	}
 	memset(file_buff, 0, fs.st_size + LINE_BUF_SZ);
@@ -121,7 +124,7 @@ int cfgfile_write_str(char *file_name, char *key_str, char *val_str)
 
 	fp = fopen(file_name, "w+");
 	if (fp == NULL) {
-		//perror("fopen");
+		//x_perror("fopen");
 		return -2;
 	}
 	fwrite(file_buff, buf_ptr, 1, fp);
@@ -129,6 +132,10 @@ int cfgfile_write_str(char *file_name, char *key_str, char *val_str)
 	
 	return 0;
 }
+
+#endif
+
+#if 1
 
 int pipe_read(char *cmd_str, char *buff, int buf_len)
 {
@@ -139,7 +146,7 @@ int pipe_read(char *cmd_str, char *buff, int buf_len)
     
 	fp = popen(cmd_str, "r");
     if (fp == NULL) {
-        vos_print("popen failed(%s), cmd(%s)\n", strerror(errno), cmd_str);
+        x_perror("popen");
         return VOS_ERR;
     }
     
@@ -160,7 +167,7 @@ int sys_node_readstr(char *node_str, char *rd_buf, int buf_len)
     snprintf(cmd_buf, sizeof(cmd_buf), "cat %s", node_str);
 	fp = popen(cmd_buf, "r");
     if (fp == NULL) {
-        vos_print("popen failed(%s), cmd(%s)\n", strerror(errno), cmd_buf);
+        x_perror("popen");
         return VOS_ERR;
     }
     
@@ -182,7 +189,7 @@ int sys_node_read(char *node_str, int *value)
     snprintf(cmd_buf, sizeof(cmd_buf), "cat %s", node_str);
 	fp = popen(cmd_buf, "r");
     if (fp == NULL) {
-        vos_print("popen failed(%s), cmd(%s)\n", strerror(errno), cmd_buf);
+        x_perror("popen");
         return VOS_ERR;
     }
     
@@ -206,7 +213,7 @@ int sys_node_writestr(char *node_str, char *wr_buf)
     snprintf(cmd_buf, sizeof(cmd_buf), "echo %s > %s", wr_buf, node_str);
     fp = popen(cmd_buf, "r");
     if (fp == NULL) {
-        vos_print("popen failed(%s), cmd(%s)\n", strerror(errno), cmd_buf);
+        x_perror("popen");
         return VOS_ERR;
     }
     pclose(fp);
@@ -224,13 +231,17 @@ int sys_node_write(char *node_str, int value)
     snprintf(cmd_buf, sizeof(cmd_buf), "echo 0x%x > %s", value, node_str);
     fp = popen(cmd_buf, "r");
     if (fp == NULL) {
-        vos_print("popen failed(%s), cmd(%s)\n", strerror(errno), cmd_buf);
+        x_perror("popen");
         return VOS_ERR;
     }
     pclose(fp);
     
     return VOS_OK;
 }
+
+#endif
+
+#if 1
 
 /*
 union sigval {
@@ -250,7 +261,7 @@ int vos_create_timer(timer_t *ret_tid, int interval, timer_cb callback, void *pa
 	evp.sigev_notify = SIGEV_THREAD;
 	evp.sigev_notify_function = (lib_callback)callback;
 	if (timer_create(CLOCK_REALTIME, &evp, &timerid) == -1) {
-        vos_print("timer_create failed(%s)\n", strerror(errno));
+        x_perror("timer_create");
 		return 1;
 	}
 	
@@ -261,7 +272,7 @@ int vos_create_timer(timer_t *ret_tid, int interval, timer_cb callback, void *pa
 	it.it_value.tv_sec = interval;
 	it.it_value.tv_nsec = 0;
 	if (timer_settime(timerid, 0, &it, NULL) == -1) {
-        vos_print("timer_settime failed(%s)\n", strerror(errno));
+        x_perror("timer_settime");
         timer_delete(timerid);
 		return 1;
 	}
@@ -295,7 +306,7 @@ int vos_run_cmd(char *cmd_str)
     status = system(cmd_str);
     if (status < 0)
     {
-        vos_print("cmd: %s, error: %s", cmd_str, strerror(errno));
+        x_perror("system");
         return status;
     }
      
@@ -336,4 +347,76 @@ int vos_sem_wait(void *sem_id, uint32 msecs)
 	return sem_timedwait(sem, &ts);
 }
 
+#endif
+
+#if 1
+
+#define MAP_SIZE        4096UL
+#define MAP_MASK        (MAP_SIZE - 1)
+
+static int memdev_fd = -1;
+
+uint32 devmem_read(uint32 mem_addr) 
+{
+    void *map_base, *virt_addr;
+    uint32 read_result;
+    off_t target = (off_t)mem_addr;
+
+    if (memdev_fd < 0) {
+        if ( (memdev_fd = open("/dev/mem", O_RDWR | O_SYNC)) == -1 ) {
+            x_perror("open");
+            return 0;
+        }
+    }
+
+    /* Map one page */
+    map_base = mmap(0, MAP_SIZE, PROT_READ | PROT_WRITE, MAP_SHARED, memdev_fd, target & ~MAP_MASK);
+    if (map_base == (void *) -1) {
+        x_perror("mmap");
+        return 0;
+    }
+    
+    virt_addr = map_base + (target & MAP_MASK);
+	read_result = *((uint32 *) virt_addr);
+	
+    if (munmap(map_base, MAP_SIZE) == -1) {
+        x_perror("munmap");
+    }
+
+    return read_result;
+}
+
+uint32 devmem_write(uint32 mem_addr, uint32 writeval) 
+{
+    void *map_base, *virt_addr;
+    //unsigned long read_result;
+    off_t target = (off_t)mem_addr;
+
+    if (memdev_fd < 0) {
+        if ( (memdev_fd = open("/dev/mem", O_RDWR | O_SYNC)) == -1 )  {
+            x_perror("open");
+            return 0;
+        }
+    }
+
+    /* Map one page */
+    map_base = mmap(0, MAP_SIZE, PROT_READ | PROT_WRITE, MAP_SHARED, memdev_fd, target & ~MAP_MASK);
+    if(map_base == (void *) -1) {
+        x_perror("mmap");
+        return 0;
+    }
+    
+    virt_addr = map_base + (target & MAP_MASK);
+	*((uint32 *) virt_addr) = writeval;
+	//read_result = *((unsigned long *) virt_addr);
+    //printf("Written 0x%lu; readback 0x%lu\n", writeval, read_result);
+
+    if (munmap(map_base, MAP_SIZE) == -1)  {
+        x_perror("munmap");
+    }
+
+    return 0;
+}
+
+#endif
 
