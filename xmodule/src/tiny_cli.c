@@ -313,74 +313,6 @@ int cli_cmd_reg(const char *cmd, const char *help, CMD_FUNC func)
     return CMD_OK;
 }
 
-int cli_do_exit(int argc, char **argv)
-{
-    vos_print("exit cmd ... \r\n");
-    return CMD_ERR_EXIT;
-}
-
-int cli_do_param_test(int argc, char **argv)
-{
-    vos_print("param format: \r\n");
-    for (int i=0; i<argc; i++)
-    {
-        vos_print("%d: %s\r\n", i, argv[i]);
-    }
-    
-    return CMD_OK;
-}
-
-int cli_do_passwd_verify(int argc, char **argv)
-{
-    if (argc < 2) {
-        vos_print("usage: %s <passwd_str> \r\n", argv[0]);
-        return CMD_OK;
-    }
-
-    if (memcmp("foxconn", argv[1], 7) != 0) {  //todo
-        vos_print("invalid password \r\n");
-        return CMD_OK;
-    }
-
-    pwd_check_ok = TRUE;
-    vos_print("password verified OK \r\n");
-    return CMD_OK;
-}
-
-int cli_do_show_version(int argc, char **argv)
-{
-    vos_print("==============================================\r\n");
-    vos_print("vos version: 1.0\r\n");
-    vos_print("compile time: %s, %s\r\n", __DATE__, __TIME__);
-    vos_print("==============================================\r\n");
-    
-    return CMD_OK;
-}
-
-int cli_do_help(int argc, char **argv)
-{
-    CMD_NODE *pNode;
-
-    pNode = gst_cmd_list;
-    while(pNode != NULL)
-    {
-        vos_print("%-24s -- %-45s \r\n", pNode->cmd_str, pNode->help_str);
-        pNode = pNode->pNext;
-    }
-
-    return CMD_OK;
-}
-
-void cli_cmd_init(void)
-{
-    cli_cmd_reg("quit",         "exit app",             &cli_do_exit);
-    cli_cmd_reg("help",         "cmd help",             &cli_do_help);
-    //cli_cmd_reg("version",      "show version",         &cli_do_show_version);
-    cli_cmd_reg("cmdtest",      "cmd param test",       &cli_do_param_test);
-#ifdef CLI_PWD_CHECK    
-    cli_cmd_reg("passwd",       "password verify",      &cli_do_passwd_verify);
-#endif
-}
 
 int cli_do_spec_char(char c)
 {
@@ -471,6 +403,101 @@ int cli_task_run(void)
 		return 1;
 	return 0;
 }
+
+#if 1
+
+int cli_do_exit(int argc, char **argv)
+{
+    vos_print("exit cmd ... \r\n");
+    return CMD_ERR_EXIT;
+}
+
+int cli_do_param_test(int argc, char **argv)
+{
+    vos_print("param format: \r\n");
+    for (int i=0; i<argc; i++)
+    {
+        vos_print("%d: %s\r\n", i, argv[i]);
+    }
+    
+    return CMD_OK;
+}
+
+int cli_do_passwd_verify(int argc, char **argv)
+{
+    if (argc < 2) {
+        vos_print("usage: %s <passwd_str> \r\n", argv[0]);
+        return CMD_OK;
+    }
+
+    if (memcmp("passwd", argv[1], 7) != 0) {  //todo
+        vos_print("invalid password \r\n");
+        return CMD_OK;
+    }
+
+    pwd_check_ok = TRUE;
+    vos_print("password verified OK \r\n");
+    return CMD_OK;
+}
+
+int cli_do_show_version(int argc, char **argv)
+{
+    vos_print("==============================================\r\n");
+    vos_print("vos version: 1.0\r\n");
+    vos_print("compile time: %s, %s\r\n", __DATE__, __TIME__);
+    vos_print("==============================================\r\n");
+    
+    return CMD_OK;
+}
+
+int cli_do_help(int argc, char **argv)
+{
+    CMD_NODE *pNode;
+
+    pNode = gst_cmd_list;
+    while(pNode != NULL)
+    {
+        vos_print("%-24s -- %-45s \r\n", pNode->cmd_str, pNode->help_str);
+        pNode = pNode->pNext;
+    }
+
+    return CMD_OK;
+}
+
+int get_cpu_endian() 
+{
+	union {
+		int number;
+		char s;
+	} test;
+
+    test.number = 0x01000002;
+    return (test.s == 0x01);
+}
+
+int cli_do_sysinfo(int argc, char **argv)
+{
+	vos_print("char=%ld short=%ld int=%ld \n", sizeof(char), sizeof(short), sizeof(int));
+	vos_print("ulong=%ld ptr=%ld llong=%ld \n", sizeof(unsigned long), sizeof(char *), sizeof(long long));
+	vos_print("float=%ld double=%ld \n", sizeof(float), sizeof(double));
+	vos_print("CPU: %s endian \n", get_cpu_endian()?"big":"little");
+
+    return CMD_OK;
+}
+
+void cli_cmd_init(void)
+{
+    cli_cmd_reg("quit",         "exit app",             &cli_do_exit);
+    cli_cmd_reg("help",         "cmd help",             &cli_do_help);
+    //cli_cmd_reg("version",      "show version",         &cli_do_show_version);
+    cli_cmd_reg("cmdtest",      "cmd param test",       &cli_do_param_test);
+	cli_cmd_reg("sysinfo",      "show sysinfo",          &cli_do_sysinfo);
+	
+#ifdef CLI_PWD_CHECK    
+    cli_cmd_reg("passwd",       "password verify",      &cli_do_passwd_verify);
+#endif
+}
+#endif
 
 
 #ifdef INCLUDE_TELNETD

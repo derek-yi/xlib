@@ -1,34 +1,49 @@
-# Top level makefile, the real shit is at src/makefile
+# Top level makefile
 
-TARGETS=noopt 32bit
+## dynamic lib
+DLIB_DIR=libx1 libx2
 
-all:
-	cd src && $(MAKE) $@
+## static lib
+SLIB_DIR=src1 src2
 
-install:
-	cd src && $(MAKE) $@
+## app list
+APP_DIR=app1
 
-$(TARGETS):
-	cd src && $(MAKE) $@
+app:
+	for var in $(APP_DIR); do \
+        cd $$var && $(MAKE) $@; \
+		cd -; \
+    done
 
-doc:
-	cd doc && $(MAKE)
+dlibs:
+	for var in $(DLIB_DIR); do \
+        cd $$var && $(MAKE) dynamic; \
+		cd -; \
+    done
 
-test:
-	cd app/m_jerry && $(MAKE) && cd -
-	cd app/m_tom && $(MAKE) && cd -
-
-TAGS:
-	find . -type f -name "*.[ch]" | xargs etags -
+slibs:
+	for var in $(SLIB_DIR); do \
+        cd $$var && $(MAKE) static; \
+		cd -; \
+    done
 
 clean:
-	cd src && $(MAKE) $@
-	cd app/m_jerry && $(MAKE) $@ && cd -
-	cd app/m_tom && $(MAKE) $@ && cd -
-	rm -f TAGS
+	for var in $(DLIB_DIR); do \
+		cd $$var && $(MAKE) $@; \
+		cd -; \
+	done
+	for var in $(SLIB_DIR); do \
+		cd $$var && $(MAKE) $@; \
+		cd -; \
+	done 
+	for var in $(APP_DIR); do \
+		cd $$var && $(MAKE) $@; \
+		cd -; \
+	done 
 
 distclean: clean
 
 dummy:
 
-.PHONY: doc install test TAGS
+.PHONY: all
+all: dlibs slibs app

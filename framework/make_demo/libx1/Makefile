@@ -1,18 +1,11 @@
-# zlog makefile
+# copy from zlog makefile
 # Copyright (C) 2010-2012 Hardy Simpson <HardySimpson1984@gmail.com>
 # This file is released under the LGPL 2.1 license, see the COPYING file
 
-OBJ=    \
-  tiny_cli.o    \
-  vos.o   \
-  xmodule.o \
-  cJSON.o \
-  xlog.o \
-  syscfg.o \
-  xmsg.o
+OBJ= libx1.o
 
-
-LIBNAME=libxmodule
+LIBNAME=liblibx1
+LIB_OUTDIR=../lib
 
 VER_MAJOR=0
 VER_MINOR=1
@@ -35,15 +28,6 @@ DYLIBNAME=$(LIBNAME).$(DYLIBSUFFIX)
 DYLIB_MAKE_CMD=$(CC) -shared -Wl,-soname,$(DYLIB_MINOR_NAME) -o $(DYLIBNAME) $(LDFLAGS)
 STLIBNAME=$(LIBNAME).$(STLIBSUFFIX)
 STLIB_MAKE_CMD=ar rcs $(STLIBNAME)
-
-# Installation related variables
-PREFIX?=/usr/local
-INCLUDE_PATH=include
-LIBRARY_PATH=lib
-BINARY_PATH=bin
-INSTALL_INCLUDE_PATH= $(PREFIX)/$(INCLUDE_PATH)
-INSTALL_LIBRARY_PATH= $(PREFIX)/$(LIBRARY_PATH)
-INSTALL_BINARY_PATH=  $(PREFIX)/$(BINARY_PATH)
 
 # Platform-specific overrides
 uname_S := $(shell sh -c 'uname -s 2>/dev/null || echo not')
@@ -74,18 +58,9 @@ endif
 all: $(DYLIBNAME) 
 ########################################################################################
 # Deps (use make dep to generate this)
-cJSON.o: cJSON.c ../include/cJSON.h
-syscfg.o: syscfg.c ../include/vos.h ../include/cJSON.h \
- ../include/syscfg.h
-tiny_cli.o: tiny_cli.c ../include/vos.h ../include/tiny_cli.h
-vos.o: vos.c ../include/vos.h
-xlog.o: xlog.c ../include/vos.h ../include/xlog.h
-xmodule.o: xmodule.c ../include/xmodule.h ../include/vos.h \
- ../include/xlog.h ../include/tiny_cli.h ../include/cJSON.h \
- ../include/syscfg.h ../include/xmsg.h
-xmsg.o: xmsg.c ../include/xmodule.h ../include/vos.h ../include/xlog.h \
- ../include/tiny_cli.h ../include/cJSON.h ../include/syscfg.h \
- ../include/xmsg.h ../include/xmsg.h
+libx1.o: libx1.c ../include/pub1.h libx1.h
+
+
 
 
 
@@ -97,9 +72,11 @@ $(DYLIBNAME): $(OBJ)
 	# resolving
 	cp -f $(DYLIBNAME) $(DYLIB_MAJOR_NAME)
 	cp -f $(DYLIBNAME) $(DYLIB_MINOR_NAME)
+	cp -f $(DYLIBNAME) $(LIB_OUTDIR)
 
 $(STLIBNAME): $(OBJ)
 	$(STLIB_MAKE_CMD) $(OBJ)
+	cp -f $(STLIBNAME) $(LIB_OUTDIR)
 
 dynamic: $(DYLIBNAME)
 static: $(STLIBNAME)
@@ -108,31 +85,10 @@ static: $(STLIBNAME)
 	$(CC) -std=gnu99 -pedantic -c $(REAL_CFLAGS) $<
 
 clean:
-	rm -rf $(DYLIBNAME) $(STLIBNAME) *.o *.gcda *.gcno *.gcov $(DYLIB_MINOR_NAME) $(DYLIB_MAJOR_NAME)
+	rm -rf $(DYLIBNAME) $(STLIBNAME) *.o $(DYLIB_MINOR_NAME) $(DYLIB_MAJOR_NAME)
 
 dep:
 	$(CC) -MM -I../include *.c
-
-# Installation target
-
-ifeq ($(uname_S),SunOS)
-  INSTALL?= cp -r
-endif
-
-ifeq ($(uname_S),AIX)
-  INSTALL?= cp -r
-endif
-
-
-INSTALL?= cp -a
-
-install: $(DYLIBNAME) $(STLIBNAME)
-	mkdir -p $(INSTALL_INCLUDE_PATH) $(INSTALL_LIBRARY_PATH) $(INSTALL_BINARY_PATH)
-	$(INSTALL) ../include/*.h $(INSTALL_INCLUDE_PATH)
-	$(INSTALL) $(DYLIBNAME) $(INSTALL_LIBRARY_PATH)/$(DYLIB_MINOR_NAME)
-	cd $(INSTALL_LIBRARY_PATH) && ln -sf $(DYLIB_MINOR_NAME) $(DYLIB_MAJOR_NAME)
-	cd $(INSTALL_LIBRARY_PATH) && ln -sf $(DYLIB_MAJOR_NAME) $(DYLIBNAME)
-	$(INSTALL) $(STLIBNAME) $(INSTALL_LIBRARY_PATH)
 
 32bit:
 	@echo ""
@@ -140,20 +96,8 @@ install: $(DYLIBNAME) $(STLIBNAME)
 	@echo ""
 	$(MAKE) CFLAGS="-m32" LDFLAGS="-m32"
 
-gprof:
-	$(MAKE) CFLAGS="-pg" LDFLAGS="-pg"
-
-gcov:
-	$(MAKE) CFLAGS="-fprofile-arcs -ftest-coverage" LDFLAGS="-fprofile-arcs"
-
-coverage: gcov
-	make check
-	mkdir -p tmp/lcov
-	lcov -d . -c -o tmp/lcov/hiredis.info
-	genhtml --legend -o tmp/lcov/report tmp/lcov/hiredis.info
-
 noopt:
 	$(MAKE) OPTIMIZATION=""
 
-.PHONY: all clean dep install 32bit gprof gcov noopt
+.PHONY: all clean dep 32bit noopt 
 ########################################################################################
