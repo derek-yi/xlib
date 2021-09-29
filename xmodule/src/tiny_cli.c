@@ -477,10 +477,10 @@ int get_cpu_endian()
 
 int cli_do_sysinfo(int argc, char **argv)
 {
-	vos_print("char=%ld short=%ld int=%ld \n", sizeof(char), sizeof(short), sizeof(int));
-	vos_print("ulong=%ld ptr=%ld llong=%ld \n", sizeof(unsigned long), sizeof(char *), sizeof(long long));
-	vos_print("float=%ld double=%ld \n", sizeof(float), sizeof(double));
-	vos_print("CPU: %s endian \n", get_cpu_endian()?"big":"little");
+	vos_print("char=%ld short=%ld int=%ld \r\n", sizeof(char), sizeof(short), sizeof(int));
+	vos_print("ulong=%ld ptr=%ld llong=%ld \r\n", sizeof(unsigned long), sizeof(char *), sizeof(long long));
+	vos_print("float=%ld double=%ld \r\n", sizeof(float), sizeof(double));
+	vos_print("CPU: %s endian \r\n", get_cpu_endian()?"big":"little");
 
     return CMD_OK;
 }

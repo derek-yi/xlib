@@ -26,7 +26,7 @@ static char my_log_file[128];
 
 static uint32 my_log_level = XLOG_DEBUG;
 
-static uint32 my_print_level = XLOG_WARN;
+static uint32 my_print_level = XLOG_INFO;
 
 int xlog_print_file(char *filename)
 {
@@ -66,6 +66,35 @@ void fmt_time_str(char *time_str, int max_len)
     
     snprintf(time_str, max_len, "[%04d-%02d-%02d %02d:%02d:%02d]", 
             tp->tm_year+1900, tp->tm_mon+1, tp->tm_mday, tp->tm_hour, tp->tm_min, tp->tm_sec);
+}
+
+int xlog_set_level(uint32 log_level, uint32 print_level)
+{
+    my_log_level = log_level;
+    my_print_level = print_level;
+    return 0;
+}
+
+int cli_xlog_level(int argc, char **argv)
+{
+    if (argc < 2) {
+        vos_print("usage: %s get \r\n", argv[0]);
+        vos_print("       %s set <log_level> <print_level> \r\n", argv[0]);
+        return VOS_OK;
+    }
+
+	if (strncasecmp(argv[1], "set", strlen(argv[1])) == 0) {
+		if (argc < 4)  {
+	        vos_print("invalid param \r\n");
+	        return 0x2; //CMD_ERR_PARAM;
+    	}
+
+		xlog_set_level(atoi(argv[2]), atoi(argv[3]));
+	}
+	
+	vos_print("log_level %d, print_level %d\r\n", my_log_level, my_print_level);
+	vos_print("=> DEBUG(1) INFO(2) WARN(3) ERROR(4)\r\n");
+    return VOS_OK;
 }
 
 #ifdef INCLUDE_SYSLOG
@@ -164,13 +193,6 @@ int xlog_init(char *log_file)
         strcpy(my_log_file, "xlog.txt");
     }
     
-    return 0;
-}
-
-int xlog_set_level(uint32 log_level, uint32 print_level)
-{
-    my_log_level = log_level;
-    my_print_level = print_level;
     return 0;
 }
 

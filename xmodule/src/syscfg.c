@@ -28,22 +28,56 @@ int sys_conf_set(char *key_str, char *value)
 
     p = my_syscfg;
     while (p != NULL) {
-        if( !strcmp(key_str, p->key) ) {
+        if( !strcmp(key_str, p->key) ) { 
+			// update 
+			if (p->value) free(p->value);
             p->value = strdup(value);
             return 0;
         }
         p = p->next;
     }
 
+	//new
     p = (SYS_CFG_S *)malloc(sizeof(SYS_CFG_S));
     if (p == NULL) {
         return -1;
     }
-    
+
     p->key = strdup(key_str);
     p->value = strdup(value);
     p->next = my_syscfg;
     my_syscfg = p;
+        
+    return 0;
+}
+
+int sys_conf_delete(char *key_str)
+{
+    SYS_CFG_S *p;
+	SYS_CFG_S *prev;
+
+    if (key_str == NULL) {
+        return -1;
+    }
+
+    p = my_syscfg;
+	prev = NULL;
+    while (p != NULL) {
+        if( !strcmp(key_str, p->key) ) {
+            if (prev) {
+				prev->next = p->next;	
+            } else {
+				my_syscfg = p->next;
+            }
+
+			if (p->key) free(p->key);
+			if (p->value) free(p->value);
+			free(p);
+            return 0;
+        }
+		prev = p;
+        p = p->next;
+    }
         
     return 0;
 }
@@ -82,6 +116,21 @@ int sys_conf_geti(char *key_str)
     return 0;
 }
 
+int sys_conf_show(void)
+{
+    SYS_CFG_S *p;
+
+    p = my_syscfg;
+    while (p != NULL) {
+        if ( p->key && p->value ) {
+            vos_print("%-24s %s \r\n", p->key, p->value);
+        }
+        p = p->next;
+    }    
+
+    return VOS_OK;
+}
+
 int parse_json_cfg(char *json_file)
 {
     char *json = NULL;
@@ -105,27 +154,16 @@ int parse_json_cfg(char *json_file)
 	list_cnt = cJSON_GetArraySize(root_tree);
 	for (int i = 0; i < list_cnt; ++i) {
 		cJSON* tmp_node = cJSON_GetArrayItem(root_tree, i);
-        SYS_CFG_S *sys_cfg;
         char num_str[64];
 
-        sys_cfg = (SYS_CFG_S *)malloc(sizeof(SYS_CFG_S));
-        if (sys_cfg == NULL) {
-            printf("malloc failed\r\n");
-            goto EXIT_PROC;
-        }
-        
-        sys_cfg->key = strdup(tmp_node->string);
         if (tmp_node->valuestring) {
-            sys_cfg->value = strdup(tmp_node->valuestring);
+			sys_conf_set(tmp_node->string, tmp_node->valuestring);
         } else {
             sprintf(num_str, "%d", tmp_node->valueint);
-            sys_cfg->value = strdup(num_str);
+            sys_conf_set(tmp_node->string, num_str);
         }
-        sys_cfg->next = my_syscfg;
-        my_syscfg = sys_cfg;
 	}
 
-EXIT_PROC:
     if (root_tree != NULL) {
         cJSON_Delete(root_tree);
     }
@@ -165,25 +203,19 @@ int store_json_cfg(char *file_name)
     return ret;
 }
 
-int sys_conf_show(void)
-{
-    SYS_CFG_S *p;
-
-    p = my_syscfg;
-    while (p != NULL) {
-        if ( p->key && p->value ) {
-            vos_print("--> %s: %s \r\n", p->key, p->value);
-        }
-        p = p->next;
-    }    
-
-    return VOS_OK;
-}
-
 #ifndef MAKE_XLIB
 
 int main()
 {
+	sys_conf_set("aa", "100");
+	sys_conf_set("bb", "200");
+	sys_conf_set("cc", "300");
+	sys_conf_show();
+	
+	sys_conf_set("aa", "101");
+	sys_conf_delete("bb");	
+	sys_conf_show();
+
     return VOS_OK;
 }
 

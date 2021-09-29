@@ -27,6 +27,7 @@ int cli_sys_cfg_proc(int argc, char **argv)
         vos_print("usage: \r\n");
         vos_print("  cfg show               -- list cfg \r\n");
         vos_print("  cfg set <key> <value>  -- add cfg \r\n");
+        vos_print("  cfg del <key> <value>  -- delete cfg \r\n");
         vos_print("  cfg save               -- save cfg \r\n");
         vos_print("  cfg clear              -- clear saved file \r\n");
         return VOS_OK;
@@ -47,6 +48,15 @@ int cli_sys_cfg_proc(int argc, char **argv)
         return VOS_OK;
     }
 
+    if (!strncasecmp(argv[1], "delete", cp_len)) {
+        if (argc < 3) {
+            vos_print("invalid param \r\n");
+            return CMD_ERR_PARAM;
+        }
+        sys_conf_delete(argv[2]);
+        return VOS_OK;
+    }
+
     if (!strncasecmp(argv[1], "save", cp_len)) {
         store_json_cfg(xmodule_conf.cfg_file);
         return VOS_OK;
@@ -62,9 +72,12 @@ int cli_sys_cfg_proc(int argc, char **argv)
 
 #endif
 
+int cli_xlog_level(int argc, char **argv);
+
 void xmodule_cmd_init(void)
 {
     cli_cmd_reg("cfg",      "sys cfg operation",            &cli_sys_cfg_proc);
+    cli_cmd_reg("xlog",     "xlog level config",            &cli_xlog_level);
 }
 
 //https://tenfy.cn/2017/09/16/only-one-instance/
@@ -95,12 +108,6 @@ int xmodule_init(char *app_name, char *json_file)
 {
     char *cfg_name;
 
-#if 0
-    if (single_instance_check("./xm_applock") != VOS_OK) {
-        return VOS_ERR;
-    }
-#endif
-
 	if (json_file != NULL) {
 		xmodule_conf.cfg_file = strdup(json_file);
 	    if (access(json_file, F_OK) == 0) {
@@ -117,13 +124,17 @@ int xmodule_init(char *app_name, char *json_file)
     } else {
     	xmodule_conf.app_name = strdup(app_name);
     }
+	
     xmodule_conf.app_role = sys_conf_geti("app_role");
 
     xlog_init(sys_conf_get("log_file"));
+	xlog_info("log file: %s", sys_conf_get("log_file"));
+	xlog_info("top cfg: %s", xmodule_conf.cfg_file);
+	
     devm_msg_init(xmodule_conf.app_name, xmodule_conf.app_role);
+	
 	cli_cmd_init();
     xmodule_cmd_init();
-	
     if (sys_conf_geti("telnet_enable")) {
         telnet_task_init();
     }
