@@ -27,7 +27,7 @@ int cli_sys_cfg_proc(int argc, char **argv)
         vos_print("usage: \r\n");
         vos_print("  cfg show               -- list cfg \r\n");
         vos_print("  cfg set <key> <value>  -- add cfg \r\n");
-        vos_print("  cfg del <key> <value>  -- delete cfg \r\n");
+        vos_print("  cfg del <key>          -- delete cfg \r\n");
         vos_print("  cfg save               -- save cfg \r\n");
         vos_print("  cfg clear              -- clear saved file \r\n");
         return VOS_OK;

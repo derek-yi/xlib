@@ -4,31 +4,30 @@
 
 #define DEF_LISTEN_PORT             7100
 
-#define MSG_TYPE_HELLO              0x01
-#define MSG_TYPE_ECHO               0x02
-#define MSG_TYPE_RCMD               0x03
-#define MSG_TYPE_RPC_ACK            0x04
-#define MSG_TYPE_RPC_CALL           0x05
-#define MSG_TYPE_USER_START         0x20
-#define MSG_TYPE_MAX                0x80
+#define XMSG_T_HELLO              	0x01
+#define XMSG_T_ECHO_REQ             0x02
+#define XMSG_T_ECHO_ACK             0x03
+#define XMSG_T_RCMD               	0x04
+
+#define XMSG_T_USER_START         	0x20
+#define XMSG_T_MAX                	0x80
 
 #define APP_NAME_LEN                32
-#define MSG_HEAD_LEN                128
+#define MSG_HEAD_LEN                96	//sizeof(DEVM_MSG_S)
 #define MSG_MAX_PAYLOAD             512
 #define MSG_MAGIC_NUM               0x01015AA5
 
 typedef struct {
+    int  magic_num;
     int  src_ip;
     char src_app[APP_NAME_LEN];
     char dst_app[APP_NAME_LEN];
-    int  magic_num;
-    char resv[28]; //keep MSG_HEAD_LEN 128
 
 	//below for user&app
     int  msg_type;
-    int  param[4];
+    int  resv[4];
     int  payload_len;
-    char msg_payload[MSG_MAX_PAYLOAD];
+    char msg_payload[0];
 }DEVM_MSG_S;
 
 typedef int (*msg_func)(DEVM_MSG_S *rx_msg);
