@@ -104,18 +104,17 @@ int single_instance_check(char *file_path)
 
 
 
-int xmodule_init(char *app_name, char *json_file)
+int xmodule_init(char *app_name, char *log_file)
 {
     char *cfg_name;
+	char *json_file = "/home/config/top_cfg.json";
 
-	if (json_file != NULL) {
-		xmodule_conf.cfg_file = strdup(json_file);
-	    if (access(json_file, F_OK) == 0) {
-			if (parse_json_cfg(json_file) != VOS_OK) {
-				printf("invalid json cfg \r\n");
-				return VOS_ERR;
-			}
-	    }
+	xmodule_conf.cfg_file = strdup(json_file);
+	if (access(json_file, F_OK) == 0) {
+		if (parse_json_cfg(json_file) != VOS_OK) {
+			printf("invalid json cfg \r\n");
+			return VOS_ERR;
+		}
 	}
     
     cfg_name = sys_conf_get("app_name");
@@ -127,8 +126,8 @@ int xmodule_init(char *app_name, char *json_file)
 	
     xmodule_conf.app_role = sys_conf_geti("app_role");
 
-    xlog_init(sys_conf_get("log_file"));
-	xlog_info("log file: %s", sys_conf_get("log_file"));
+    xlog_init(log_file);
+	sys_conf_set("log_file", log_file);
 	xlog_info("top cfg: %s", xmodule_conf.cfg_file);
 	
     devm_msg_init(xmodule_conf.app_name, xmodule_conf.app_role);

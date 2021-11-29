@@ -148,7 +148,7 @@ void cli_show_match_cmd(char *cmd_buf, uint32 key_len)
     }
 }
 
-#ifndef DAEMON_RELEASE    
+#ifdef INCLUDE_SHELL_CMD    
 
 #define OUTPUT_TEMP_FILE   "/tmp/cmd.log" 
 
@@ -182,6 +182,7 @@ int cli_run_shell(char *cmd_buf)
     unlink(OUTPUT_TEMP_FILE);    
     return CMD_OK;
 }
+
 #endif
 
 int cli_cmd_exec(char *buff)
@@ -230,11 +231,10 @@ int cli_cmd_exec(char *buff)
 
     if (pNode == NULL)
     {
-    #ifndef DAEMON_RELEASE
-        cli_run_shell(buff);
-    #else
-        vos_print("unknown cmd: %s \r\n", buff);
-    #endif
+    	if ( sys_conf_geti("shell_enable") )
+        	cli_run_shell(buff);
+    	else
+	        vos_print("unknown cmd: %s \r\n", buff);
         return CMD_OK; 
     }
 
@@ -286,7 +286,7 @@ int cli_cmd_reg(const char *cmd, const char *help, CMD_FUNC func)
     new_node->help_str = (char *)strdup(help);
     new_node->pNext = NULL;
 
-    printf("cli_cmd_reg: %s(%s) \r\n", new_node->cmd_str, new_node->help_str);
+    //printf("cli_cmd_reg: %s(%s) \r\n", new_node->cmd_str, new_node->help_str);
     q = NULL;
     p = gst_cmd_list;
     while (p != NULL) {
@@ -324,6 +324,9 @@ int cli_do_spec_char(char c)
             vos_print("\b");
             return TRUE;
         }
+    } else if (c == 0xFF) {
+    	sleep(1);
+		return TRUE;
     }
     
     return FALSE;   //not special char
@@ -360,7 +363,7 @@ void* cli_main_task(void *param)
             continue;
         }
         
-        ch = getchar();   
+        ch = getchar();
         if ( (ch == '\r') || (ch == '\n') ) {
             ret = cli_cmd_exec(cli_cmd_buff);
             if(ret != CMD_OK){
@@ -381,6 +384,7 @@ void* cli_main_task(void *param)
     }
 
 	cli_console_active = 0;
+	exit(0);
     return NULL;
 }
 
@@ -412,6 +416,17 @@ int cli_do_exit(int argc, char **argv)
     return CMD_ERR_EXIT;
 }
 
+int get_cpu_endian() 
+{
+	union {
+		int number;
+		char s;
+	} test;
+
+    test.number = 0x01000002;
+    return (test.s == 0x01);
+}
+
 int cli_do_param_test(int argc, char **argv)
 {
     vos_print("param format: \r\n");
@@ -419,6 +434,11 @@ int cli_do_param_test(int argc, char **argv)
     {
         vos_print("%d: %s\r\n", i, argv[i]);
     }
+
+	vos_print("char=%ld short=%ld int=%ld \r\n", sizeof(char), sizeof(short), sizeof(int));
+	vos_print("ulong=%ld ptr=%ld llong=%ld \r\n", sizeof(unsigned long), sizeof(char *), sizeof(long long));
+	vos_print("float=%ld double=%ld \r\n", sizeof(float), sizeof(double));
+	vos_print("CPU: %s endian \r\n", get_cpu_endian()?"big":"little");
     
     return CMD_OK;
 }
@@ -430,7 +450,7 @@ int cli_do_passwd_verify(int argc, char **argv)
         return CMD_OK;
     }
 
-    if (memcmp("passwd", argv[1], 7) != 0) {  //todo
+    if (memcmp("simpie", argv[1], 6) != 0) {  //todo
         vos_print("invalid password \r\n");
         return CMD_OK;
     }
@@ -464,34 +484,12 @@ int cli_do_help(int argc, char **argv)
     return CMD_OK;
 }
 
-int get_cpu_endian() 
-{
-	union {
-		int number;
-		char s;
-	} test;
-
-    test.number = 0x01000002;
-    return (test.s == 0x01);
-}
-
-int cli_do_sysinfo(int argc, char **argv)
-{
-	vos_print("char=%ld short=%ld int=%ld \r\n", sizeof(char), sizeof(short), sizeof(int));
-	vos_print("ulong=%ld ptr=%ld llong=%ld \r\n", sizeof(unsigned long), sizeof(char *), sizeof(long long));
-	vos_print("float=%ld double=%ld \r\n", sizeof(float), sizeof(double));
-	vos_print("CPU: %s endian \r\n", get_cpu_endian()?"big":"little");
-
-    return CMD_OK;
-}
-
 void cli_cmd_init(void)
 {
     cli_cmd_reg("quit",         "exit app",             &cli_do_exit);
     cli_cmd_reg("help",         "cmd help",             &cli_do_help);
     //cli_cmd_reg("version",      "show version",         &cli_do_show_version);
     cli_cmd_reg("cmdtest",      "cmd param test",       &cli_do_param_test);
-	cli_cmd_reg("sysinfo",      "show sysinfo",          &cli_do_sysinfo);
 	
 #ifdef CLI_PWD_CHECK    
     cli_cmd_reg("passwd",       "password verify",      &cli_do_passwd_verify);

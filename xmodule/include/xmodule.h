@@ -38,10 +38,10 @@
 int xmodule_init(char *app_name, char *json_file);
 
 char* sys_conf_get(char *key_str);
+int sys_conf_set(char *key_str, char *value);
 
 int sys_conf_geti(char *key_str);
-
-int sys_conf_set(char *key_str, char *value);
+int sys_conf_seti(char *key_str, int value);
 
 char *get_app_name(void);
 

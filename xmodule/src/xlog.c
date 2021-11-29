@@ -20,13 +20,11 @@
 #endif
 
 
-#define XLOG_BUFF_MAX           1024
-
 static char my_log_file[128];
 
-static uint32 my_log_level = XLOG_DEBUG;
+static uint32 my_log_level = XLOG_INFO;
 
-static uint32 my_print_level = XLOG_INFO;
+static uint32 my_print_level = XLOG_ERROR;
 
 int xlog_print_file(char *filename)
 {
@@ -64,8 +62,8 @@ void fmt_time_str(char *time_str, int max_len)
      
     if (!time_str) return ;
     
-    snprintf(time_str, max_len, "[%04d-%02d-%02d %02d:%02d:%02d]", 
-            tp->tm_year+1900, tp->tm_mon+1, tp->tm_mday, tp->tm_hour, tp->tm_min, tp->tm_sec);
+    snprintf(time_str, max_len, "%02d-%02d_%02d-%02d-%02d", 
+            tp->tm_mon+1, tp->tm_mday, tp->tm_hour, tp->tm_min, tp->tm_sec);
 }
 
 int xlog_set_level(uint32 log_level, uint32 print_level)
@@ -199,17 +197,19 @@ int xlog_init(char *log_file)
 int _xlog(const char *func, int line, int level, const char *format, ...)
 {
     va_list args;
+	char time_str[32];
     char buff[XLOG_BUFF_MAX];
 	int ptr = 0;
 
-	ptr = sprintf(buff, "<%s,%d> ", func, line);
+	fmt_time_str(time_str, sizeof(time_str));
+	ptr = sprintf(buff, "[%s]<%s,%d> ", time_str, func, line);
     va_start(args, format);
     vsnprintf(buff + ptr, XLOG_BUFF_MAX - ptr, format, args);
     va_end(args);
 	strcat(buff, "\r\n");
 	
     if ( level >= my_print_level ){
-        printf("%s", buff);
+        vos_print("%s", buff);
     } 
 
     if ( level >= my_log_level ){

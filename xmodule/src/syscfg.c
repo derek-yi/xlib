@@ -99,21 +99,22 @@ char* sys_conf_get(char *key_str)
     return NULL;
 }
 
+int sys_conf_seti(char *key_str, int value)
+{
+	char value_str[64];
+
+	sprintf(value_str, "0x%x", value);
+	return sys_conf_set(key_str, value_str);
+}
+
 int sys_conf_geti(char *key_str)
 {
-    SYS_CFG_S *p;
+    char *value_str;
 
-    if (key_str == NULL) return 0;
+	value_str = sys_conf_get(key_str);
+    if (value_str == NULL) return 0;
 
-    p = my_syscfg;
-    while (p != NULL) {
-        if( !strcmp(key_str, p->key) ) {
-            return strtol(p->value, NULL, 0);
-        }
-        p = p->next;
-    }
-
-    return 0;
+    return strtol(value_str, NULL, 0);
 }
 
 int sys_conf_show(void)

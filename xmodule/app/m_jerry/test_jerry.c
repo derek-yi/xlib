@@ -7,8 +7,8 @@
 
 #include "xmodule.h"
 
-#define MSG_TYPE_TIMER_MSG      (MSG_TYPE_USER_START + 1)
-#define MSG_TYPE_USER_CFG       (MSG_TYPE_USER_START + 2)
+#define MSG_TYPE_TIMER_MSG      (XMSG_T_USER_START + 1)
+#define MSG_TYPE_USER_CFG       (XMSG_T_USER_START + 2)
 
 int timer_msg_proc(DEVM_MSG_S *rx_msg)
 {
@@ -96,7 +96,7 @@ int main(int argc, char **argv)
         return VOS_ERR;  
     } 
 
-    ret = vos_create_timer(&timer_id, 1, demo_timer_callback, NULL);
+    ret = vos_create_timer(&timer_id, 1000, 1, demo_timer_callback, NULL);
     if (ret != 0)  {  
         xlog(XLOG_ERROR, "vos_create_timer failed");
         return -1;  

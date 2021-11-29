@@ -25,7 +25,8 @@ typedef struct {
 
 	//below for user&app
     int  msg_type;
-    int  resv[4];
+	int  serial_num;
+    int  resv[3];
     int  payload_len;
     char msg_payload[0];
 }DEVM_MSG_S;
@@ -43,6 +44,10 @@ int app_send_msg(int dst_ip, char *dst_app, int msg_type, char *usr_data, int da
 int app_rpc_call(int dst_ip, char *dst_app, char *user_tx, int tx_len, char *user_rx, int rx_len);
 
 int rpc_set_callback(rpc_func func);
+
+int devm_msg_forward(DEVM_MSG_S *tx_msg);
+
+int get_local_ip(char *if_name);
 
 #endif
 

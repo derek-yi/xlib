@@ -6,6 +6,9 @@
 //#define INCLUDE_ZLOG
 //#define INCLUDE_SYSLOG
 
+#define XLOG_BUFF_MAX           1024
+
+
 #ifdef INCLUDE_ZLOG
 
 #include <zlog.h>

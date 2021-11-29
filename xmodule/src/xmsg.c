@@ -29,8 +29,6 @@ int msg_qid = -1;
 
 #if 1
 
-int devm_msg_forward(DEVM_MSG_S *tx_msg);
-
 int get_local_ip(char *if_name)
 {
     int inet_sock;  
@@ -47,7 +45,7 @@ int get_local_ip(char *if_name)
 
 int devm_delete_sock(int index)
 {
-	xlog(XLOG_ERROR, "delete sockid %d", index);
+	xlog(XLOG_INFO, "delete sockid %d", index);
 	if (index >= MAX_CONNECT_NUM) {
 		return VOS_ERR;
 	}
@@ -89,8 +87,8 @@ int devm_update_sock(int sockid, char *app_name, int ip_addr)
 		}
 	} else if (match == 2) {
 		//todo
-	} else { //new connect
-		//xlog(XLOG_INFO, "new sock %d, app_name %s", sockid, app_name);
+	} else {
+		xlog(XLOG_INFO, "new sock %d, app_name %s", sockid, app_name);
 		sock_list[j].sock_id = sockid;
 		snprintf(sock_list[j].app_name, APP_NAME_LEN, "%s", app_name);
 		sock_list[j].ip_addr = ip_addr;
@@ -122,7 +120,7 @@ void* msg_rx_task(void *param)
             continue;
         }
 
-        xlog(XLOG_DEBUG, "new msg %d to %s", rx_msg->msg_type, rx_msg->dst_app);
+        //xlog(XLOG_DEBUG, "new msg %d to %s", rx_msg->msg_type, rx_msg->dst_app);
         if ( strcmp(rx_msg->dst_app, get_app_name()) ) {
             if (local_is_master) { 
                 ret = devm_msg_forward(rx_msg);
@@ -162,7 +160,7 @@ void* socket_rx_task(void *param)
             continue;
         }
 
-        xlog(XLOG_DEBUG, "new msg %d", raw_msg->msg_type);
+        //xlog(XLOG_DEBUG, "new msg %d", raw_msg->msg_type);
         if (raw_msg->magic_num != MSG_MAGIC_NUM) {
             xlog(XLOG_ERROR, "wrong magic 0x%x", raw_msg->magic_num);
             continue;
@@ -296,9 +294,6 @@ int devm_connect_uds(char *app_name, int *sockid)
         if (sock_list[i].used == FALSE) {
             if (j < 0) j = i;
         }
-        else if (sock_list[i].app_name == NULL) {
-            continue;
-        }
         else if (!strcmp(app_name, sock_list[i].app_name)) {
 			*sockid = sock_list[i].sock_id;;
             return i;
@@ -309,6 +304,11 @@ int devm_connect_uds(char *app_name, int *sockid)
         xlog(XLOG_ERROR, "full");
         return VOS_ERR;
     }
+
+	if (local_is_master) {
+        xlog(XLOG_DEBUG, "no connect to %s", app_name);
+        return VOS_ERR;
+	}
     
     int socket_id = socket(AF_UNIX, SOCK_STREAM, 0);
     if (socket_id < 0) {
@@ -412,7 +412,7 @@ int devm_msg_send_local(char *dst_app, DEVM_MSG_S *tx_msg)
 {
 	int tx_socket, index;
 
-    xlog(XLOG_DEBUG, "send to %s", dst_app);
+    //xlog(XLOG_DEBUG, "send to %s", dst_app);
     if (tx_msg == NULL) {
         return VOS_ERR;
     }
@@ -420,7 +420,7 @@ int devm_msg_send_local(char *dst_app, DEVM_MSG_S *tx_msg)
     pthread_mutex_lock(&tx_mutex);
     index = devm_connect_uds(dst_app, &tx_socket);
     if (index < 0) {
-        xlog(XLOG_ERROR, "devm_connect_uds failed");
+        xlog(XLOG_DEBUG, "devm_connect_uds failed");
         pthread_mutex_unlock(&tx_mutex);
         return VOS_ERR;
     }
@@ -490,7 +490,7 @@ int app_send_msg(int dst_ip, char *dst_app, int msg_type, char *usr_data, int da
         return VOS_ERR;
     }
 
-    xlog(XLOG_DEBUG, "app send to 0x%x %s", dst_ip, dst_app);
+    //xlog(XLOG_DEBUG, "app send to 0x%x %s", dst_ip, dst_app);
     memset(msg_buff, 0, sizeof(msg_buff));
     tx_msg->msg_type = msg_type;
 	
@@ -616,8 +616,8 @@ int cli_show_client_list(int argc, char **argv)
         if (sock_list[i].used == FALSE) {
             continue;
         }
-        vos_print("--> ip=0x%08x app=%s rx_cnt=%d tx_cnt=%d\r\n", 
-        		sock_list[i].ip_addr, sock_list[i].app_name, sock_list[i].rx_cnt, sock_list[i].tx_cnt);
+        vos_print("%04d: ip=0x%08x app=%s rx_cnt=%d tx_cnt=%d\r\n", 
+        		sock_list[i].sock_id, sock_list[i].ip_addr, sock_list[i].app_name, sock_list[i].rx_cnt, sock_list[i].tx_cnt);
     }
 
     return VOS_OK;
@@ -668,8 +668,8 @@ int devm_msg_init(char *app_name, int master)
     msg_func_list[XMSG_T_RCMD]        = rcmd_msg_proc;
 
     cli_cmd_reg("echo",     "send local echo",          &cli_send_local_echo);
-    cli_cmd_reg("tx",       "send remote echo",         &cli_send_remote_echo);
-    cli_cmd_reg("rcmd",     "remote cmd",               &cli_send_remote_cmd);
+    //cli_cmd_reg("tx",       "send remote echo",         &cli_send_remote_echo);
+    //cli_cmd_reg("rcmd",     "remote cmd",               &cli_send_remote_cmd);
     cli_cmd_reg("list",     "list client",              &cli_show_client_list);
 
     return VOS_OK;

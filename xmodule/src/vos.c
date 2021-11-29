@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <stdint.h>
 #include <pthread.h>
 #include <sys/stat.h>
 #include <unistd.h>
@@ -137,7 +138,7 @@ int cfgfile_write_str(char *file_name, char *key_str, char *val_str)
 
 #if 1
 
-int pipe_read(char *cmd_str, char *buff, int buf_len)
+int sys_read_pipe(char *cmd_str, char *buff, int buf_len)
 {
 	FILE *fp;
 
@@ -251,10 +252,11 @@ union sigval {
 */
 typedef void (* lib_callback)(union sigval);
 
-int vos_create_timer(timer_t *ret_tid, int interval, timer_cb callback, void *param)
+int vos_create_timer(timer_t *ret_tid, int interval, int repeat, timer_cb callback, void *param)
 {
 	timer_t timerid;
 	struct sigevent evp;
+	struct itimerspec it;
 
 	memset(&evp, 0, sizeof(struct sigevent));
 	evp.sigev_value.sival_ptr = param; 
@@ -266,11 +268,15 @@ int vos_create_timer(timer_t *ret_tid, int interval, timer_cb callback, void *pa
 	}
 	
 	//第一次间隔it.it_value这么长,以后每次都是it.it_interval这么长
-	struct itimerspec it;
-	it.it_interval.tv_sec = interval;
-	it.it_interval.tv_nsec = 0;
-	it.it_value.tv_sec = interval;
-	it.it_value.tv_nsec = 0;
+	it.it_value.tv_sec = interval/1000;
+	it.it_value.tv_nsec = (interval%1000)*1000*1000;
+	if ( repeat ) {
+		it.it_interval.tv_sec  = it.it_value.tv_sec;
+		it.it_interval.tv_nsec = it.it_value.tv_nsec;
+	} else {
+		it.it_interval.tv_sec  = 0;
+		it.it_interval.tv_nsec = 0;
+	}
 	if (timer_settime(timerid, 0, &it, NULL) == -1) {
         x_perror("timer_settime");
         timer_delete(timerid);
@@ -282,6 +288,11 @@ int vos_create_timer(timer_t *ret_tid, int interval, timer_cb callback, void *pa
     }
 
     return 0;
+}
+
+int vos_delete_timer(timer_t timerid)
+{
+	return timer_delete(timerid);
 }
 
 void vos_msleep(uint32 milliseconds) 
@@ -345,6 +356,105 @@ int vos_sem_wait(void *sem_id, uint32 msecs)
 	ts.tv_nsec = msecs%(1000*1000*1000);
  
 	return sem_timedwait(sem, &ts);
+}
+
+#endif
+
+#if 1
+short mk_num16(char high, char low) 
+{
+	short temp = high;
+	temp = (temp << 8) + low;
+	return temp;
+}
+
+int mk_num32(char b0, char b1, char b2, char b3) 
+{
+	int temp = b0;
+	temp = (temp << 8) + b1;
+	temp = (temp << 8) + b2;
+	temp = (temp << 8) + b3;
+	return temp;
+}
+
+int mk_boundary(int frame, int slot, int symbol)
+{
+   return (symbol << 20) + ((slot&0xFF) << 12) + (frame & 0xFFF);
+}
+
+int list_max_index2(uint64_t *list, int size)
+{
+	uint64_t max_value = 0;
+	uint32 i, max_index = 0;
+
+	for (i = 0; i < size; i++) {
+		if (list[i] > max_value) {
+			max_index = i;
+			max_value = list[i];
+		}
+	}
+
+	return max_index;
+}
+
+int xlog_save_list(char *file_name, int *list, int cnt)
+{
+	int i, len;
+	char buf[128];
+	int fd;
+
+	fd = open(file_name, O_RDWR|O_CREAT|O_TRUNC, 0666);
+	if (fd < 0) {
+		return -1;
+	}
+
+	for (i = 0; i < cnt; i++) {
+		len = sprintf(buf, "%d\n", list[i]);
+		write(fd, buf, len);
+	}
+
+	close(fd);
+	return 0;
+}
+
+int xlog_save_ulist(char *file_name, uint32 *list, int cnt)
+{
+	int i, len;
+	char buf[128];
+	int fd;
+
+	fd = open(file_name, O_RDWR|O_CREAT|O_TRUNC, 0666);
+	if (fd < 0) {
+		return -1;
+	}
+
+	for (i = 0; i < cnt; i++) {
+		len = sprintf(buf, "%u\n", list[i]);
+		write(fd, buf, len);
+	}
+
+	close(fd);
+	return 0;
+}
+
+int xlog_save_list2(char *file_name, uint64_t *list, int cnt)
+{
+	int i, len;
+	char buf[128];
+	int fd;
+
+	fd = open(file_name, O_RDWR|O_CREAT|O_TRUNC, 0666);
+	if (fd < 0) {
+		return -1;
+	}
+
+	for (i = 0; i < cnt; i++) {
+		len = sprintf(buf, "%lu\n", (uint64_t)list[i]);
+		write(fd, buf, len);
+	}
+
+	close(fd);
+	return 0;
 }
 
 #endif

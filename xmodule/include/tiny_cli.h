@@ -4,6 +4,7 @@
 #define INCLUDE_CONSOLE
 #define INCLUDE_TELNETD
 #define CHECK_AMBIGUOUS
+#define INCLUDE_SHELL_CMD
 //#define CLI_PWD_CHECK 
 
 #define CMD_OK                  0x00
@@ -37,7 +38,7 @@ int cli_cmd_reg(const char *cmd, const char *help, CMD_FUNC func);
 
 int vos_print(const char * format,...);
 
-
+int sys_conf_geti(char *key_str);
 
 #endif
 
