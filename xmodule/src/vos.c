@@ -1,4 +1,3 @@
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -34,32 +33,36 @@ int cfgfile_read_str(char *file_name, char *key_str, char *val_buf, int buf_len)
 	FILE *fp;
 	char *ptr;
 	char line_str[LINE_BUF_SZ];
-	int cp_len;
 
     if (file_name == NULL) return -1;
     if (key_str == NULL || val_buf == NULL) return -1;
     
 	fp = fopen(file_name, "r");
     if (fp == NULL) {
-		//x_perror("fopen");
+		x_perror("fopen");
         return -2;
     }
     
     while (fgets(line_str, LINE_BUF_SZ, fp) != NULL) { 
-		line_str[strlen(line_str)] = 0; //delete '\n'
+		ptr = &line_str[strlen(line_str) - 1];
+		while ( *ptr == '\r' || *ptr == '\n' ) { //delete \r\n at tail
+			*ptr = 0;
+			ptr--; 
+		}
+
+		ptr = &line_str[0];
+		while ( *ptr == ' ' || *ptr == '\t' ) ptr++; //delete space/tab at head
+		if (*ptr == '#') continue; //skip comment line
 		
-		if (memcmp(line_str, key_str, strlen(key_str)) == 0) { //key_str must at line head
-			ptr = line_str + strlen(key_str);
+		if (memcmp(ptr, key_str, strlen(key_str)) == 0) {
+			ptr = ptr + strlen(key_str);
 			while ( ptr != NULL) {
-				if (*ptr == '=' || *ptr == ' ') ptr++;
+				if (*ptr == '=' || *ptr == ' ' || *ptr == '\t') ptr++;
 				else break;
 			}
 			
-			if (ptr != NULL) {
-				cp_len = strlen(ptr);
-				if (cp_len > buf_len - 1) cp_len = buf_len - 1;
-				memcpy(val_buf, ptr, cp_len);
-				val_buf[cp_len] = 0;
+			if (*ptr != 0) {
+				snprintf(val_buf, buf_len, "%s", ptr);
 				fclose(fp);
 				return 0;
 			}
@@ -75,12 +78,12 @@ int cfgfile_write_str(char *file_name, char *key_str, char *val_str)
 	FILE *fp;
 	struct stat fs;
 	char line_str[LINE_BUF_SZ];
+	char *ptr;
 	char *file_buff;
 	int find_node = 0;
 	int buf_ptr = 0;
 
-	if (file_name == NULL) return -1;
-	if (key_str == NULL || val_str == NULL) return -1;
+	if (file_name == NULL || key_str == NULL) return -1;
 
 	if (stat(file_name, &fs) == -1) {
        fs.st_size = 0;
@@ -88,7 +91,7 @@ int cfgfile_write_str(char *file_name, char *key_str, char *val_str)
 
 	file_buff = (char *)malloc(fs.st_size + LINE_BUF_SZ);
 	if (file_buff == NULL) {
-		//x_perror("malloc");
+		x_perror("malloc");
 		return -2;
 	}
 	memset(file_buff, 0, fs.st_size + LINE_BUF_SZ);
@@ -96,10 +99,11 @@ int cfgfile_write_str(char *file_name, char *key_str, char *val_str)
 	fp = fopen(file_name, "r");
 	if (fp != NULL) {
 		while (fgets(line_str, LINE_BUF_SZ, fp) != NULL) { 
-			//printf("readline: %s \n", line_str);
-			if (line_str[0] == 0) break;
+			ptr = &line_str[0];
+			while ( *ptr == ' ' || *ptr == '\t' ) ptr++;
+			if (*ptr == 0) break;
 			
-			if (memcmp(line_str, key_str, strlen(key_str)) == 0) { //key_str must at line head
+			if (memcmp(ptr, key_str, strlen(key_str)) == 0) {
 				find_node = 1;
 				if (val_str == NULL) { //clear
 					//printf("clear %s\n", key_str);
@@ -116,7 +120,7 @@ int cfgfile_write_str(char *file_name, char *key_str, char *val_str)
 		fclose(fp);
 	}
 
-	if (find_node == 0) {
+	if ( (find_node == 0) && (val_str != NULL) ) {
 		//printf("add %s\n", key_str);
 		snprintf(line_str, LINE_BUF_SZ, "%s=%s\n", key_str, val_str);
 		memcpy(file_buff + buf_ptr, line_str, strlen(line_str));
@@ -125,13 +129,49 @@ int cfgfile_write_str(char *file_name, char *key_str, char *val_str)
 
 	fp = fopen(file_name, "w+");
 	if (fp == NULL) {
-		//x_perror("fopen");
+		x_perror("fopen");
 		return -2;
 	}
 	fwrite(file_buff, buf_ptr, 1, fp);
 	fclose(fp);
 	
 	return 0;
+}
+
+int cfgfile_unit_test(void)
+{
+	int ret;
+	char rd_buff[64];
+
+	cfgfile_write_str("./my_cfg.txt", "aa", "100");
+	cfgfile_write_str("./my_cfg.txt", "bb", "200");
+	cfgfile_write_str("./my_cfg.txt", "cc", "300");
+	cfgfile_write_str("./my_cfg.txt", "aa", "101");
+	cfgfile_write_str("./my_cfg.txt", "cc", NULL);
+	
+	ret = cfgfile_read_str("./my_cfg.txt", "aa", rd_buff, sizeof(rd_buff));
+	printf("cfgfile_read: %d [aa] = %s(%ld) \n", ret, rd_buff, strlen(rd_buff));
+	ret = cfgfile_read_str("./my_cfg.txt", "bb", rd_buff, sizeof(rd_buff));
+	printf("cfgfile_read: %d [bb] = %s(%ld) \n", ret, rd_buff, strlen(rd_buff));
+	ret = cfgfile_read_str("./my_cfg.txt", "cc", rd_buff, sizeof(rd_buff));
+	printf("cfgfile_read: %d [cc] = %s(%ld) \n", ret, rd_buff, strlen(rd_buff));
+
+/*
+cat >file1.txt<< EOF
+	aa = 100
+	bb=
+  cc	=x
+## cc=1
+EOF
+*/	
+	ret = cfgfile_read_str("./file1.txt", "aa", rd_buff, sizeof(rd_buff));
+	printf("cfgfile_read: %d [aa] = %s(%ld) \n", ret, rd_buff, strlen(rd_buff));
+	ret = cfgfile_read_str("./file1.txt", "bb", rd_buff, sizeof(rd_buff));
+	printf("cfgfile_read: %d [bb] = %s(%ld) \n", ret, rd_buff, strlen(rd_buff));
+	ret = cfgfile_read_str("./file1.txt", "cc", rd_buff, sizeof(rd_buff));
+	printf("cfgfile_read: %d [cc] = %s(%ld) \n", ret, rd_buff, strlen(rd_buff));
+
+    return VOS_OK;
 }
 
 #endif

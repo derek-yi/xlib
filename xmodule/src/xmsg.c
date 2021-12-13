@@ -1,7 +1,5 @@
-
 #include "xmodule.h"
 #include "xmsg.h"
-
 
 #define MAX_CONNECT_NUM 32
 
@@ -25,7 +23,6 @@ int local_ip_addr = 0;
 int local_is_master = 0;
 
 int msg_qid = -1;
-
 
 #if 1
 
@@ -260,7 +257,7 @@ void* inet_listen_task(void *param)
         return NULL;
     }
 
-    while(1){
+    while (1) {
         pthread_t unused_tid;
         long int temp_val; //suppress warning
         int new_fd;
@@ -501,6 +498,7 @@ int app_send_msg(int dst_ip, char *dst_app, int msg_type, char *usr_data, int da
 
     return devm_msg_send(dst_ip, dst_app, tx_msg);
 }
+
 #endif
 
 #if 1

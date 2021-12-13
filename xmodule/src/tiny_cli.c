@@ -185,6 +185,15 @@ int cli_run_shell(char *cmd_buf)
 
 #endif
 
+#ifndef MAKE_XLIB
+int sys_conf_geti(char *key_str)
+{
+	return 1;
+}
+#endif
+
+#if 1
+
 int cli_cmd_exec(char *buff)
 {
     uint32  cmd_key_len;
@@ -231,7 +240,7 @@ int cli_cmd_exec(char *buff)
 
     if (pNode == NULL)
     {
-    	if ( sys_conf_geti("shell_enable") )
+		if ( sys_conf_geti("shell_enable") )
         	cli_run_shell(buff);
     	else
 	        vos_print("unknown cmd: %s \r\n", buff);
@@ -312,7 +321,6 @@ int cli_cmd_reg(const char *cmd, const char *help, CMD_FUNC func)
 
     return CMD_OK;
 }
-
 
 int cli_do_spec_char(char c)
 {
@@ -407,6 +415,8 @@ int cli_task_run(void)
 		return 1;
 	return 0;
 }
+
+#endif
 
 #if 1
 

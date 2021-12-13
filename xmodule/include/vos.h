@@ -42,6 +42,7 @@ int mk_boundary(int frame, int slot, int symbol);
 int list_max_index2(uint64_t *list, int size);
 int xlog_save_list(char *file_name, int *list, int cnt);
 int xlog_save_list2(char *file_name, uint64_t *list, int cnt);
+
 uint32 devmem_read(uint32 mem_addr);
 uint32 devmem_write(uint32 mem_addr, uint32 writeval);
 

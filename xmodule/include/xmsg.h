@@ -1,4 +1,3 @@
-
 #ifndef _DEVM_MSG_H_
 #define _DEVM_MSG_H_
 
@@ -50,6 +49,4 @@ int devm_msg_forward(DEVM_MSG_S *tx_msg);
 int get_local_ip(char *if_name);
 
 #endif
-
-
 

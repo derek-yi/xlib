@@ -1,8 +1,16 @@
+## syscfg
+gcc -o syscfg.bin syscfg.c cJSON.c -I../include -lpthread
+
+## tiny_cli
+gcc -o tiny_cli.bin tiny_cli.c -I../include -lpthread
 
 ## xlog
-gcc -I../include -o xlog.bin xlog.c vos.c -lpthread -lrt
+gcc -o xlog.bin xlog.c vos.c -I../include -lpthread -lrt
 
 ## syscfg
-gcc -I../include -o syscfg.bin syscfg.c cJSON.c vos.c -lpthread -lrt
+gcc -o syscfg.bin syscfg.c cJSON.c -I../include -lpthread
+
+## xmodule
+gcc -DMAKE_APP -DMAKE_XLIB -o xmodule.bin  xmodule.c xmsg.c xlog.c tiny_cli.c syscfg.c vos.c cJSON.c -I../include -lpthread -lrt
 
 

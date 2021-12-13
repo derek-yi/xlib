@@ -227,8 +227,19 @@ int _xlog(const char *func, int line, int level, const char *format, ...)
 
 #ifndef MAKE_XLIB
 
+extern int cfgfile_unit_test(void);
+
 int main()
-{
+{	
+	xlog_set_level(XLOG_INFO, XLOG_WARN);
+	xlog_init("./my_log.txt");
+
+	xlog_debug("this is xlog_debug");
+	xlog_info("this is xlog_info");
+	xlog_warn("this is xlog_warn");
+	xlog_err("this is xlog_err");
+
+	cfgfile_unit_test();
     return 0;
 }
 

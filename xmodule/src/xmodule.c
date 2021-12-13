@@ -11,7 +11,6 @@ typedef struct
     int     app_role;
 }SYS_CONF_PARAM;
 
-
 SYS_CONF_PARAM xmodule_conf = {NULL};
 
 char *get_app_name(void)
@@ -102,8 +101,6 @@ int single_instance_check(char *file_path)
     return VOS_OK;
 }
 
-
-
 int xmodule_init(char *app_name, char *log_file)
 {
     char *cfg_name;
@@ -143,4 +140,22 @@ int xmodule_init(char *app_name, char *log_file)
 
     return VOS_OK;
 }
+
+#ifdef MAKE_APP
+
+int main(int argc, char **argv)
+{
+	if (argc < 2) {
+		printf("usage: %s <app_name> \r\n", argv[0]);
+		return VOS_OK;
+	}
+
+	sys_conf_seti("cli_enable", 1);
+	xmodule_init(argv[1], NULL);
+
+	while(1) sleep(3);
+	return VOS_OK;
+}
+
+#endif
 
