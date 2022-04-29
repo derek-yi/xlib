@@ -3,24 +3,25 @@
 
 #if 1
 
-typedef struct 
-{
-    char    *cfg_file;
-    char    *build_time;
-    char    *app_name;
-    int     app_role;
-}SYS_CONF_PARAM;
-
-SYS_CONF_PARAM xmodule_conf = {NULL};
-
 char *get_app_name(void)
 {   
-    return xmodule_conf.app_name;
+    return sys_conf_get("app_name");
+}
+
+int cfgfile_reload_file(char *def_file, char *cur_file)
+{
+	char temp_str[256];
+
+	sprintf(temp_str, "cp -rf %s %s", def_file, cur_file);
+	vos_run_cmd(temp_str);
+	
+	return VOS_OK;
 }
 
 int cli_sys_cfg_proc(int argc, char **argv)
 {
     int cp_len;
+	char *cfg_file = sys_conf_get("sys_cfgfile");
 
     if (argc < 2) {
         vos_print("usage: \r\n");
@@ -29,11 +30,13 @@ int cli_sys_cfg_proc(int argc, char **argv)
         vos_print("  cfg del <key>          -- delete cfg \r\n");
         vos_print("  cfg save               -- save cfg \r\n");
         vos_print("  cfg clear              -- clear saved file \r\n");
+        vos_print("  cfg reload             -- reload default cfg \r\n");
         return VOS_OK;
     }
 
     cp_len = strlen(argv[1]);
     if (!strncasecmp(argv[1], "show", cp_len)) {
+		vos_print("%-24s %s %s\r\n", "build_time", __DATE__, __TIME__);
         sys_conf_show();
         return VOS_OK;
     }
@@ -57,12 +60,21 @@ int cli_sys_cfg_proc(int argc, char **argv)
     }
 
     if (!strncasecmp(argv[1], "save", cp_len)) {
-        store_json_cfg(xmodule_conf.cfg_file);
+		#ifdef INCLUDE_JSON_CFGFILE
+        store_json_cfg(cfg_file);
+        #else
+		cfgfile_store_file(cfg_file, NULL);
+		#endif
         return VOS_OK;
     }
 
     if (!strncasecmp(argv[1], "clear", cp_len)) {
-        unlink(xmodule_conf.cfg_file);
+        unlink(cfg_file);
+        return VOS_OK;
+    }
+
+    if (!strncasecmp(argv[1], "reload", cp_len)) {
+		cfgfile_reload_file("/home/app/g70a/default_cfg.txt", cfg_file);
         return VOS_OK;
     }
     
@@ -103,38 +115,40 @@ int single_instance_check(char *file_path)
 
 int xmodule_init(char *app_name, char *log_file)
 {
-    char *cfg_name;
-	char *json_file = "/home/config/top_cfg.json";
+	int app_role;
 
-	xmodule_conf.cfg_file = strdup(json_file);
-	if (access(json_file, F_OK) == 0) {
-		if (parse_json_cfg(json_file) != VOS_OK) {
+	if (access(DEF_CONFIG_FILE, F_OK) == 0) {
+		#ifdef INCLUDE_JSON_CFGFILE
+		if (parse_json_cfg(DEF_CONFIG_FILE) != VOS_OK) {
 			printf("invalid json cfg \r\n");
 			return VOS_ERR;
 		}
+		#else
+		if (cfgfile_load_file(DEF_CONFIG_FILE) != VOS_OK) {
+			printf("invalid cfg file \r\n");
+			return VOS_ERR;
+		}
+		#endif
 	}
-    
-    cfg_name = sys_conf_get("app_name");
-    if (cfg_name != NULL) {
-        xmodule_conf.app_name = strdup(cfg_name);
-    } else {
-    	xmodule_conf.app_name = strdup(app_name);
+
+	sys_conf_set("sys_cfgfile", DEF_CONFIG_FILE);
+    if (sys_conf_get("app_name") == NULL) {
+        sys_conf_set("app_name", "app_main");
     }
 	
-    xmodule_conf.app_role = sys_conf_geti("app_role");
-
     xlog_init(log_file);
 	sys_conf_set("log_file", log_file);
-	xlog_info("top cfg: %s", xmodule_conf.cfg_file);
+	xlog_info("top cfg: %s", DEF_CONFIG_FILE);
 	
-    devm_msg_init(xmodule_conf.app_name, xmodule_conf.app_role);
+    app_role = sys_conf_geti("app_role", 1);
+    devm_msg_init(sys_conf_get("app_name"), app_role);
 	
 	cli_cmd_init();
     xmodule_cmd_init();
-    if (sys_conf_geti("telnet_enable")) {
+    if (sys_conf_geti("telnet_enable", 1)) {
         telnet_task_init();
     }
-    if (sys_conf_geti("cli_enable")) {
+    if (sys_conf_geti("cli_enable", 1)) {
         cli_task_init();
     }
 

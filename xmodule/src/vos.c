@@ -17,165 +17,6 @@
 
 #include "vos.h"
 
-#ifdef __DEBUG
-#define x_perror(x)   perror(x)
-#else
-#define x_perror(x)	 
-#endif
-
-#if 1
-
-#define LINE_BUF_SZ		256
-
-/* each line: key_str=val_buf */
-int cfgfile_read_str(char *file_name, char *key_str, char *val_buf, int buf_len)
-{
-	FILE *fp;
-	char *ptr;
-	char line_str[LINE_BUF_SZ];
-
-    if (file_name == NULL) return -1;
-    if (key_str == NULL || val_buf == NULL) return -1;
-    
-	fp = fopen(file_name, "r");
-    if (fp == NULL) {
-		x_perror("fopen");
-        return -2;
-    }
-    
-    while (fgets(line_str, LINE_BUF_SZ, fp) != NULL) { 
-		ptr = &line_str[strlen(line_str) - 1];
-		while ( *ptr == '\r' || *ptr == '\n' ) { //delete \r\n at tail
-			*ptr = 0;
-			ptr--; 
-		}
-
-		ptr = &line_str[0];
-		while ( *ptr == ' ' || *ptr == '\t' ) ptr++; //delete space/tab at head
-		if (*ptr == '#') continue; //skip comment line
-		
-		if (memcmp(ptr, key_str, strlen(key_str)) == 0) {
-			ptr = ptr + strlen(key_str);
-			while ( ptr != NULL) {
-				if (*ptr == '=' || *ptr == ' ' || *ptr == '\t') ptr++;
-				else break;
-			}
-			
-			if (*ptr != 0) {
-				snprintf(val_buf, buf_len, "%s", ptr);
-				fclose(fp);
-				return 0;
-			}
-		}
-    }
-
-	fclose(fp);
-    return -3;
-}
-
-int cfgfile_write_str(char *file_name, char *key_str, char *val_str)
-{
-	FILE *fp;
-	struct stat fs;
-	char line_str[LINE_BUF_SZ];
-	char *ptr;
-	char *file_buff;
-	int find_node = 0;
-	int buf_ptr = 0;
-
-	if (file_name == NULL || key_str == NULL) return -1;
-
-	if (stat(file_name, &fs) == -1) {
-       fs.st_size = 0;
-    }
-
-	file_buff = (char *)malloc(fs.st_size + LINE_BUF_SZ);
-	if (file_buff == NULL) {
-		x_perror("malloc");
-		return -2;
-	}
-	memset(file_buff, 0, fs.st_size + LINE_BUF_SZ);
-
-	fp = fopen(file_name, "r");
-	if (fp != NULL) {
-		while (fgets(line_str, LINE_BUF_SZ, fp) != NULL) { 
-			ptr = &line_str[0];
-			while ( *ptr == ' ' || *ptr == '\t' ) ptr++;
-			if (*ptr == 0) break;
-			
-			if (memcmp(ptr, key_str, strlen(key_str)) == 0) {
-				find_node = 1;
-				if (val_str == NULL) { //clear
-					//printf("clear %s\n", key_str);
-					continue; 
-				} else {  //update
-					snprintf(line_str, LINE_BUF_SZ, "%s=%s\n", key_str, val_str);
-					//printf("update %s\n", key_str);
-				}
-			} 
-			memcpy(file_buff + buf_ptr, line_str, strlen(line_str));
-			buf_ptr += strlen(line_str);
-		}
-
-		fclose(fp);
-	}
-
-	if ( (find_node == 0) && (val_str != NULL) ) {
-		//printf("add %s\n", key_str);
-		snprintf(line_str, LINE_BUF_SZ, "%s=%s\n", key_str, val_str);
-		memcpy(file_buff + buf_ptr, line_str, strlen(line_str));
-		buf_ptr += strlen(line_str);
-	}
-
-	fp = fopen(file_name, "w+");
-	if (fp == NULL) {
-		x_perror("fopen");
-		return -2;
-	}
-	fwrite(file_buff, buf_ptr, 1, fp);
-	fclose(fp);
-	
-	return 0;
-}
-
-int cfgfile_unit_test(void)
-{
-	int ret;
-	char rd_buff[64];
-
-	cfgfile_write_str("./my_cfg.txt", "aa", "100");
-	cfgfile_write_str("./my_cfg.txt", "bb", "200");
-	cfgfile_write_str("./my_cfg.txt", "cc", "300");
-	cfgfile_write_str("./my_cfg.txt", "aa", "101");
-	cfgfile_write_str("./my_cfg.txt", "cc", NULL);
-	
-	ret = cfgfile_read_str("./my_cfg.txt", "aa", rd_buff, sizeof(rd_buff));
-	printf("cfgfile_read: %d [aa] = %s(%ld) \n", ret, rd_buff, strlen(rd_buff));
-	ret = cfgfile_read_str("./my_cfg.txt", "bb", rd_buff, sizeof(rd_buff));
-	printf("cfgfile_read: %d [bb] = %s(%ld) \n", ret, rd_buff, strlen(rd_buff));
-	ret = cfgfile_read_str("./my_cfg.txt", "cc", rd_buff, sizeof(rd_buff));
-	printf("cfgfile_read: %d [cc] = %s(%ld) \n", ret, rd_buff, strlen(rd_buff));
-
-/*
-cat >file1.txt<< EOF
-	aa = 100
-	bb=
-  cc	=x
-## cc=1
-EOF
-*/	
-	ret = cfgfile_read_str("./file1.txt", "aa", rd_buff, sizeof(rd_buff));
-	printf("cfgfile_read: %d [aa] = %s(%ld) \n", ret, rd_buff, strlen(rd_buff));
-	ret = cfgfile_read_str("./file1.txt", "bb", rd_buff, sizeof(rd_buff));
-	printf("cfgfile_read: %d [bb] = %s(%ld) \n", ret, rd_buff, strlen(rd_buff));
-	ret = cfgfile_read_str("./file1.txt", "cc", rd_buff, sizeof(rd_buff));
-	printf("cfgfile_read: %d [cc] = %s(%ld) \n", ret, rd_buff, strlen(rd_buff));
-
-    return VOS_OK;
-}
-
-#endif
-
 #if 1
 
 int sys_read_pipe(char *cmd_str, char *buff, int buf_len)
@@ -200,43 +41,30 @@ int sys_read_pipe(char *cmd_str, char *buff, int buf_len)
 int sys_node_readstr(char *node_str, char *rd_buf, int buf_len)
 {
 	FILE *fp;
-    char cmd_buf[256];
+	char cmd_buf[256];
 
-    if (node_str == NULL) return VOS_ERR;
-    if (rd_buf == NULL) return VOS_ERR;
-    
-    snprintf(cmd_buf, sizeof(cmd_buf), "cat %s", node_str);
-	fp = popen(cmd_buf, "r");
-    if (fp == NULL) {
-        x_perror("popen");
-        return VOS_ERR;
-    }
-    
-    memset(rd_buf, 0, buf_len);
+	if (rd_buf == NULL) return VOS_ERR;
+
+	fp = fopen(node_str, "r");
+	if (fp == NULL) {
+		x_perror("fopen");
+		return VOS_ERR;
+	}
+	
+	memset(rd_buf, 0, buf_len);
 	fgets(rd_buf, buf_len, fp);
-	pclose(fp);
+	fclose(fp);
 
-    return VOS_OK;
+	return VOS_OK;
 }
 
 int sys_node_read(char *node_str, int *value)
 {
-	FILE *fp;
-    char cmd_buf[256];
-    char rd_buf[32];
+    char rd_buf[64];
 
-    if (node_str == NULL) return VOS_ERR;
-    
-    snprintf(cmd_buf, sizeof(cmd_buf), "cat %s", node_str);
-	fp = popen(cmd_buf, "r");
-    if (fp == NULL) {
-        x_perror("popen");
-        return VOS_ERR;
-    }
-    
-	fgets(rd_buf, 30, fp);
-	pclose(fp);
-
+    if ( sys_node_readstr(node_str, rd_buf, sizeof(rd_buf)) != VOS_OK)
+		return VOS_ERR;
+	
     if (value) {
         *value = (int)strtoul(rd_buf, 0, 0);
     }
@@ -252,24 +80,6 @@ int sys_node_writestr(char *node_str, char *wr_buf)
     if (node_str == NULL) return VOS_ERR;
 
     snprintf(cmd_buf, sizeof(cmd_buf), "echo %s > %s", wr_buf, node_str);
-    fp = popen(cmd_buf, "r");
-    if (fp == NULL) {
-        x_perror("popen");
-        return VOS_ERR;
-    }
-    pclose(fp);
-    
-    return VOS_OK;
-}
-
-int sys_node_write(char *node_str, int value)
-{
-    FILE *fp;
-    char cmd_buf[256];
-
-    if (node_str == NULL) return VOS_ERR;
-
-    snprintf(cmd_buf, sizeof(cmd_buf), "echo 0x%x > %s", value, node_str);
     fp = popen(cmd_buf, "r");
     if (fp == NULL) {
         x_perror("popen");
@@ -398,6 +208,18 @@ int vos_sem_wait(void *sem_id, uint32 msecs)
 	return sem_timedwait(sem, &ts);
 }
 
+void fmt_time_str(char *time_str, int max_len)
+{
+    struct tm *tp;
+    time_t t = time(NULL);
+    tp = localtime(&t);
+     
+    if (!time_str) return ;
+    
+    snprintf(time_str, max_len, "%02d%02d_%02d_%02d_%02d", 
+            tp->tm_mon+1, tp->tm_mday, tp->tm_hour, tp->tm_min, tp->tm_sec);
+}
+
 #endif
 
 #if 1
@@ -441,19 +263,20 @@ int xlog_save_list(char *file_name, int *list, int cnt)
 {
 	int i, len;
 	char buf[128];
-	int fd;
+	FILE *fd;
 
-	fd = open(file_name, O_RDWR|O_CREAT|O_TRUNC, 0666);
-	if (fd < 0) {
+	fd = fopen(file_name, "w");
+	if (fd == NULL) {
 		return -1;
 	}
 
 	for (i = 0; i < cnt; i++) {
 		len = sprintf(buf, "%d\n", list[i]);
-		write(fd, buf, len);
+		fwrite(buf, 1, len, fd);
 	}
 
-	close(fd);
+	fflush(fd);
+	fclose(fd);
 	return 0;
 }
 
@@ -461,19 +284,20 @@ int xlog_save_ulist(char *file_name, uint32 *list, int cnt)
 {
 	int i, len;
 	char buf[128];
-	int fd;
+	FILE *fd;
 
-	fd = open(file_name, O_RDWR|O_CREAT|O_TRUNC, 0666);
-	if (fd < 0) {
+	fd = fopen(file_name, "w");
+	if (fd == NULL) {
 		return -1;
 	}
 
 	for (i = 0; i < cnt; i++) {
 		len = sprintf(buf, "%u\n", list[i]);
-		write(fd, buf, len);
+		fwrite(buf, 1, len, fd);
 	}
 
-	close(fd);
+	fflush(fd);
+	fclose(fd);
 	return 0;
 }
 
@@ -481,19 +305,20 @@ int xlog_save_list2(char *file_name, uint64_t *list, int cnt)
 {
 	int i, len;
 	char buf[128];
-	int fd;
+	FILE *fd;
 
-	fd = open(file_name, O_RDWR|O_CREAT|O_TRUNC, 0666);
-	if (fd < 0) {
+	fd = fopen(file_name, "w");
+	if (fd == NULL) {
 		return -1;
 	}
 
 	for (i = 0; i < cnt; i++) {
 		len = sprintf(buf, "%lu\n", (uint64_t)list[i]);
-		write(fd, buf, len);
+		fwrite(buf, 1, len, fd);
 	}
 
-	close(fd);
+	fflush(fd);
+	fclose(fd);
 	return 0;
 }
 
@@ -506,7 +331,7 @@ int xlog_save_list2(char *file_name, uint64_t *list, int cnt)
 
 static int memdev_fd = -1;
 
-uint32 devmem_read(uint32 mem_addr) 
+uint32 devmem_read(uint64_t mem_addr) 
 {
     void *map_base, *virt_addr;
     uint32 read_result;
@@ -536,7 +361,7 @@ uint32 devmem_read(uint32 mem_addr)
     return read_result;
 }
 
-uint32 devmem_write(uint32 mem_addr, uint32 writeval) 
+uint32 devmem_write(uint64_t mem_addr, uint32 writeval) 
 {
     void *map_base, *virt_addr;
     //unsigned long read_result;

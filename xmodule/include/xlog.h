@@ -34,8 +34,6 @@
 
 #endif
 
-void fmt_time_str(char *time_str, int max_len);
-
 int xlog_print_file(char *filename);
 
 int xlog_init(char *app_name);

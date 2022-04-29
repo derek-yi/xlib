@@ -22,8 +22,13 @@ typedef unsigned short uint16;
 typedef unsigned int uint32;
 #endif
 
-#define VOS_OK      0
-#define VOS_ERR     (-1)
+#define VOS_OK      		0
+#define VOS_ERR     		(-1)
+#define VOS_E_PARAM     	(-2)
+#define VOS_E_NONEXIST     	(-3)
+#define VOS_E_FILE     		(-4)
+#define VOS_E_SOCK     		(-5)
+#define VOS_E_MALLOC   		(-6)
 
 #ifndef TRUE
 #define TRUE        1
@@ -36,6 +41,12 @@ typedef unsigned int uint32;
 #define T_DESC(x, y)    y
 #endif
 
+#ifdef __DEBUG
+#define x_perror(x)   perror(x)
+#else
+#define x_perror(x)	 
+#endif
+
 short mk_num16(char high, char low);
 int mk_num32(char b0, char b1, char b2, char b3);
 int mk_boundary(int frame, int slot, int symbol);
@@ -43,8 +54,8 @@ int list_max_index2(uint64_t *list, int size);
 int xlog_save_list(char *file_name, int *list, int cnt);
 int xlog_save_list2(char *file_name, uint64_t *list, int cnt);
 
-uint32 devmem_read(uint32 mem_addr);
-uint32 devmem_write(uint32 mem_addr, uint32 writeval);
+uint32 devmem_read(uint64_t mem_addr);
+uint32 devmem_write(uint64_t mem_addr, uint32 writeval);
 
 int cfgfile_read_str(char *file_name, char *key_str, char *val_buf, int buf_len);
 
@@ -74,6 +85,8 @@ typedef struct
 int vos_create_timer(timer_t *ret_tid, int interval, int repeat, timer_cb callback, void *param);
 
 int vos_delete_timer(timer_t timerid);
+
+void fmt_time_str(char *time_str, int max_len);
 
 void vos_msleep(uint32 milliseconds);
 

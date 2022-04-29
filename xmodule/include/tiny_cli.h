@@ -38,7 +38,7 @@ int cli_cmd_reg(const char *cmd, const char *help, CMD_FUNC func);
 
 int vos_print(const char * format,...);
 
-int sys_conf_geti(char *key_str);
+int sys_conf_geti(char *key_str, int def_val);
 
 #endif
 

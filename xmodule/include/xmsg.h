@@ -9,6 +9,12 @@
 #define XMSG_T_RCMD               	0x04
 
 #define XMSG_T_USER_START         	0x20
+#define XMSG_T_TIMER_MSG			0x21
+#define XMSG_T_OAM_CFG				0x30
+#define XMSG_T_OAM_APK				0x31
+#define XMSG_T_OAM_BT				0x32
+#define XMSG_T_OAM_CGI				0x33
+#define XMSG_T_OAM_METH				0x34
 #define XMSG_T_MAX                	0x80
 
 #define APP_NAME_LEN                32

@@ -9,6 +9,7 @@ OBJ=    \
   cJSON.o \
   xlog.o \
   syscfg.o \
+  net_check.c \
   xmsg.o
 
 

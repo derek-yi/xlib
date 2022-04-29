@@ -186,9 +186,9 @@ int cli_run_shell(char *cmd_buf)
 #endif
 
 #ifndef MAKE_XLIB
-int sys_conf_geti(char *key_str)
+int sys_conf_geti(char *key_str, int def_val)
 {
-	return 1;
+	return def_val;
 }
 #endif
 
@@ -240,7 +240,7 @@ int cli_cmd_exec(char *buff)
 
     if (pNode == NULL)
     {
-		if ( sys_conf_geti("shell_enable") )
+		if ( sys_conf_geti("shell_enable", 0) )
         	cli_run_shell(buff);
     	else
 	        vos_print("unknown cmd: %s \r\n", buff);

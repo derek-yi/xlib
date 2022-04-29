@@ -34,13 +34,11 @@
 #define APP_ROLE_SLAVE          0
 #define APP_ROLE_MASTER         1
 
+#define DEF_CONFIG_FILE			"/home/config/top_cfg.txt"
+#define TX_CONFIG_FILE			"/home/config/tx_atten_cfg.txt"
+#define WIFI_CONFIG_FILE		"/home/config/wpa_supplicant.conf"
+
 int xmodule_init(char *app_name, char *json_file);
-
-char* sys_conf_get(char *key_str);
-int sys_conf_set(char *key_str, char *value);
-
-int sys_conf_geti(char *key_str);
-int sys_conf_seti(char *key_str, int value);
 
 char *get_app_name(void);
 

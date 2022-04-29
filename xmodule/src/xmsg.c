@@ -22,7 +22,7 @@ int local_ip_addr = 0;
 
 int local_is_master = 0;
 
-int msg_qid = -1;
+static int xmsg_qid = -1;
 
 #if 1
 
@@ -33,10 +33,12 @@ int get_local_ip(char *if_name)
 
     inet_sock = socket(AF_INET, SOCK_DGRAM, 0);  
     strcpy(ifr.ifr_name, if_name);  
-    if ( ioctl(inet_sock, SIOCGIFADDR, &ifr) < 0) {
+    if ( ioctl(inet_sock, SIOCGIFADDR, &ifr) < 0 ) {
+		close(inet_sock);
         return -1;
     }
-    
+
+	close(inet_sock);
     return (int)((struct sockaddr_in *)&ifr.ifr_addr)->sin_addr.s_addr;
 }
 
@@ -74,7 +76,7 @@ int devm_update_sock(int sockid, char *app_name, int ip_addr)
 
 	if (j < 0) { //full 
 		xlog(XLOG_ERROR, "full");
-		close(sockid);
+		//close(sockid);
 		return VOS_ERR;
 	}
 
@@ -111,9 +113,10 @@ void* msg_rx_task(void *param)
 		char msg_buff[MSG_MAX_PAYLOAD + MSG_HEAD_LEN];
 		DEVM_MSG_S *rx_msg = (DEVM_MSG_S *)msg_buff;
         
-        int ret = msgrcv(msg_qid, msg_buff, sizeof(msg_buff), 0, 0);
+        int ret = msgrcv(xmsg_qid, msg_buff, sizeof(msg_buff), 0, 0);
         if (ret < 0) {
-            xlog(XLOG_ERROR, "msgrcv failed(%s)", strerror(errno));
+            xlog(XLOG_ERROR, "msgrcv %d failed(%s)", xmsg_qid, strerror(errno));
+			sleep(1);
             continue;
         }
 
@@ -142,6 +145,7 @@ void* socket_rx_task(void *param)
     int socket_id = (int)temp_val;
 	int index;
 
+	xlog(XLOG_INFO, "socket_rx_task %d \n", socket_id);
     while (1) {
 		char msg_buff[MSG_MAX_PAYLOAD + MSG_HEAD_LEN];
 		DEVM_MSG_S *raw_msg = (DEVM_MSG_S *)msg_buff;
@@ -170,12 +174,13 @@ void* socket_rx_task(void *param)
 		}
 		sock_list[index].rx_cnt++;
 		
-        if ( msgsnd(msg_qid, raw_msg, MSG_HEAD_LEN + raw_msg->payload_len, 0) < 0 ) {
+        if ( msgsnd(xmsg_qid, raw_msg, MSG_HEAD_LEN + raw_msg->payload_len, 0) < 0 ) {
             xlog(XLOG_ERROR, "msgsnd failed(%s)", strerror(errno));
             continue;
         }
     }
 
+	close(socket_id);
     return NULL;
 }
 
@@ -382,10 +387,6 @@ int devm_msg_forward(DEVM_MSG_S *tx_msg)
 {
 	int tx_socket, index;
 	
-    if (tx_msg == NULL) {
-        return VOS_ERR;
-    }
-
     pthread_mutex_lock(&tx_mutex);
     index = devm_connect_uds(tx_msg->dst_app, &tx_socket);
     if (index < 0) {
@@ -409,9 +410,10 @@ int devm_msg_send_local(char *dst_app, DEVM_MSG_S *tx_msg)
 {
 	int tx_socket, index;
 
-    //xlog(XLOG_DEBUG, "send to %s", dst_app);
-    if (tx_msg == NULL) {
-        return VOS_ERR;
+    tx_msg->src_ip = 0; //reset src_ip
+    if (dst_app == NULL) {  //send to self
+    	msgsnd(xmsg_qid, tx_msg, MSG_HEAD_LEN + tx_msg->payload_len, 0);
+        return VOS_OK;
     }
 	
     pthread_mutex_lock(&tx_mutex);
@@ -421,11 +423,6 @@ int devm_msg_send_local(char *dst_app, DEVM_MSG_S *tx_msg)
         pthread_mutex_unlock(&tx_mutex);
         return VOS_ERR;
     }
-
-    tx_msg->src_ip = 0;
-    snprintf(tx_msg->src_app, APP_NAME_LEN, "%s", get_app_name());
-    snprintf(tx_msg->dst_app, APP_NAME_LEN, "%s", dst_app);
-    tx_msg->magic_num = MSG_MAGIC_NUM;
 
 	sock_list[index].tx_cnt++;	
     if ( send(tx_socket, tx_msg, tx_msg->payload_len + MSG_HEAD_LEN, 0) < MSG_HEAD_LEN ) {
@@ -443,28 +440,17 @@ int devm_msg_send(int dst_ip, char *dst_app, DEVM_MSG_S *tx_msg)
 {
 	int tx_socket, index;
 
-    if (tx_msg == NULL) {
-        return VOS_ERR;
-    }
-	
     if ( (dst_ip == local_ip_addr) || (dst_ip == 0x0100007f) || (dst_ip == 0) ){
         return devm_msg_send_local(dst_app, tx_msg);
     }
 
-    xlog(XLOG_DEBUG, "send to 0x%x %s", dst_ip, dst_app);
     pthread_mutex_lock(&tx_mutex);
-	
     index = devm_connect_inet(dst_ip, &tx_socket);
     if (index < 0) {
         xlog(XLOG_ERROR, "devm_connect_inet failed");
         pthread_mutex_unlock(&tx_mutex);
         return VOS_ERR;
     }
-
-    tx_msg->src_ip = local_ip_addr;
-    snprintf(tx_msg->src_app, APP_NAME_LEN, "%s", get_app_name());
-    snprintf(tx_msg->dst_app, APP_NAME_LEN, "%s", dst_app);
-    tx_msg->magic_num = MSG_MAGIC_NUM;
 
 	sock_list[index].tx_cnt++;	
     if ( send(tx_socket, tx_msg, tx_msg->payload_len + MSG_HEAD_LEN, 0) < MSG_HEAD_LEN ) {
@@ -482,14 +468,21 @@ int app_send_msg(int dst_ip, char *dst_app, int msg_type, char *usr_data, int da
 {
 	char msg_buff[MSG_MAX_PAYLOAD + MSG_HEAD_LEN];
     DEVM_MSG_S *tx_msg = (DEVM_MSG_S *)msg_buff;
+	static int serial_num = 0;
     
-    if (dst_app == NULL || data_len > MSG_MAX_PAYLOAD) {
+    if (data_len > MSG_MAX_PAYLOAD) {
+		xlog_err("data_len %d", data_len);
         return VOS_ERR;
     }
 
-    //xlog(XLOG_DEBUG, "app send to 0x%x %s", dst_ip, dst_app);
     memset(msg_buff, 0, sizeof(msg_buff));
+    tx_msg->magic_num = MSG_MAGIC_NUM;
     tx_msg->msg_type = msg_type;
+	tx_msg->serial_num = serial_num++;
+    tx_msg->src_ip = local_ip_addr;
+    snprintf(tx_msg->src_app, APP_NAME_LEN, "%s", get_app_name());
+    snprintf(tx_msg->dst_app, APP_NAME_LEN, "%s", dst_app ? dst_app : get_app_name());
+	xlog_debug("app send to 0x%x %s", dst_ip, tx_msg->dst_app);
 	
     if (usr_data != NULL && data_len != 0) {
         memcpy(tx_msg->msg_payload, usr_data, data_len);
@@ -633,8 +626,9 @@ int devm_msg_init(char *app_name, int master)
         xlog(XLOG_INFO, "local_ip_addr 0x%x", local_ip_addr);
     }
 
-    msg_qid = msgget(IPC_PRIVATE, 0666);
-    if (msg_qid == -1) {
+    xmsg_qid = msgget(IPC_PRIVATE, 0666);
+	xlog(XLOG_INFO, "xmsg_qid %d", xmsg_qid);
+    if (xmsg_qid == -1) {
         xlog(XLOG_ERROR, "msgget failed(%s)", strerror(errno));
         return VOS_ERR;  
     }

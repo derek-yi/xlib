@@ -54,18 +54,6 @@ int xlog_print_file(char *filename)
     return VOS_OK;
 }
 
-void fmt_time_str(char *time_str, int max_len)
-{
-    struct tm *tp;
-    time_t t = time(NULL);
-    tp = localtime(&t);
-     
-    if (!time_str) return ;
-    
-    snprintf(time_str, max_len, "%02d-%02d_%02d-%02d-%02d", 
-            tp->tm_mon+1, tp->tm_mday, tp->tm_hour, tp->tm_min, tp->tm_sec);
-}
-
 int xlog_set_level(uint32 log_level, uint32 print_level)
 {
     my_log_level = log_level;
@@ -113,7 +101,7 @@ int _xlog(char *file, int line, int level, const char *format, ...)
     syslog(level, "%s", buf);
     closelog();
 
-    if ( level > sys_conf_geti("log_level") ){
+    if ( level > sys_conf_geti("log_level", 0) ){
         printf("%s\r\n", buf);
     } 
 
@@ -201,6 +189,10 @@ int _xlog(const char *func, int line, int level, const char *format, ...)
     char buff[XLOG_BUFF_MAX];
 	int ptr = 0;
 
+	if ( (level < my_print_level) && (level < my_log_level) ) {
+		return 0;
+	}
+	
 	fmt_time_str(time_str, sizeof(time_str));
 	ptr = sprintf(buff, "[%s]<%s,%d> ", time_str, func, line);
     va_start(args, format);
@@ -208,11 +200,11 @@ int _xlog(const char *func, int line, int level, const char *format, ...)
     va_end(args);
 	strcat(buff, "\r\n");
 	
-    if ( level >= my_print_level ){
+    if ( level >= my_print_level ) {
         vos_print("%s", buff);
     } 
 
-    if ( level >= my_log_level ){
+    if ( level >= my_log_level ) {
         int fd = open(my_log_file, O_RDWR|O_CREAT|O_APPEND, 0666);
         if (fd > 0) {
             write(fd, buff, strlen(buff));
@@ -227,8 +219,6 @@ int _xlog(const char *func, int line, int level, const char *format, ...)
 
 #ifndef MAKE_XLIB
 
-extern int cfgfile_unit_test(void);
-
 int main()
 {	
 	xlog_set_level(XLOG_INFO, XLOG_WARN);
@@ -239,7 +229,6 @@ int main()
 	xlog_warn("this is xlog_warn");
 	xlog_err("this is xlog_err");
 
-	cfgfile_unit_test();
     return 0;
 }
 
