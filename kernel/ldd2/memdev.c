@@ -1,10 +1,8 @@
 /****************************************************************************** 
-* Name: memdev.c 
-* Desc: 字符设备驱动程序的框架结构
-* Parameter:  
-* Return: 
+* Name  : memdev.c 
+* Desc  : xx
 * Author: derek 
-* Date: 2013-6-4 
+* Date  : 2013-6-4 
 ********************************************************************************/  
 #include <linux/kernel.h>
 #include <linux/init.h>
@@ -17,10 +15,8 @@
 #include <linux/mm.h>  
 #include <linux/cdev.h>  
 
-//module_param(mem_major, int, S_IRUGO);  
-
-#define MEMDEV_MAJOR        260     /*预设的mem的主设备号*/  
-#define MEMDEV_NR_DEVS      2       /*设备数*/  
+#define MEMDEV_MAJOR        260
+#define MEMDEV_NR_DEVS      2
 #define CHAR_DEV_NAME       "memdev"
   
 static int mem_major = 0; //MEMDEV_MAJOR;  
@@ -39,15 +35,6 @@ int mem_release(struct inode *inode, struct file *filp)
     return 0;  
 }  
 
-/*
-'k'为幻数，要按照Linux内核的约定方法为驱动程序选择ioctl编号，
-应该首先看看include/asm/ioctl.h和Documentation/ioctl-number.txt这两个文件.
-
-对幻数的编号千万不能重复定义，如ioctl-number.txt已经说明‘k'的编号已经被占用的范围为：
-'k'    00-0F    linux/spi/spidev.h    conflict!
-'k'    00-05    video/kyro.h        conflict!
-所以我们在这里分别编号为0x1a和0x1b
-*/
 #define CMD_MAGIC   'k'
 #define MEM_CMD1    _IO(CMD_MAGIC, 0x1a)
 #define MEM_CMD2    _IO(CMD_MAGIC, 0x1b)
@@ -56,6 +43,7 @@ int temp_data = 0;
 
 static long mem_ioctl( struct file *file, unsigned int cmd, unsigned long arg)
 {    
+    printk("ioctl CMD %d \n", cmd);   
     switch(cmd)
     {
         case MEM_CMD1:
@@ -69,7 +57,6 @@ static long mem_ioctl( struct file *file, unsigned int cmd, unsigned long arg)
             break;
     }
     
-    //printk(KERN_NOTICE"ioctl CMD%d done!\n",temp);    
     return 0;
 }
 
@@ -84,14 +71,13 @@ static const struct file_operations mem_fops =
 static int memdev_init(void)  
 {  
     int result;  
-    int i;  
 
     dev_t devno = MKDEV(mem_major, 0);  
 
-    if (mem_major) { /* 静态申请设备号*/  
-        result = register_chrdev_region(devno, 2, CHAR_DEV_NAME);  
-    } else { /* 动态分配设备号 */  
-        result = alloc_chrdev_region(&devno, 0, 2, CHAR_DEV_NAME);  
+    if (mem_major) {
+        result = register_chrdev_region(devno, MEMDEV_NR_DEVS, CHAR_DEV_NAME);  
+    } else { 
+        result = alloc_chrdev_region(&devno, 0, MEMDEV_NR_DEVS, CHAR_DEV_NAME);  
         mem_major = MAJOR(devno);  
     }   
 
@@ -106,7 +92,7 @@ static int memdev_init(void)
     pclass = class_create(THIS_MODULE, CHAR_DEV_NAME);  
     if (IS_ERR(pclass))  
     {  
-        printk("class_create failed!/n");  
+        printk("class_create failed! \n");  
         goto failed;  
     }  
 
@@ -125,10 +111,10 @@ static void memdev_exit(void)
     class_destroy(pclass);
     
     cdev_del(&my_dev);
-    unregister_chrdev_region(MKDEV(mem_major, 0), 2); 
+    unregister_chrdev_region(MKDEV(mem_major, 0), MEMDEV_NR_DEVS); 
 }  
   
-MODULE_AUTHOR("derek yi");  
+MODULE_AUTHOR("derek.yi");  
 MODULE_LICENSE("GPL");  
   
 module_init(memdev_init);  

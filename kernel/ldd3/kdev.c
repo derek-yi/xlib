@@ -1,10 +1,8 @@
 /****************************************************************************** 
-*Name: memdev.c 
-*Desc: 字符设备驱动程序的框架结构
-*Parameter:  
-*Return: 
-*Author: derek 
-*Date: 2013-6-4 
+* Name  : kdev.c 
+* Desc  : xx
+* Author: derek 
+* Date  : 2013-6-4 
 ********************************************************************************/  
 #include <linux/kernel.h>
 #include <linux/init.h>
@@ -19,23 +17,25 @@
 #include <linux/sched.h>
 #include <linux/sched/signal.h>
 
-#define IO_CMD_LEN      256  
-#define CHAR_DEV_NAME   "kdev"
+#define IO_CMD_LEN              256  
+#define CHAR_DEV_NAME           "kdev"
+#define MEMDEV_NR_DEVS          4
 
 #if 1
 
 static int user_cmd_proc(char *user_cmd, char *out_str)
 {
-    if(strncmp(user_cmd, "sendsig", 7) == 0) {
+    if (strncmp(user_cmd, "sendsig", 7) == 0) {
         send_sig(SIGUSR1, current, 0); //send SIGUSR 1
     }
     
-    if(strncmp(user_cmd, "showpid", 7) == 0) {
+    if (strncmp(user_cmd, "showpid", 7) == 0) {
         sprintf(out_str, "pid=%d tgid=%d\n", current->pid, current->tgid);
     }
     
     return 0;
 }
+
 #endif
 
 #if 1
@@ -85,14 +85,12 @@ static int memdev_init(void)
     int result;  
 
     dev_t devno = MKDEV(mem_major, 0);  
-
-    if (mem_major) { /* 静态申请设备号*/  
-        result = register_chrdev_region(devno, 2, CHAR_DEV_NAME);  
-    } else { /* 动态分配设备号 */  
-        result = alloc_chrdev_region(&devno, 0, 2, CHAR_DEV_NAME);  
+    if (mem_major) {
+        result = register_chrdev_region(devno, MEMDEV_NR_DEVS, CHAR_DEV_NAME);  
+    } else {
+        result = alloc_chrdev_region(&devno, 0, MEMDEV_NR_DEVS, CHAR_DEV_NAME);  
         mem_major = MAJOR(devno);  
     }   
-
     if (result < 0)  {  
         printk("alloc_chrdev failed!\n");  
         return result;  
@@ -101,7 +99,7 @@ static int memdev_init(void)
     cdev_init(&my_dev, &mem_fops);  
     my_dev.owner = THIS_MODULE;  
     my_dev.ops = &mem_fops;  
-    cdev_add(&my_dev, MKDEV(mem_major, 0), 2);   /*设备数2*/  
+    cdev_add(&my_dev, MKDEV(mem_major, 0), MEMDEV_NR_DEVS);
 
     pclass = class_create(THIS_MODULE, CHAR_DEV_NAME);  
     if (IS_ERR(pclass))  {  
@@ -124,11 +122,11 @@ static void memdev_exit(void)
     class_destroy(pclass);
     
     cdev_del(&my_dev);
-    unregister_chrdev_region(MKDEV(mem_major, 0), 2); 
+    unregister_chrdev_region(MKDEV(mem_major, 0), MEMDEV_NR_DEVS); 
 }  
 #endif
   
-MODULE_AUTHOR("derek yi");  
+MODULE_AUTHOR("derek.yi");  
 MODULE_LICENSE("GPL");  
   
 module_init(memdev_init);  

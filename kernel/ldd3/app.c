@@ -1,4 +1,3 @@
-
 #include <stdio.h>  
 #include <fcntl.h>  
 #include <stdlib.h>  
@@ -13,6 +12,7 @@
 #include <sys/syscall.h>
 
 #define IO_CMD_LEN      256  
+
 char kdev_io_buf[IO_CMD_LEN] = {0};
 
 void signal_handler(int signo)
@@ -35,7 +35,7 @@ int main()
     
     fd = open("/dev/kdev", O_RDWR);
     if( fd < 0 ) {
-        printf("open memdev WRONG£¡\n");
+        printf("open memdev WRONG\n");
         return 0;
     }
 
