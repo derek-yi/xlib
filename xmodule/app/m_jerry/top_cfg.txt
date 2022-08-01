@@ -1,0 +1,42 @@
+########################################################################
+########################################################################
+## config format is "key_string = val_string"
+## make sure every key_string is unique
+########################################################################
+## syscfg
+last_update = 20220408
+log_file = /home/log/xlog.txt
+dev_name = simpie_g70
+client_name = sz_simpie
+
+## bluetooth config
+bt_name = g70bt1111
+wifi_ssid = SIMDO
+
+## meth config
+meth_ipaddr = 192.168.1.33
+meth_ipmask = 255.255.255.0
+gw_ipaddr = 192.168.1.1
+
+## ftp&tftp server 
+echo_ipaddr = 192.168.100.2
+ftp_ipaddr = 192.168.100.31
+ftp_path = g70_ftp
+ftp_user = user
+ftp_passwd = admin
+
+## time sync
+ntp_enable = 0
+#ntp_server = 202.112.10.36
+gps_time_sync = 0
+
+## GPS position
+cfg_latitude = 0
+cfg_longitude = 0 
+
+########################################################################
+## xxx
+
+
+########################################################################
+########################################################################

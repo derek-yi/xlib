@@ -1,34 +1,23 @@
-# Top level makefile, the real shit is at src/makefile
+LIB_XMODULE = libxmodule.a
+XMODULE_SUBSRC = ./src
 
-TARGETS=noopt 32bit
+CC = $(CROSS_COMPILE)gcc
+AR = $(CROSS_COMPILE)ar
+ARFLAGS = -rv
+CFLAGS = $(GLB_CFLAGS) -DMAKE_XLIB -I./src -I./include
+EXT = c
 
-all:
-	cd src && $(MAKE) $@
+SRC = $(wildcard $(XMODULE_SUBSRC)/*.$(EXT))
+OBJS = $(SRC:.$(EXT)=.o)
 
-install:
-	cd src && $(MAKE) $@
+all: $(LIB_XMODULE)
 
-$(TARGETS):
-	cd src && $(MAKE) $@
+.$(EXT).o:
+	$(CC) $(CFLAGS) -o $@ -c $<
 
-doc:
-	cd doc && $(MAKE)
-
-test:
-	cd app/m_jerry && $(MAKE) && cd -
-	cd app/m_tom && $(MAKE) && cd -
-
-TAGS:
-	find . -type f -name "*.[ch]" | xargs etags -
+$(LIB_XMODULE): $(OBJS)
+	$(AR) $(ARFLAGS) $(LIB_XMODULE) $(OBJS)
 
 clean:
-	cd src && $(MAKE) $@
-	cd app/m_jerry && $(MAKE) $@ && cd -
-	cd app/m_tom && $(MAKE) $@ && cd -
-	rm -f TAGS
-
-distclean: clean
-
-dummy:
-
-.PHONY: doc install test TAGS
+	rm -rf *.o
+	rm -rf *.a

@@ -1,21 +1,9 @@
 
 #include "xmodule.h"
 
-#if 1
-
 char *get_app_name(void)
 {   
     return sys_conf_get("app_name");
-}
-
-int cfgfile_reload_file(char *def_file, char *cur_file)
-{
-	char temp_str[256];
-
-	sprintf(temp_str, "cp -rf %s %s", def_file, cur_file);
-	vos_run_cmd(temp_str);
-	
-	return VOS_OK;
 }
 
 int cli_sys_cfg_proc(int argc, char **argv)
@@ -30,7 +18,6 @@ int cli_sys_cfg_proc(int argc, char **argv)
         vos_print("  cfg del <key>          -- delete cfg \r\n");
         vos_print("  cfg save               -- save cfg \r\n");
         vos_print("  cfg clear              -- clear saved file \r\n");
-        vos_print("  cfg reload             -- reload default cfg \r\n");
         return VOS_OK;
     }
 
@@ -63,7 +50,7 @@ int cli_sys_cfg_proc(int argc, char **argv)
 		#ifdef INCLUDE_JSON_CFGFILE
         store_json_cfg(cfg_file);
         #else
-		cfgfile_store_file(cfg_file, NULL);
+		cfgfile_store_file(cfg_file, cfg_file);
 		#endif
         return VOS_OK;
     }
@@ -72,16 +59,9 @@ int cli_sys_cfg_proc(int argc, char **argv)
         unlink(cfg_file);
         return VOS_OK;
     }
-
-    if (!strncasecmp(argv[1], "reload", cp_len)) {
-		cfgfile_reload_file("/home/app/g70a/default_cfg.txt", cfg_file);
-        return VOS_OK;
-    }
     
     return VOS_OK;
 }
-
-#endif
 
 int cli_xlog_level(int argc, char **argv);
 
@@ -138,6 +118,7 @@ int xmodule_init(char *app_name, char *log_file)
 	
     xlog_init(log_file);
 	sys_conf_set("log_file", log_file);
+	xlog_info("------------------------------------------------------------");
 	xlog_info("top cfg: %s", DEF_CONFIG_FILE);
 	
     app_role = sys_conf_geti("app_role", 1);
@@ -148,7 +129,7 @@ int xmodule_init(char *app_name, char *log_file)
     if (sys_conf_geti("telnet_enable", 1)) {
         telnet_task_init();
     }
-    if (sys_conf_geti("cli_enable", 1)) {
+    if (sys_conf_geti("cli_enable", 0)) {
         cli_task_init();
     }
 

@@ -42,6 +42,23 @@ int get_local_ip(char *if_name)
     return (int)((struct sockaddr_in *)&ifr.ifr_addr)->sin_addr.s_addr;
 }
 
+int get_local_mac(char *if_name, char *mac_addr)
+{
+    int sockfd;  
+    struct ifreq ifr;  
+
+    sockfd = socket(AF_INET, SOCK_DGRAM, 0);  
+    strcpy(ifr.ifr_name, if_name);  
+	
+	if (ioctl(sockfd, SIOCGIFHWADDR, &ifr) == 0) {
+		memcpy(mac_addr, ifr.ifr_hwaddr.sa_data, 6);
+		//printf("mac: %02x:%02x:%02x:%02x:%02x:%02x\n", mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
+	}
+
+	close(sockfd);
+    return VOS_OK;
+}
+
 int devm_delete_sock(int index)
 {
 	xlog(XLOG_INFO, "delete sockid %d", index);
@@ -154,6 +171,9 @@ void* socket_rx_task(void *param)
         if (ret < 0) {
             xlog(XLOG_ERROR, "recv failed(%s)", strerror(errno));
             break;
+        } else if (ret == 0) {
+			vos_msleep(500);
+			continue;
         }
 
         if (ret < sizeof(DEVM_MSG_S)) {
@@ -210,7 +230,7 @@ void* uds_listen_task(void *param)
         return NULL;
     }
 
-    xlog(XLOG_DEBUG, "uds_listen_task: listen %s", get_app_name());
+    xlog(XLOG_INFO, "uds_listen_task: listen %d", fd);
     while(1){
         pthread_t unused_tid;
         long int temp_val; //suppress warning
@@ -221,7 +241,7 @@ void* uds_listen_task(void *param)
             continue;
         }
 
-        xlog(XLOG_DEBUG, "uds_listen_task new_fd %d", new_fd);
+        xlog(XLOG_INFO, "uds_listen_task new_fd %d", new_fd);
         temp_val = new_fd;
         ret = pthread_create(&unused_tid, NULL, socket_rx_task, (void *)temp_val);  
         if (ret != 0)  {  
@@ -247,6 +267,7 @@ void* inet_listen_task(void *param)
         return NULL;
     }
 	(void)setsockopt(listen_fd, SOL_SOCKET, SO_REUSEADDR, &on, sizeof(on));
+	(void)setsockopt(listen_fd, SOL_SOCKET, SO_REUSEPORT, &on, sizeof(on));
     
     memset(&inet_addr, 0, sizeof(inet_addr));
     inet_addr.sin_family =  AF_INET; 
@@ -262,6 +283,7 @@ void* inet_listen_task(void *param)
         return NULL;
     }
 
+	xlog(XLOG_INFO, "inet_listen_task: listen %d", listen_fd);
     while (1) {
         pthread_t unused_tid;
         long int temp_val; //suppress warning
@@ -273,7 +295,7 @@ void* inet_listen_task(void *param)
             continue;
         }
 
-        xlog(XLOG_DEBUG, "inet_listen_task new_fd %d", new_fd);
+        xlog(XLOG_INFO, "inet_listen_task new_fd %d", new_fd);
         temp_val = new_fd;
         ret = pthread_create(&unused_tid, NULL, socket_rx_task, (void *)temp_val);  
         if (ret != 0)  {  
@@ -460,6 +482,7 @@ int devm_msg_send(int dst_ip, char *dst_app, DEVM_MSG_S *tx_msg)
         return VOS_ERR;
     }
 
+	vos_msleep(10); //avoid packet crush
     pthread_mutex_unlock(&tx_mutex);
     return VOS_OK;
 }

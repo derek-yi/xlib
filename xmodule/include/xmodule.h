@@ -37,6 +37,8 @@
 #define DEF_CONFIG_FILE			"/home/config/top_cfg.txt"
 #define TX_CONFIG_FILE			"/home/config/tx_atten_cfg.txt"
 #define WIFI_CONFIG_FILE		"/home/config/wpa_supplicant.conf"
+#define DEF_LICENSE_FILE		"/run/raw_license.txt"
+#define FENCE_CFG_FILE			"/home/config/fence_cfg.bin"
 
 int xmodule_init(char *app_name, char *json_file);
 

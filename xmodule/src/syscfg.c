@@ -13,9 +13,12 @@
 
 typedef struct _SYS_CFG{
     struct _SYS_CFG *next;
+	unsigned hash;
     char    *key;
     char    *value;
 }SYS_CFG_S;
+
+static int debug_en = 0;
 
 static SYS_CFG_S *my_syscfg = NULL;
 
@@ -23,9 +26,44 @@ static pthread_mutex_t syscfg_mutex = PTHREAD_MUTEX_INITIALIZER;
 static pthread_mutex_t cfgfile_mutex = PTHREAD_MUTEX_INITIALIZER;
 
 #if 1
+
+/*-------------------------------------------------------------------------*/
+/**
+  @brief    Compute the hash key for a string.
+  @param    key     Character string to use for key.
+  @return   1 unsigned int on at least 32 bits.
+
+  This hash function has been taken from an Article in Dr Dobbs Journal.
+  This is normally a collision-free function, distributing keys evenly.
+  The key is stored anyway in the struct so that collision can be avoided
+  by comparing the key itself in last resort.
+ */
+/*--------------------------------------------------------------------------*/
+unsigned dictionary_hash(const char * key)
+{
+    size_t      len ;
+    unsigned    hash ;
+    size_t      i ;
+
+    if (!key)
+        return 0 ;
+
+    len = strlen(key);
+    for (hash=0, i=0 ; i<len ; i++) {
+        hash += (unsigned)key[i] ;
+        hash += (hash<<10);
+        hash ^= (hash>>6) ;
+    }
+    hash += (hash <<3);
+    hash ^= (hash >>11);
+    hash += (hash <<15);
+    return hash ;
+}
+
 int sys_conf_set(char *key_str, char *value)
 {
     SYS_CFG_S *p;
+	unsigned key_hash = dictionary_hash(key_str);
 
     if ( (key_str == NULL) || (value == NULL) ) {
         return VOS_E_PARAM;
@@ -34,12 +72,14 @@ int sys_conf_set(char *key_str, char *value)
 	pthread_mutex_lock(&syscfg_mutex);
     p = my_syscfg;
     while (p != NULL) {
-        if ( !strcmp(key_str, p->key) ) {  //update 
-			if (p->value) free(p->value);
-            p->value = strdup(value);
-			pthread_mutex_unlock(&syscfg_mutex);
-            return VOS_OK;
-        }
+		if (p->hash == key_hash) {
+	        if ( !strcmp(key_str, p->key) ) {  //update 
+				if (p->value) free(p->value);
+	            p->value = strdup(value);
+				pthread_mutex_unlock(&syscfg_mutex);
+	            return VOS_OK;
+	        }
+		}
         p = p->next;
     }
 
@@ -50,6 +90,7 @@ int sys_conf_set(char *key_str, char *value)
         return VOS_E_MALLOC;
     }
 
+	p->hash = key_hash;
     p->key = strdup(key_str);
     p->value = strdup(value);
     p->next = my_syscfg;
@@ -62,7 +103,8 @@ int sys_conf_set(char *key_str, char *value)
 int sys_conf_delete(char *key_str)
 {
     SYS_CFG_S *p;
-	SYS_CFG_S *prev;
+	SYS_CFG_S *prev = NULL;
+	unsigned key_hash = dictionary_hash(key_str);
 
     if (key_str == NULL) {
         return VOS_E_PARAM;
@@ -70,9 +112,8 @@ int sys_conf_delete(char *key_str)
 
 	pthread_mutex_lock(&syscfg_mutex);
     p = my_syscfg;
-	prev = NULL;
     while (p != NULL) {
-        if ( !strcmp(key_str, p->key) ) {
+        if ( (p->hash == key_hash) && !strcmp(key_str, p->key) ) {
             if (prev) {
 				prev->next = p->next;	
             } else {
@@ -93,16 +134,38 @@ int sys_conf_delete(char *key_str)
     return VOS_E_NONEXIST;
 }
 
+int sys_conf_clear()
+{
+    SYS_CFG_S *p;
+	SYS_CFG_S *next = NULL;
+
+	pthread_mutex_lock(&syscfg_mutex);
+    p = my_syscfg;
+    while (p != NULL) {
+        next = p->next;
+        
+        if (p->key) free(p->key);
+        if (p->value) free(p->value);
+        free(p);
+
+        p = next;
+    }
+
+	pthread_mutex_unlock(&syscfg_mutex); 
+    return VOS_OK;
+}
+
 char* sys_conf_get(char *key_str)
 {
     SYS_CFG_S *p;
+	unsigned key_hash = dictionary_hash(key_str);
 
     if (key_str == NULL) return NULL;
 
 	pthread_mutex_lock(&syscfg_mutex);
     p = my_syscfg;
     while (p != NULL) {
-        if ( !strcmp(key_str, p->key) ) {
+        if ( (p->hash == key_hash) && !strcmp(key_str, p->key) ) {
 			pthread_mutex_unlock(&syscfg_mutex);
             return p->value;
         }
@@ -280,61 +343,56 @@ int cfgfile_write_str(char *file_name, char *key_str, char *val_str)
 	FILE *fp;
 	char line_str[LINE_BUF_SZ];
 	char *ptr;
-	char *file_buff;
 	int find_node = 0;
 	int buf_ptr = 0;
 
 	if (file_name == NULL || key_str == NULL) return -1;
 
-	file_buff = (char *)malloc(MAX_CFG_LINE*LINE_BUF_SZ);
-	if (file_buff == NULL) {
-		x_perror("malloc");
-		return VOS_E_MALLOC;
-	}
+	pthread_mutex_lock(&cfgfile_mutex);
 	memset(file_buff, 0, MAX_CFG_LINE*LINE_BUF_SZ);
 
-	pthread_mutex_lock(&cfgfile_mutex);
 	fp = fopen(file_name, "r");
 	if (fp != NULL) {
 		while (fgets(line_str, LINE_BUF_SZ, fp) != NULL) { 
 			ptr = &line_str[0];
-			while ( *ptr == ' ' || *ptr == '\t' ) ptr++;
+			while ( *ptr == ' ' || *ptr == '\t' || *ptr == '#' ) ptr++;
 			
 			if (memcmp(ptr, key_str, strlen(key_str)) == 0) {
 				find_node = 1;
 				if (val_str == NULL) {
-					//printf("delete %s\n", key_str);
-					snprintf(line_str, LINE_BUF_SZ, "%s = \n", key_str);
+					if(debug_en) printf("%d> delete %s\n", __LINE__, key_str);
+					snprintf(line_str, LINE_BUF_SZ, "#%s = \n", key_str);
 				} else {
-					//printf("update %s to %s \n", key_str, val_str);
+					if(debug_en) printf("%d> update %s to %s \n", __LINE__, key_str, val_str);
 					snprintf(line_str, LINE_BUF_SZ, "%s = %s\n", key_str, val_str);
 				}
 			} 
 
-			memcpy(file_buff + buf_ptr, line_str, strlen(line_str));
-			buf_ptr += strlen(line_str);
+			memcpy(file_buff[buf_ptr], line_str, strlen(line_str));
+			buf_ptr++;
 		}
 
 		fclose(fp);
 	}
 
 	if ( (find_node == 0) && (val_str != NULL) ) {
-		//printf("add %s = %s \n", key_str, val_str);
+		if(debug_en) printf("%d> add %s = %s \n", __LINE__, key_str, val_str);
 		snprintf(line_str, LINE_BUF_SZ, "%s = %s\n", key_str, val_str);
-		memcpy(file_buff + buf_ptr, line_str, strlen(line_str));
-		buf_ptr += strlen(line_str);
+		memcpy(file_buff[buf_ptr], line_str, strlen(line_str));
+		buf_ptr++;
 	}
 
 	fp = fopen(file_name, "w+");
 	if (fp == NULL) {
 		x_perror("fopen");
-		free(file_buff);
 		pthread_mutex_unlock(&cfgfile_mutex);
 		return VOS_E_FILE;
 	}
-	
-	fwrite(file_buff, buf_ptr, 1, fp);
-	free(file_buff);
+
+    for (int i = 0; i < buf_ptr; i++) {
+        fwrite(file_buff[i], strlen(file_buff[i]), 1, fp);
+    }
+    
 	fclose(fp);
 	pthread_mutex_unlock(&cfgfile_mutex);
 	return VOS_OK;
@@ -355,7 +413,7 @@ int cfgfile_load_file(char *file_name)
 		pthread_mutex_unlock(&cfgfile_mutex);
 		return VOS_E_FILE;
 	}
-	
+
 	while (fgets(line_str, LINE_BUF_SZ, fp) != NULL) { 
 		char *ptr = &line_str[0];
 		while ( *ptr == ' ' || *ptr == '\t' ) ptr++; //skip space/tab at head
@@ -390,7 +448,7 @@ int cfgfile_load_file(char *file_name)
 	return VOS_OK;
 }
 
-int cfgfile_store_file(char *cfg_file, char *bak_file)
+int cfgfile_store_file(char *old_file, char *new_file)
 {
 	FILE *fp;
     SYS_CFG_S *p;
@@ -399,17 +457,11 @@ int cfgfile_store_file(char *cfg_file, char *bak_file)
 	int i, line_cnt = 0;
 	int add_line = 0;
 
-	if (cfg_file == NULL) return VOS_E_PARAM;
-	if (bak_file != NULL) {
-		snprintf(key_str, sizeof(key_str), "cp -rf %s %s", cfg_file, bak_file);
-		vos_run_cmd(key_str);
-	}
-
 	pthread_mutex_lock(&cfgfile_mutex);
 	fmt_time_str(key_str, LINE_BUF_SZ);
 	sys_conf_set("last_update", key_str);
 
-	fp = fopen(cfg_file, "r");
+	fp = fopen(old_file, "r");
 	if (fp != NULL) {
 		memset(file_buff[line_cnt], 0, LINE_BUF_SZ);
 		while (fgets(file_buff[line_cnt], LINE_BUF_SZ, fp) != NULL) { 
@@ -426,8 +478,8 @@ int cfgfile_store_file(char *cfg_file, char *bak_file)
 				memset(key_str, 0, sizeof(key_str));
 				memcpy(key_str, ptr, i);
 				if (sys_conf_get(key_str) == NULL) {
-					//printf("delete %s \n", key_str);
-					snprintf(file_buff[line_cnt], LINE_BUF_SZ, "%s = \n", key_str);
+					if(debug_en) printf("%d> delete %s \n", __LINE__, key_str);
+					snprintf(file_buff[line_cnt], LINE_BUF_SZ, "#%s = \n", key_str);
 				}
 			}
 
@@ -435,10 +487,11 @@ int cfgfile_store_file(char *cfg_file, char *bak_file)
 			line_cnt++;
 			if (line_cnt >= MAX_CFG_LINE) break;
 		}
+        
 		fclose(fp);
 	}
 
-	//printf("line_cnt %d \n", line_cnt);
+	if(debug_en) printf("line_cnt %d \n", line_cnt);
     p = my_syscfg;
     while (p != NULL) {
         if ( p->key == NULL || p->value == NULL) {
@@ -448,19 +501,21 @@ int cfgfile_store_file(char *cfg_file, char *bak_file)
 
 		for ( i = 0, find_key = 0; i < line_cnt; i++) {
 			char *ptr = file_buff[i];
-			while ( *ptr == ' ' || *ptr == '\t' ) ptr++; //skip space/tab at head
-			if ( (*ptr == '#') || (*ptr == 0) ) continue; //skip comment or blank line
+			while ( *ptr == ' ' || *ptr == '\t' || *ptr == '#' ) ptr++; //skip space/tab at head
+			if (*ptr == 0) continue; //skip comment or blank line
 
+            //both exist in my_syscfg and file, update value to file
 			if (memcmp(ptr, p->key, strlen(p->key)) == 0) {
-				//printf("update %s %s \n", p->key, p->value);
+				if(debug_en) printf("%d> update %s %s \n", __LINE__, p->key, p->value);
 				snprintf(file_buff[i], LINE_BUF_SZ, "%s = %s\n", p->key, p->value);
 				find_key = 1;
 				break;
 			}
 		}
 
+        //not exist in file, add new node to file
 		if ( (find_key == 0) && (line_cnt + add_line < MAX_CFG_LINE) ) {
-			//printf("add %s %s \n", p->key, p->value);
+			if(debug_en) printf("%d> add %s %s \n", __LINE__, p->key, p->value);
 			snprintf(file_buff[line_cnt + add_line], LINE_BUF_SZ, "%s = %s\n", p->key, p->value);
 			add_line++;
 		}
@@ -469,7 +524,7 @@ int cfgfile_store_file(char *cfg_file, char *bak_file)
 		continue;
     }    
 
-	fp = fopen(cfg_file, "w");
+	fp = fopen(new_file, "w");
 	if (fp == NULL) {
 		x_perror("fopen");
 		pthread_mutex_unlock(&cfgfile_mutex);
@@ -512,6 +567,7 @@ int cfgfile_unit_test(void)
 	ret = cfgfile_read_str("./my_cfg.txt", "cc", rd_buff, sizeof(rd_buff));
 	if ( ret == 0 ) printf("%d error %d \n", __LINE__, ret);
 
+    sys_conf_clear();
 	ret = cfgfile_load_file("./my_cfg.txt");	
 	if ( ret != 0 ) printf("%d error %d \n", __LINE__, ret);
 	sys_conf_show();
@@ -526,7 +582,14 @@ int cfgfile_unit_test(void)
 	sys_conf_delete("bb");
 	sys_conf_set("cc", "222");
 	sys_conf_show();
-	ret = cfgfile_store_file("./new_cfg.txt", "./bak_cfg.txt");	
+
+	ret = cfgfile_store_file(NULL, "./new_cfg1.txt");	
+	if ( ret != 0 ) printf("%d error %d \n", __LINE__, ret);
+
+	ret = cfgfile_store_file("./my_cfg.txt", "./new_cfg2.txt");	
+	if ( ret != 0 ) printf("%d error %d \n", __LINE__, ret);
+
+	ret = cfgfile_write_str("./my_cfg.txt", "bb", "new");
 	if ( ret != 0 ) printf("%d error %d \n", __LINE__, ret);
 
     return VOS_OK;

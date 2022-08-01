@@ -9,22 +9,63 @@
 #include <signal.h>
 #include <sys/time.h>
 #include <stdarg.h>
+#include <sys/socket.h>
+#include <sys/un.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
+#include <sys/ioctl.h>
+#include <net/if.h>
 
 #include "vos.h"    //vos_run_cmd
+#include "syscfg.h"
 #include "xlog.h"
 
+//#define INCLUDE_SYSLOG
+
 #ifndef MAKE_XLIB
-
 #define vos_print   printf
-
 #endif
-
 
 static char my_log_file[128];
 
 static uint32 my_log_level = XLOG_INFO;
 
 static uint32 my_print_level = XLOG_ERROR;
+
+#ifdef INCLUDE_SYSLOG
+
+int syslog_sock = -1;
+
+int syslog_sendmsg(void *tx_buff, int len) 
+{
+	int ret;
+	char *syslog_ip;
+	static struct sockaddr_in srv_addr;
+
+	syslog_ip = sys_conf_get("ftp_ipaddr");
+	if ( syslog_ip == NULL) return 0;
+	
+	if (syslog_sock < 0) {
+		syslog_sock = socket(PF_INET, SOCK_DGRAM, 0);
+		if (syslog_sock < 0) {
+			///printf("invalid xlog_sock %d", syslog_sock);
+			return -1;
+		}
+		memset(&srv_addr, 0, sizeof(srv_addr));
+		srv_addr.sin_family = AF_INET;
+		srv_addr.sin_port = htons(514);
+		srv_addr.sin_addr.s_addr = inet_addr(syslog_ip);
+	}
+
+	ret = sendto(syslog_sock, tx_buff, len, 0, (struct sockaddr *)&srv_addr, sizeof(srv_addr));
+	if (ret <= 0) {
+		//printf("sendto failed %d", ret);
+		return -1;
+	}
+
+	return 0;
+}
+#endif
 
 int xlog_print_file(char *filename)
 {
@@ -72,7 +113,7 @@ int cli_xlog_level(int argc, char **argv)
 	if (strncasecmp(argv[1], "set", strlen(argv[1])) == 0) {
 		if (argc < 4)  {
 	        vos_print("invalid param \r\n");
-	        return 0x2; //CMD_ERR_PARAM;
+	        return VOS_E_PARAM;
     	}
 
 		xlog_set_level(atoi(argv[2]), atoi(argv[3]));
@@ -83,94 +124,6 @@ int cli_xlog_level(int argc, char **argv)
     return VOS_OK;
 }
 
-#ifdef INCLUDE_SYSLOG
-
-int _xlog(char *file, int line, int level, const char *format, ...)
-{
-    va_list args;
-    char buf[XLOG_BUFF_MAX];
-    int len;
-    int facility = LOG_LOCAL0;
-
-    va_start(args, format);
-    len = vsnprintf(buf, XLOG_BUFF_MAX, format, args);
-    va_end(args);
-
-    openlog(NULL, LOG_CONS, facility);
-    //setlogmask(LOG_UPTO(LOG_NOTICE));
-    syslog(level, "%s", buf);
-    closelog();
-
-    if ( level > sys_conf_geti("log_level", 0) ){
-        printf("%s\r\n", buf);
-    } 
-
-    return len;    
-}
-
-int xlog_init(char *log_file)
-{
-    return 0;
-}
-
-#elif defined (INCLUDE_ZLOG)
-
-/* 
-## demo of zlog.conf
-[global]
-strict init = true
-buffer min = 1024
-buffer max = 2MB
-rotate lock file = /tmp/zlog.lock
-default format = "[%-5V][%d.%ms][%c][%f:%L] %m%n"
-file perms = 600
-
-[levels]
-TRACE = 10
-
-[formats]
-simple = "%m"
-normal = "%d %m%n"
-
-## level: "DEBUG", "INFO", "NOTICE", "WARN", "ERROR", "FATAL"
-[rules]
-*.*                     "/var/log/zlog.%c.log", 1MB*3
-*.=TRACE                "/var/log/zlog_trace.log", 1MB*3
-*.=DEBUG                "/var/log/zlog_debug.log", 1MB*3
-*.=INFO                 "/var/log/zlog_info.log", 1MB*3
-*.=WARN                 "/var/log/zlog_warn.log", 1MB*3
-*.=ERROR                "/var/log/zlog_error.log", 1MB*3
-
-## zlog -> syslog -> logserver
-*.=TRACE                >syslog,LOG_LOCAL0;simple
-*.=DEBUG                >syslog,LOG_LOCAL0;simple
-*.=INFO                 >syslog,LOG_LOCAL0;simple
-*.WARN                  >syslog,LOG_LOCAL1;simple
-*/
-
-zlog_category_t *my_cat = NULL; 
-
-int xlog_init(char *app_name)
-{
-    int rc;
-    
-	rc = zlog_init("/etc/zlog.conf");
-	if (rc) {
-		printf("init failed\n");
-		return -1;
-	}
-
-	my_cat = zlog_get_category("app_name");
-	if (!my_cat) {
-		printf("get category fail\n");
-		zlog_fini();
-		return -3;
-	}
-    return 0;
-}
-
-#else
-
 int xlog_init(char *log_file)
 {
     if (log_file != NULL) {
@@ -178,8 +131,8 @@ int xlog_init(char *log_file)
     } else {
         strcpy(my_log_file, "xlog.txt");
     }
-    
-    return 0;
+
+    return VOS_OK;
 }
 
 int _xlog(const char *func, int line, int level, const char *format, ...)
@@ -190,11 +143,15 @@ int _xlog(const char *func, int line, int level, const char *format, ...)
 	int ptr = 0;
 
 	if ( (level < my_print_level) && (level < my_log_level) ) {
-		return 0;
+		return VOS_OK;
 	}
 	
 	fmt_time_str(time_str, sizeof(time_str));
+	#ifdef INCLUDE_SYSLOG
+	ptr = sprintf(buff, "<1>[%s]<%s,%d> ", time_str, func, line);
+	#else
 	ptr = sprintf(buff, "[%s]<%s,%d> ", time_str, func, line);
+	#endif
     va_start(args, format);
     vsnprintf(buff + ptr, XLOG_BUFF_MAX - ptr, format, args);
     va_end(args);
@@ -206,19 +163,22 @@ int _xlog(const char *func, int line, int level, const char *format, ...)
 
     if ( level >= my_log_level ) {
         int fd = open(my_log_file, O_RDWR|O_CREAT|O_APPEND, 0666);
+		int buf_len = strlen(buff);
         if (fd > 0) {
-            write(fd, buff, strlen(buff));
+            write(fd, buff, buf_len);
             close(fd);
         }
+		#ifdef INCLUDE_SYSLOG
+		syslog_sendmsg(buff, buf_len);
+		#endif
     } 
 
-    return 0;    
+    return VOS_OK;    
 }
 
-#endif
-
 #ifndef MAKE_XLIB
-
+//undef INCLUDE_SYSLOG
+//gcc xlog.c vos.c -I../include -lpthread -lrt
 int main()
 {	
 	xlog_set_level(XLOG_INFO, XLOG_WARN);
@@ -229,8 +189,7 @@ int main()
 	xlog_warn("this is xlog_warn");
 	xlog_err("this is xlog_err");
 
-    return 0;
+    return VOS_OK;
 }
-
 #endif
 

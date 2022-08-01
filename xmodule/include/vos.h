@@ -90,7 +90,7 @@ void fmt_time_str(char *time_str, int max_len);
 
 void vos_msleep(uint32 milliseconds);
 
-int vos_run_cmd(char *cmd_str);
+int vos_run_cmd(const char *format, ...);
 
 int vos_print(const char * format,...);
 

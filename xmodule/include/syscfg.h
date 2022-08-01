@@ -5,6 +5,8 @@
 
 int sys_conf_set(char *key_str, char *value);
 
+int sys_conf_seti(char *key_str, int value);
+
 char* sys_conf_get(char *key_str);
 
 int sys_conf_delete(char *key_str);
@@ -19,9 +21,7 @@ int sys_conf_show(void);
 
 int cfgfile_load_file(char *file_name);
 
-int cfgfile_store_file(char *cfg_file, char *bak_file);
-
-int cfgfile_reload_file(char *def_file, char *cur_file);
+int cfgfile_store_file(char *old_file, char *new_file);
 
 #endif
 

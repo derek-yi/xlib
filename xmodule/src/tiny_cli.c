@@ -582,6 +582,7 @@ void* telnet_listen_task(void *param)
 		return NULL;
 	}
 	(void)setsockopt(master_fd, SOL_SOCKET, SO_REUSEADDR, &on, sizeof(on));
+	(void)setsockopt(master_fd, SOL_SOCKET, SO_REUSEPORT, &on, sizeof(on));
 
 	/* Set it to listen to specified port */
 	memset((void *)&sa, 0, sizeof(sa));
@@ -589,7 +590,8 @@ void* telnet_listen_task(void *param)
 	sa.sin_port = htons(TELNETD_LISTEN_PORT);
 
 	/* Set it to listen on the specified interface */
-	sa.sin_addr.s_addr = htonl(INADDR_ANY);
+	//sa.sin_addr.s_addr = htonl(INADDR_ANY);
+	sa.sin_addr.s_addr = inet_addr("127.0.0.1");
 	if (bind(master_fd, (struct sockaddr *) &sa, sizeof(sa)) < 0) {
 		perror("bind");
 		return NULL;

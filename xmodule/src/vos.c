@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdint.h>
+#include <stdarg.h>
 #include <pthread.h>
 #include <sys/stat.h>
 #include <unistd.h>
@@ -41,7 +42,6 @@ int sys_read_pipe(char *cmd_str, char *buff, int buf_len)
 int sys_node_readstr(char *node_str, char *rd_buf, int buf_len)
 {
 	FILE *fp;
-	char cmd_buf[256];
 
 	if (rd_buf == NULL) return VOS_ERR;
 
@@ -155,14 +155,15 @@ void vos_msleep(uint32 milliseconds)
 }
 
 //https://blog.csdn.net/Primeprime/article/details/60954203
-int vos_run_cmd(char *cmd_str)
+int vos_run_cmd(const char *format, ...)
 {
+	va_list args;
+	char cmd_str[512];
     int status;
     
-    if (NULL == cmd_str)
-    {
-        return VOS_ERR;
-    }
+    va_start(args, format);
+    vsnprintf(cmd_str, 512, format, args);
+    va_end(args);
     
     status = system(cmd_str);
     if (status < 0)
@@ -352,7 +353,7 @@ uint32 devmem_read(uint64_t mem_addr)
     }
     
     virt_addr = map_base + (target & MAP_MASK);
-	read_result = *((uint32 *) virt_addr);
+	read_result = *((volatile uint32 *) virt_addr);
 	
     if (munmap(map_base, MAP_SIZE) == -1) {
         x_perror("munmap");
@@ -382,7 +383,7 @@ uint32 devmem_write(uint64_t mem_addr, uint32 writeval)
     }
     
     virt_addr = map_base + (target & MAP_MASK);
-	*((uint32 *) virt_addr) = writeval;
+	*((volatile uint32 *) virt_addr) = writeval;
 	//read_result = *((unsigned long *) virt_addr);
     //printf("Written 0x%lu; readback 0x%lu\n", writeval, read_result);
 

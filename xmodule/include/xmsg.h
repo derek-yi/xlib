@@ -15,6 +15,8 @@
 #define XMSG_T_OAM_BT				0x32
 #define XMSG_T_OAM_CGI				0x33
 #define XMSG_T_OAM_METH				0x34
+#define XMSG_T_OAM_TTY				0x35
+#define XMSG_T_OAM_NULL				0xFF
 #define XMSG_T_MAX                	0x80
 
 #define APP_NAME_LEN                32
@@ -53,6 +55,8 @@ int rpc_set_callback(rpc_func func);
 int devm_msg_forward(DEVM_MSG_S *tx_msg);
 
 int get_local_ip(char *if_name);
+
+int get_local_mac(char *if_name, char *mac_addr);
 
 #endif
 
