@@ -1,4 +1,3 @@
-
 #include <linux/kernel.h>
 #include <linux/init.h>
 #include <linux/types.h>
@@ -32,32 +31,26 @@ static int global_open(struct inode *inode, struct file *filp)
 static ssize_t global_read(struct file *filp, char __user *buf, size_t count, loff_t *ppos)  
 {  
     printk("global_read: count %d ppos %d \n", count, *ppos);  
-    if (*ppos >= GLOBALMEM_SIZE)   
-        return 0;   
+    if (count > GLOBALMEM_SIZE)   
+        count = GLOBALMEM_SIZE;  
     
-    if (*ppos + count > GLOBALMEM_SIZE)   
-        count = GLOBALMEM_SIZE - *ppos;  
-    
-    if (copy_to_user(buf, mem_buff + *ppos, count))   
+    if (copy_to_user(buf, mem_buff, count))   
         return -EFAULT;   
     
-    *ppos += count;  
+    //*ppos += count;  
     return count;  
 }  
   
 static ssize_t global_write(struct file *filp, const char __user *buf, size_t count, loff_t *ppos)  
 {  
     printk("global_write: count %d ppos %d \n", count, *ppos);  
-    if (*ppos >= GLOBALMEM_SIZE)   
-        return 0;   
+    if (count > GLOBALMEM_SIZE)   
+        count = GLOBALMEM_SIZE;  
     
-    if (*ppos + count > GLOBALMEM_SIZE)   
-        count = GLOBALMEM_SIZE - *ppos;  
-    
-    if(copy_from_user(mem_buff + *ppos, buf, count))   
+    if(copy_from_user(mem_buff, buf, count))   
         return -EFAULT;   
     
-    *ppos += count;  
+    //*ppos += count;  
     return count; 
 }  
   

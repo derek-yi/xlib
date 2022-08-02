@@ -1,6 +1,3 @@
-
-#if 1
- 
 #include <stdio.h> 
 #include <fcntl.h> 
 #include <stdlib.h> 
@@ -53,8 +50,5 @@ clean_exit:
     if (fd > 0) close(fd);
     return 0;
 }
- 
-#endif
-
 
 

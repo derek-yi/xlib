@@ -8,7 +8,7 @@
  
 #define NODE_NAME ("/sys/kernel/debug/my_dev/node")
 
-#define TO_WRITE "1234"
+#define TO_WRITE "1111"
 
 #define BUF_LENGTH 128
  

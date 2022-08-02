@@ -1,4 +1,3 @@
-
 #include <linux/kernel.h>
 #include <linux/init.h>
 #include <linux/types.h>
@@ -109,6 +108,7 @@ MODULE_AUTHOR("Decly");
 
 sudo insmod debugfs.ko
 sudo cat /sys/kernel/debug/misc/u32
+echo 12 > /sys/kernel/debug/misc/u32
 
 */
 

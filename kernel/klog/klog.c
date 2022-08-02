@@ -1,10 +1,8 @@
 /****************************************************************************** 
-*Name: memdev.c 
-*Desc: 字符设备驱动程序的框架结构
-*Parameter:  
-*Return: 
-*Author: derek 
-*Date: 2013-6-4 
+*Name   : klog.c 
+*Desc   : xx
+*Author : derek 
+*Date   : 2013-6-4 
 ********************************************************************************/  
 #include <linux/kernel.h>
 #include <linux/init.h>
@@ -119,9 +117,9 @@ static int memdev_init(void)
 
     dev_t devno = MKDEV(mem_major, 0);  
 
-    if (mem_major) { /* 静态申请设备号*/  
+    if (mem_major) { 
         result = register_chrdev_region(devno, 2, CHAR_DEV_NAME);  
-    } else { /* 动态分配设备号 */  
+    } else { 
         result = alloc_chrdev_region(&devno, 0, 2, CHAR_DEV_NAME);  
         mem_major = MAJOR(devno);  
     }   
@@ -134,7 +132,7 @@ static int memdev_init(void)
     cdev_init(&my_dev, &mem_fops);  
     my_dev.owner = THIS_MODULE;  
     my_dev.ops = &mem_fops;  
-    cdev_add(&my_dev, MKDEV(mem_major, 0), 2);   /*设备数2*/  
+    cdev_add(&my_dev, MKDEV(mem_major, 0), 2); 
 
     pclass = class_create(THIS_MODULE, CHAR_DEV_NAME);  
     if (IS_ERR(pclass))  {  

@@ -1,4 +1,3 @@
-
 #include <linux/kernel.h>
 #include <linux/init.h>
 #include <linux/types.h>
@@ -63,14 +62,14 @@ static int device_mmap(struct file *file, struct vm_area_struct *vma)
 {  
     printk("device_mmap\n");  
     
-    vma->vm_flags |= VM_IO;//表示对设备IO空间的映射  
-    //vma->vm_flags |= VM_RESERVED;//标志该内存区不能被换出，在设备驱动中虚拟页和物理页的关系应该是长期的，应该保留起来，不能随便被别的虚拟页换出 
+    vma->vm_flags |= VM_IO; 
+    //vma->vm_flags |= VM_RESERVED;
     
-    if(remap_pfn_range(vma,//虚拟内存区域，即设备地址将要映射到这里  
-                       vma->vm_start,//虚拟空间的起始地址  
-                       virt_to_phys(buf)>>PAGE_SHIFT,//与物理内存对应的页帧号，物理地址右移12位  
-                       vma->vm_end - vma->vm_start,//映射区域大小，一般是页大小的整数倍  
-                       vma->vm_page_prot))//保护属性，  
+    if(remap_pfn_range(vma,
+                       vma->vm_start,
+                       virt_to_phys(buf)>>PAGE_SHIFT,
+                       vma->vm_end - vma->vm_start,
+                       vma->vm_page_prot))
     {  
         return -EAGAIN;  
     }  

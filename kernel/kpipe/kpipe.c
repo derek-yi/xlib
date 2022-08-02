@@ -1,10 +1,8 @@
 /****************************************************************************** 
-*Name: memdev.c 
-*Desc: 字符设备驱动程序的框架结构
-*Parameter:  
-*Return: 
-*Author: derek 
-*Date: 2013-6-4 
+*Name   : kpipe.c 
+*Desc   : xx
+*Author : derek 
+*Date   : 2013-6-4 
 ********************************************************************************/  
 #include <linux/kernel.h>
 #include <linux/init.h>
@@ -18,22 +16,13 @@
 #include <linux/cdev.h>  
 
 //module_param(dev_major, int, S_IRUGO);  
-#define MY_DEV_MAJOR        260     /*预设的mem的主设备号*/  
+#define MY_DEV_MAJOR        260     
 static int dev_major = 0; //MY_DEV_MAJOR;  
 
 #define MY_DEV_NR_DEVS      2       /*设备数*/  
 
 #define CHAR_DEV_NAME       "kpipe"
   
-/*
-'k'为幻数，要按照Linux内核的约定方法为驱动程序选择ioctl编号，
-应该首先看看include/asm/ioctl.h和Documentation/ioctl-number.txt这两个文件.
-
-对幻数的编号千万不能重复定义，如ioctl-number.txt已经说明‘k'的编号已经被占用的范围为：
-'k'    00-0F    linux/spi/spidev.h    conflict!
-'k'    00-05    video/kyro.h        conflict!
-所以我们在这里分别编号为0x1a和0x1b
-*/
 #define CMD_MAGIC   'k'
 #define MEM_CMD1    _IO(CMD_MAGIC, 0x1a)
 #define MEM_CMD2    _IO(CMD_MAGIC, 0x1b)
@@ -207,9 +196,9 @@ static int my_dev_init(void)
     int result;  
     dev_t devno = MKDEV(dev_major, 0);  
 
-    if (dev_major) { /* 静态申请设备号*/  
+    if (dev_major) { 
         result = register_chrdev_region(devno, 2, CHAR_DEV_NAME);  
-    } else { /* 动态分配设备号 */  
+    } else { 
         result = alloc_chrdev_region(&devno, 0, 2, CHAR_DEV_NAME);  
         dev_major = MAJOR(devno);  
     }   

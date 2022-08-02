@@ -128,11 +128,13 @@ sudo chmod 666 /sys/derek/digger/help
 sudo chmod 666 /sys/derek/digger/input
 sudo chmod 666 /sys/derek/digger/result
 
+cat /sys/derek/digger/help
+
 echo kernel > /sys/derek/digger/input
-echo on > /sys/derek/digger/input
 
 cat /sys/derek/digger/input
 cat /sys/derek/digger/result
+
 */
 
 module_init(sysfs_ctrl_init);
