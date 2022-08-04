@@ -1,4 +1,3 @@
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <sys/types.h>
@@ -8,10 +7,6 @@
 #include <string.h>
 #include <errno.h>
 #include <unistd.h>
-
-
-
-
 
 #define SHM_NAME        "shm_ram"
 #define FILE_SIZE       4096
@@ -61,13 +56,13 @@ _OUT:
 	return ret;
 }
 
-
 int main(int argc, char **argv)
 {
     int ret;
     
     if(argc < 2) {
-        printf("\n Usage: %s <read|write> <str> \r\n", argv[0]);
+        printf("\n Usage: %s write <str> \r\n", argv[0]);
+        printf("\n Usage: %s read \r\n", argv[0]);
         return 0;
     }
 
@@ -77,10 +72,8 @@ int main(int argc, char **argv)
 }
 
 /*
-
 gcc -o shm.out shm.c -lrt
 ./shm.out write aaa
 ./shm.out read
-
 */
 
