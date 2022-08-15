@@ -1,4 +1,3 @@
-
 #include <linux/module.h>
 #include <linux/fs.h>
 #include <linux/sched.h>
@@ -8,7 +7,6 @@
 #include <linux/device.h>
 #include <linux/slab.h>
 #include <linux/poll.h>
-
 
 //#undef DEBUG
 #define DEBUG
@@ -20,13 +18,12 @@
 
 static struct class *vmem_class = NULL;
 
-static int vmem_major = 0;        //模块vmem_major参数，默认为0
+static int vmem_major = 0;
 static int vmem_minor = 0;
 module_param(vmem_major, int, S_IRUGO);
 
-static int dev_num = 1;            //模块dev_num参数，默认为1
+static int dev_num = 1; 
 module_param(dev_num, int, S_IRUGO);
-
 
 struct vmem_dev {
     unsigned int current_len;
@@ -39,8 +36,8 @@ struct vmem_dev {
     struct fasync_struct *async_queue;
 
 };
-static struct  vmem_dev *vmem_devp;
 
+static struct  vmem_dev *vmem_devp;
 
 ssize_t virtual_show(struct device *dev, struct device_attribute *attr, char *buf)
 {
@@ -53,7 +50,7 @@ ssize_t virtual_show(struct device *dev, struct device_attribute *attr, char *bu
 
 ssize_t virtual_store(struct device *dev, struct device_attribute *attr, const char *buf, size_t count)
 {
-    struct  vmem_dev *devp = (struct vmem_dev *)dev_get_drvdata(dev);
+    struct vmem_dev *devp = (struct vmem_dev *)dev_get_drvdata(dev);
     mutex_lock(&devp->mutex);
     if (PAGE_SIZE == devp->current_len) {
         devp->current_len = 0;
@@ -67,7 +64,7 @@ ssize_t virtual_store(struct device *dev, struct device_attribute *attr, const c
 
 static int virtual_open(struct inode *inode, struct file *filp)
 {
-    struct  vmem_dev *devp;
+    struct vmem_dev *devp;
     devp = container_of(inode->i_cdev, struct vmem_dev, cdev);
     filp->private_data = devp;
     return 0;
@@ -80,7 +77,7 @@ static ssize_t virual_read(struct file *filp, char __user *buf, size_t count, lo
     DECLARE_WAITQUEUE(wait, current);
 
     mutex_lock(&devp->mutex);
-    add_wait_queue(&devp->r_wait, &wait);        //定义读队列唤醒
+    add_wait_queue(&devp->r_wait, &wait);
 
     while (!devp->current_len) {
         if (filp->f_flags & O_NONBLOCK) {
@@ -88,7 +85,7 @@ static ssize_t virual_read(struct file *filp, char __user *buf, size_t count, lo
             goto out1;
         }
 
-        set_current_state(TASK_INTERRUPTIBLE);    //读阻塞休眠
+        set_current_state(TASK_INTERRUPTIBLE);
         mutex_unlock(&devp->mutex);
         schedule();
         if (signal_pending(current)) {
@@ -107,7 +104,7 @@ static ssize_t virual_read(struct file *filp, char __user *buf, size_t count, lo
         devp->current_len -= count;
         memcpy(devp->mem, devp->mem + count, devp->current_len);
         dprintk("read %d bytes,current_len:%d\n", (int)count, devp->current_len);
-        wake_up_interruptible(&devp->w_wait);        //唤醒读阻塞休眠
+        wake_up_interruptible(&devp->w_wait);
         ret = count;
     }
 out1:
@@ -125,7 +122,7 @@ static ssize_t virual_write(struct file *filp, const char __user *buf, size_t co
     DECLARE_WAITQUEUE(wait, current);
 
     mutex_lock(&devp->mutex);
-    add_wait_queue(&devp->w_wait, &wait);        //定义写队列唤醒
+    add_wait_queue(&devp->w_wait, &wait);
 
     while (devp->current_len == PAGE_SIZE) {
         if (filp->f_flags & O_NONBLOCK) {
@@ -133,7 +130,7 @@ static ssize_t virual_write(struct file *filp, const char __user *buf, size_t co
             goto out1;
         }
 
-        set_current_state(TASK_INTERRUPTIBLE);    //写阻塞休眠
+        set_current_state(TASK_INTERRUPTIBLE); 
         mutex_unlock(&devp->mutex);
         schedule();
         if (signal_pending(current)) {
@@ -151,9 +148,9 @@ static ssize_t virual_write(struct file *filp, const char __user *buf, size_t co
     } else {
         devp->current_len += count;
         dprintk("written %d bytes,current_len:%d\n", (int)count, devp->current_len);
-        wake_up_interruptible(&devp->r_wait);        //唤醒读阻塞休眠
+        wake_up_interruptible(&devp->r_wait);
 
-        if (devp->async_queue) {    //写信号进行异步通知应用
+        if (devp->async_queue) {
             kill_fasync(&devp->async_queue, SIGIO, POLL_IN);
             dprintk("%s kill SIGIO\n", __func__);
         }
@@ -168,8 +165,7 @@ out2:
     return ret;
 }
 
-//这里利用IO CMD宏定义
-#define MEM_CLEAR           _IO('V',1)
+#define MEM_CLEAR           _IO('V', 1)
 #define MEM_FULL            _IOW('V', 2, unsigned char)
 
 static long virtual_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
@@ -206,7 +202,7 @@ static unsigned int virtual_poll(struct file *filp, poll_table *wait)
     struct vmem_dev *devp = filp->private_data;
     
     mutex_lock(&devp->mutex);
-    poll_wait(filp, &devp->r_wait, wait);    //声明读写队列到poll table唤醒线程
+    poll_wait(filp, &devp->r_wait, wait);
     poll_wait(filp, &devp->w_wait, wait);
 
     if (devp->current_len != 0 )
@@ -231,7 +227,6 @@ static int virtual_release(struct inode *inode, struct file *filp)
     return 0;
 }
 
-
 static  struct file_operations virtual_fops = {
     .owner = THIS_MODULE,
     .read = virual_read,
@@ -254,7 +249,6 @@ static int virtualmem_setup_dev(struct vmem_dev *devp, int index)
     return ret;
 }
 
-
 static int __init virtualmem_init(void)
 {
     int ret;
@@ -263,14 +257,14 @@ static int __init virtualmem_init(void)
     struct device *temp[dev_num];
 
     dprintk("Initializing virtualmem device.\n");
-    if(vmem_major)
+    if (vmem_major)
         ret = register_chrdev_region(devno, dev_num, "vmem");
     else {
         ret = alloc_chrdev_region(&devno, 0, dev_num, "vmem");
         vmem_major = MAJOR(devno);
         vmem_minor = MINOR(devno);
     }
-    if(ret < 0) {
+    if (ret < 0) {
         dprintk("Failed to alloc char dev region.\n");
         goto err;
     }
@@ -282,7 +276,7 @@ static int __init virtualmem_init(void)
         goto unregister;
     }
 
-    for(i = 0; i < dev_num; i++) {
+    for (i = 0; i < dev_num; i++) {
         ret = virtualmem_setup_dev(vmem_devp + i, i);
         if (ret) {
             dprintk("Failed to setup dev %d.\n", i);
@@ -292,32 +286,31 @@ static int __init virtualmem_init(void)
         }
     }
 
-    vmem_class = class_create(THIS_MODULE, "virtualmem");    //建立virtualmem类
+    vmem_class = class_create(THIS_MODULE, "virtualmem");
     if (IS_ERR(vmem_class)) {
         ret = PTR_ERR(vmem_class);
         dprintk("Failed to create virtualmem class.\n");
         goto destroy_cdev;
     }
 
-    for(i = 0; i < dev_num; i++)  {
-        //在virtualmem这个类里建立多个virtualmem文件
+    for (i = 0; i < dev_num; i++)  {
         temp[i] = device_create(vmem_class, NULL, devno + i, (void *)(vmem_devp + i), "%s%d", "virtualmem", i);
         if (IS_ERR(temp[i])) {
             ret = PTR_ERR(temp[i]);
             dprintk("Failed to create virtualmem device.\n");
-            while(--i >= 0)
+            while (--i >= 0)
                 device_destroy(vmem_class, devno + i);
             goto destory_class;
         }
     }
     
-    for(i = 0; i < dev_num; i++) {
-        (vmem_devp + i)->device_attribute.attr.name = "mem";    //对于单设备一般用宏 DEVICE_ATTR，这里多设备需要完成宏的代码
+    for (i = 0; i < dev_num; i++) {
+        (vmem_devp + i)->device_attribute.attr.name = "mem";
         (vmem_devp + i)->device_attribute.attr.mode = S_IRUGO | S_IWUSR;
         (vmem_devp + i)->device_attribute.show = virtual_show;
         (vmem_devp + i)->device_attribute.store = virtual_store;
         ret =  device_create_file(temp[i], &(vmem_devp + i)->device_attribute);
-        if(ret < 0) {
+        if (ret < 0) {
             dprintk("Failed to create attribute mem.");
             while(--i >= 0)
                 device_remove_file(temp[i], &(vmem_devp + i)->device_attribute);
@@ -325,9 +318,9 @@ static int __init virtualmem_init(void)
         }
     }
     
-    for(i = 0; i < dev_num; i++)  {
-        mutex_init(&(vmem_devp + i)->mutex);    //初始化互斥锁
-        init_waitqueue_head(&(vmem_devp + i)->r_wait);        //初始化读写队列
+    for (i = 0; i < dev_num; i++)  {
+        mutex_init(&(vmem_devp + i)->mutex);
+        init_waitqueue_head(&(vmem_devp + i)->r_wait);
         init_waitqueue_head(&(vmem_devp + i)->w_wait);
     }
 
@@ -335,14 +328,14 @@ static int __init virtualmem_init(void)
     return 0;
 
 destroy_device:
-    for(i = 0; i < dev_num; i++)
+    for (i = 0; i < dev_num; i++)
         device_destroy(vmem_class, devno + i);
 
 destory_class:
     class_destroy(vmem_class);
 
 destroy_cdev:
-    for(i = 0; i < dev_num; i++)
+    for (i = 0; i < dev_num; i++)
         cdev_del(&(vmem_devp + i)->cdev);
 
 kfree:
@@ -360,14 +353,14 @@ static void __exit virualmem_exit(void)
     int i;
     
     dprintk("Destroy virtualmem device.\n");
-    if(vmem_class) {
-        for(i = 0; i < dev_num; i++)
+    if (vmem_class) {
+        for (i = 0; i < dev_num; i++)
             device_destroy(vmem_class, MKDEV(vmem_major, vmem_minor + i));
         class_destroy(vmem_class);
     }
     
-    if(vmem_devp) {
-        for(i = 0; i < dev_num; i++)
+    if (vmem_devp) {
+        for (i = 0; i < dev_num; i++)
             cdev_del(&(vmem_devp + i)->cdev);
         kfree(vmem_devp);
     }

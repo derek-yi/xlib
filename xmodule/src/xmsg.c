@@ -482,7 +482,6 @@ int devm_msg_send(int dst_ip, char *dst_app, DEVM_MSG_S *tx_msg)
         return VOS_ERR;
     }
 
-	vos_msleep(10); //avoid packet crush
     pthread_mutex_unlock(&tx_mutex);
     return VOS_OK;
 }
@@ -498,6 +497,7 @@ int app_send_msg(int dst_ip, char *dst_app, int msg_type, char *usr_data, int da
         return VOS_ERR;
     }
 
+	vos_msleep(10); //avoid packet crush
     memset(msg_buff, 0, sizeof(msg_buff));
     tx_msg->magic_num = MSG_MAGIC_NUM;
     tx_msg->msg_type = msg_type;
