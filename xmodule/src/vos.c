@@ -336,7 +336,7 @@ uint32 devmem_read(uint64_t mem_addr)
 {
     void *map_base, *virt_addr;
     uint32 read_result;
-    off_t target = (off_t)mem_addr;
+    off_t target = (off_t)((mem_addr & 0x0FFFFFFF) | FPGA_BASE_ADDR);
 
     if (memdev_fd < 0) {
         if ( (memdev_fd = open("/dev/mem", O_RDWR | O_SYNC)) == -1 ) {
@@ -366,7 +366,7 @@ uint32 devmem_write(uint64_t mem_addr, uint32 writeval)
 {
     void *map_base, *virt_addr;
     //unsigned long read_result;
-    off_t target = (off_t)mem_addr;
+    off_t target = (off_t)((mem_addr & 0x0FFFFFFF) | FPGA_BASE_ADDR);
 
     if (memdev_fd < 0) {
         if ( (memdev_fd = open("/dev/mem", O_RDWR | O_SYNC)) == -1 )  {

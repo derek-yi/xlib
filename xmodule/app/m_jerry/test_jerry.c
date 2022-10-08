@@ -73,7 +73,7 @@ int demo_timer_callback(void *param)
 int main(int argc, char **argv)
 {
     int ret;
-    char cfg_file[128];
+    char log_file[128];
     pthread_t threadid;
     timer_t timer_id;
 
@@ -83,12 +83,12 @@ int main(int argc, char **argv)
     }
 
     if (argc > 2) {
-		snprintf(cfg_file, sizeof(cfg_file), "%s", argv[2]);
+		snprintf(log_file, sizeof(log_file), "%s", argv[2]);
     } else {
-		snprintf(cfg_file, sizeof(cfg_file), "%s_log.txt", argv[1]);
+		snprintf(log_file, sizeof(log_file), "%s_log.txt", argv[1]);
 	}
 	
-    xmodule_init(argv[1], cfg_file);
+    xmodule_init(argv[1], log_file);
 
     ret = pthread_create(&threadid, NULL, demo_main_task, NULL);  
     if (ret != 0)  {  

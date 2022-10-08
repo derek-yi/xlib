@@ -53,7 +53,7 @@ int demo_timer_callback(void *param)
 {
     static uint32 timer_cnt = 0;
     
-    if (sys_conf_geti("demo_timer_disable")) {
+    if (sys_conf_geti("demo_timer_disable", 0)) {
         return VOS_OK;
     }
     
@@ -73,22 +73,22 @@ int demo_timer_callback(void *param)
 int main(int argc, char **argv)
 {
     int ret;
-    char cfg_file[128];
+    char log_file[128];
     pthread_t threadid;
     timer_t timer_id;
 
     if (argc < 2) {
-		printf("usage: %s <app_name> <cfg_file> \r\n", argv[0]);
+		printf("usage: %s <app_name> <log_file> \r\n", argv[0]);
 		return VOS_ERR;  
     }
 
     if (argc > 2) {
-		snprintf(cfg_file, sizeof(cfg_file), "%s", argv[2]);
+		snprintf(log_file, sizeof(log_file), "%s", argv[2]);
     } else {
-		snprintf(cfg_file, sizeof(cfg_file), "%s_cfg.txt", argv[1]);
+		snprintf(log_file, sizeof(log_file), "%s_log.txt", argv[1]);
 	}
 	
-    xmodule_init(argv[1], cfg_file);
+    xmodule_init(argv[1], log_file);
 
     ret = pthread_create(&threadid, NULL, demo_main_task, NULL);  
     if (ret != 0)  {  

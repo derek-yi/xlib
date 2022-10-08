@@ -71,28 +71,6 @@ void xmodule_cmd_init(void)
     cli_cmd_reg("xlog",     "xlog level config",            &cli_xlog_level);
 }
 
-//https://tenfy.cn/2017/09/16/only-one-instance/
-#include <sys/file.h>
-int single_instance_check(char *file_path)
-{
-    int fd = open(file_path, O_WRONLY|O_CREAT);
-    if (fd < 0) {
-        printf("open %s failed\n", file_path);
-        return VOS_ERR;
-    }
-
-    int err = flock(fd, LOCK_EX|LOCK_NB);
-    if (err == -1) {
-        printf("lock failed\n");
-        return VOS_ERR;
-    }
-
-    printf("lock success\n");
-    //flock(fd, LOCK_UN);
-
-    return VOS_OK;
-}
-
 int xmodule_init(char *app_name, char *log_file)
 {
 	int app_role;

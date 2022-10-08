@@ -21,7 +21,7 @@
 
 #define APP_NAME_LEN                32
 #define MSG_HEAD_LEN                96	//sizeof(DEVM_MSG_S)
-#define MSG_MAX_PAYLOAD             512
+#define MSG_MAX_PAYLOAD             1024
 #define MSG_MAGIC_NUM               0x01015AA5
 
 typedef struct {

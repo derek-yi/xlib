@@ -47,6 +47,12 @@ typedef unsigned int uint32;
 #define x_perror(x)	 
 #endif
 
+#ifdef ROCKCHIP_BOARD   //FPGA_BAR_ADDR
+#define FPGA_BASE_ADDR           0x900000000
+#else
+#define FPGA_BASE_ADDR           0x280000000
+#endif
+
 short mk_num16(char high, char low);
 int mk_num32(char b0, char b1, char b2, char b3);
 int mk_boundary(int frame, int slot, int symbol);

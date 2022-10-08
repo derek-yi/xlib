@@ -41,8 +41,8 @@ int tu1_proc(char *op_code, char *op_str)
     	memcpy(buf, map_addr, sizeof(buf));
     	printf("read: %s\n", buf);
     } else {  // write
-        if (op_str) memcpy(map_addr, op_str, strlen(op_str));
-        else memcpy(map_addr, WRITE_STR, strlen(WRITE_STR));
+        if (op_str) memcpy(map_addr, op_str, strlen(op_str) + 1);
+        else memcpy(map_addr, WRITE_STR, strlen(WRITE_STR) + 1);
     }
 
 	ret = munmap(map_addr, FILE_SIZE);
@@ -56,13 +56,14 @@ _OUT:
 	return ret;
 }
 
+
 int main(int argc, char **argv)
 {
     int ret;
     
     if(argc < 2) {
-        printf("\n Usage: %s write <str> \r\n", argv[0]);
-        printf("\n Usage: %s read \r\n", argv[0]);
+        printf("Usage: %s <write> <str> \r\n", argv[0]);
+        printf("       %s <read> \r\n", argv[0]);
         return 0;
     }
 
@@ -72,8 +73,10 @@ int main(int argc, char **argv)
 }
 
 /*
+
 gcc -o shm.out shm.c -lrt
 ./shm.out write aaa
 ./shm.out read
+
 */
 
