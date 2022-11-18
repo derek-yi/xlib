@@ -33,10 +33,58 @@
 #include <linux/stddef.h>
 //#include <linux/rcupdate.h>
 
-//MAKE_XLIB
+/********************************************************************************/
 #ifndef bool
 typedef int bool;
 #endif
+
+typedef unsigned long uintptr_t;
+
+#define EXPORT_SYMBOL(x)
+
+#ifndef true
+#define true        1
+#define false       0
+#endif
+
+#ifndef unlikely
+#define unlikely(x)	__builtin_expect(!!(x), 0)
+#endif /* unlikely */
+
+#define WRITE_ONCE(dst, src)    ((dst) = (src))
+ 
+/* linux-2.6.38.8/include/linux/stddef.h */
+//#define offsetof(TYPE, MEMBER) ((size_t) &((TYPE *)0)->MEMBER)
+ 
+/* linux-2.6.38.8/include/linux/kernel.h */
+#define container_of(ptr, type, member) ({			\
+	typeof( ((type *)0)->member ) *__mptr = (ptr);	\
+	(type *)( (char *)__mptr - offsetof(type,member) );})
+
+#define RCU_INITIALIZER(v) (typeof(*(v))*)(v)
+
+#ifndef __smp_store_release
+#define __smp_store_release(p, v)	    \
+do {									\
+	WRITE_ONCE(*p, v);					\
+} while (0)
+#endif
+
+#ifndef smp_store_release
+#define smp_store_release(p, v)         __smp_store_release(p, v)
+#endif
+
+#define rcu_assign_pointer(p, v)					      \
+({									      \
+	uintptr_t _r_a_p__v = (uintptr_t)(v);				      \
+									      \
+	if (__builtin_constant_p(v) && (_r_a_p__v) == (uintptr_t)NULL)	      \
+		WRITE_ONCE((p), (typeof(p))(_r_a_p__v));		      \
+	else								      \
+		smp_store_release(&p, RCU_INITIALIZER((typeof(p))_r_a_p__v)); \
+	_r_a_p__v;							      \
+})
+/********************************************************************************/
 
 struct rb_node {
 	unsigned long  __rb_parent_color;
