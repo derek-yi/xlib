@@ -1,17 +1,20 @@
-ifneq ($(KERNELRELEASE),)
+#export CROSS_COMPLE=aarch64-linux-gnu-
+#export ARCH=arm
+#CC  = $(CROSS_COMPILE)gcc
 
-##obj-m:=misc.o
-obj-m:=misc.o
+KERNELDIR:=/home/derek/share/rockchip/rk3588/kernel
+PWD := $(shell pwd)
 
-else
+## todo
+ccflags-y += -Wno-error
 
-KERNELDIR:=/lib/modules/$(shell uname -r)/build
-PWD:=$(shell pwd)
+obj-m := misc.o
 
-default:
-	$(MAKE) -C $(KERNELDIR) M=$(PWD) modules
-
+modules:
+	#$(MAKE) -C $(KERNELDIR) M=$(PWD) modules
+	$(MAKE) -C $(KERNELDIR) M=$(PWD) modules ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu-
+    
 clean:
-	rm -rf *.o *.mod.c *.mod.o *.ko
+	rm -rf *.o *~ core .depend .*.cmd *.ko *.mod.c .tmp_versions
 
-endif
+.PHONY: modules clean
