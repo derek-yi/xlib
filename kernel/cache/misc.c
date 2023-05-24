@@ -82,7 +82,7 @@ static inline void __flush_dcache_all(void)
 
 }
 
-int flush_user_va1(IO_DATA_ST *iocb)
+int flush_user_va(IO_DATA_ST *iocb)
 {
 	unsigned long len = iocb->len;
 	char *buf = iocb->buff;
@@ -152,7 +152,7 @@ int flush_user_pa(IO_DATA_ST *iocb)
 	return 0;
 }
 
-int invalidate_user_va(IO_DATA_ST *iocb)
+int invalid_user_va(IO_DATA_ST *iocb)
 {
 	unsigned long len = iocb->len;
 	char *buf = iocb->buff;
@@ -210,19 +210,31 @@ err_out:
 	return 0;
 }
 
+int invalid_user_pa(IO_DATA_ST *iocb)
+{
+	void *virt_addr = phys_to_virt((unsigned long)iocb->buff);
+	__inval_dcache_area(virt_addr, iocb->len);
+	return 0;
+}
+
 unsigned long dummy_cnt = 0;
 
 static long misc_ioctl( struct file *file, unsigned int cmd, unsigned long arg)
 {   
 	IO_DATA_ST temp_data;
 	
-	//pr_info("misc_ioctl cmd 0x%x \n", cmd);
+	pr_info("misc_ioctl cmd 0x%x \n", cmd);
     switch(cmd)
     {
         case 0x100: //virt_addr, len
             if(copy_from_user(&temp_data,  (int *)arg, sizeof(IO_DATA_ST)))
                 return -EFAULT;
-			flush_user_va1(&temp_data);
+			flush_user_va(&temp_data);
+            break;
+        case 0x200: //virt_addr, len
+            if(copy_from_user(&temp_data,  (int *)arg, sizeof(IO_DATA_ST)))
+                return -EFAULT;
+            invalid_user_va(&temp_data);
             break;
          
         case 0x101: 
@@ -234,12 +246,11 @@ static long misc_ioctl( struct file *file, unsigned int cmd, unsigned long arg)
 				return -EFAULT;
 			flush_user_pa(&temp_data);
 			break;
-
-		case 0x200: //virt_addr, len
-			if(copy_from_user(&temp_data,  (int *)arg, sizeof(IO_DATA_ST)))
-				return -EFAULT;
-			invalidate_user_va(&temp_data);
-			break;
+        case 0x103: //phy_addr, len
+            if(copy_from_user(&temp_data,  (int *)arg, sizeof(IO_DATA_ST)))
+                return -EFAULT;
+            invalid_user_pa(&temp_data);
+            break;
 
 		case 0x300: 
 			dummy_cnt++;

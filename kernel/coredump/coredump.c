@@ -33,13 +33,13 @@ int main(int argc, char **argv)
 /*
 为所有用户设置生成 core
 $ su - # 获得 root 权限
-# ulimit -S -c unlimited > /dev/null 2>&1
+# ulimit -S -c unlimited
 
 或者为单个用户设置core:
 ulimit -c unlimited # unlimited 可以为数字，如1024
 
-##
-gdb -c [core file] [exec file]
-gdb [exec file] [core file | pid]
+## run with core file
+gdb -c [core_file] [exec_file]
+gdb [exec_file] [core_file | pid]
 
 */

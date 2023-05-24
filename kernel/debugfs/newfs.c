@@ -30,27 +30,27 @@ static int global_open(struct inode *inode, struct file *filp)
     
 static ssize_t global_read(struct file *filp, char __user *buf, size_t count, loff_t *ppos)  
 {  
-    printk("global_read: count %d ppos %d \n", count, *ppos);  
+    printk("global_read: count %ld ppos %lld \n", count, *ppos);  
     if (count > GLOBALMEM_SIZE)   
         count = GLOBALMEM_SIZE;  
     
     if (copy_to_user(buf, mem_buff, count))   
         return -EFAULT;   
     
-    //*ppos += count;  
+    *ppos += count;  
     return count;  
 }  
   
 static ssize_t global_write(struct file *filp, const char __user *buf, size_t count, loff_t *ppos)  
 {  
-    printk("global_write: count %d ppos %d \n", count, *ppos);  
+    printk("global_write: count %ld ppos %lld \n", count, *ppos);  
     if (count > GLOBALMEM_SIZE)   
         count = GLOBALMEM_SIZE;  
     
     if(copy_from_user(mem_buff, buf, count))   
         return -EFAULT;   
     
-    //*ppos += count;  
+    *ppos += count;  
     return count; 
 }  
   
@@ -86,11 +86,9 @@ module_exit(globalvar_exit);
 
 
 /*
-cat /sys/kernel/debug/my_dev/node
-1234
-
 echo 100 > /sys/kernel/debug/my_dev/node
 
+## should test by app.c
 cat /sys/kernel/debug/my_dev/node
 100
 

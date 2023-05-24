@@ -1,6 +1,3 @@
-
-#if 1
- 
 #include <stdio.h> 
 #include <fcntl.h> 
 #include <stdlib.h> 
@@ -19,14 +16,14 @@ typedef struct
 	unsigned long len;
 }IO_DATA_ST;
 
-#define LENGTH 	(10*1024)
+#define LENGTH 	(6*1024)
 
 int main()
 {
     int fd;
     int ret;
 	IO_DATA_ST io_data;
-    char mem_buff[6000];
+    char mem_buff[LENGTH];
 	char *dyn_buff;
 	char *huge_buff;
  
@@ -74,8 +71,6 @@ int main()
     close(fd);
     return 0;
 }
- 
-#endif
 
 
 
