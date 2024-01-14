@@ -1,5 +1,5 @@
 #include "avlmini.c"
-#include "test/linux_rbtree.c"
+//#include "test/linux_rbtree.c"
 #include "test_avl.h"
 
 

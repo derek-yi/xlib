@@ -1,4 +1,3 @@
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
@@ -25,8 +24,6 @@ typedef struct user_data_tag
 
 //static DECLARE_HASHTABLE(my_hash_table, MY_HASH_TABLE_BITS);
 struct hlist_head my_hash_table[1 << (MY_HASH_TABLE_BITS)];
-
-
 
 static inline unsigned int my_hash_func(int aa, int bb)
 {
@@ -57,9 +54,7 @@ int main()
 
     printf("\r\n dump  : ");  
     hash_for_each(my_hash_table, bkt, obj, node) {
-        if(obj->key%3 == 0) {
-            printf("\r\n key=%d param=%d", obj->key, obj->param);
-        }
+		printf("\r\n key=%d param=%d", obj->key, obj->param);
     }
     printf("\r\n");  
 
@@ -74,9 +69,7 @@ int main()
 
     printf("\r\n dump  : ");  
     hash_for_each(my_hash_table, bkt, obj, node) {
-        if(obj->key%3 == 0) {
-            printf("\r\n key=%d param=%d", obj->key, obj->param);
-        }
+		printf("\r\n key=%d param=%d", obj->key, obj->param);
     }
     printf("\r\n");  
     return 0;  

@@ -1,9 +1,8 @@
-
 #ifndef _XLIB_DLINK_H_
 #define _XLIB_DLINK_H_
 
-
 typedef int (*fp_node_proc)(void* data, void *cookie);
+
 typedef int (*fp_node_cmp)(const void*, const void*);
 
 typedef struct _node_st{
@@ -16,7 +15,6 @@ typedef struct {
     int elmsize;
     int elmnr;
 }dlink_st;
-
 
 dlink_st* dlink_new(int elmsize);
 

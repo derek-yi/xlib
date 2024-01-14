@@ -51,7 +51,7 @@ int main()
     {
         pstListNode = list_entry(tmp, user_data_t, list);
         if (pstListNode->param % 3 == 0) {
-            printf("[%d]=%d ", pstListNode->key, pstListNode->param);
+            printf("delete [%d]=%d ", pstListNode->key, pstListNode->param);
             list_del_init(&pstListNode->list);
             free(pstListNode);
         }

@@ -1,4 +1,3 @@
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -86,7 +85,7 @@ int dlink_node_insert(dlink_st* dlink, const void* data, fp_node_cmp comp)
 
     for ( curr = me->head.next; curr != &me->head; curr = curr->next ) {
         if ( comp(curr->data, data) > 0 ) {
-            // insert before curr, maybe as first
+            // insert before current, maybe as first
             newnodep->next = curr;
             newnodep->prev = curr->prev;
             curr->prev->next = newnodep;
@@ -175,7 +174,7 @@ int dlink_sort(dlink_st* dlink, fp_node_cmp comp)
         saved = curr->next;
         for (ptr = temp_head.next; ptr != &temp_head; ptr = ptr->next) {
             if ( comp(ptr->data, curr->data) > 0 ) {
-                // insert before curr, maybe as first
+                // insert before current, maybe as first
                 curr->next = ptr;
                 curr->prev = ptr->prev;
                 ptr->prev->next = curr;
@@ -247,11 +246,10 @@ int main(int argc, char **argv)
     MY_ASSERT(my_list != NULL);
 
     if (argc < 2) {
-        printf("usage: %s <array_size>     -- default array_size is 16 \r\n", argv[0]);
+        printf("usage: %s <array_size> \r\n", argv[0]);
         return 0;
     }
     ARRAY_SIZE = atoi(argv[1]);
-    if (ARRAY_SIZE < 1) ARRAY_SIZE = 16;
     
     printf("%d: init with ARRAY_SIZE(%d) \r\n", __LINE__, ARRAY_SIZE);
     srand(time(NULL));
@@ -263,14 +261,14 @@ int main(int argc, char **argv)
     dlink_walk(my_list, node_print, NULL);
     printf("\r\n");
 
-    printf("%d: dlink_node_delete 3,5,8 \r\n", __LINE__);
+    printf("%d: dlink_node_delete key 3,5,8 \r\n", __LINE__);
     temp.key = 3; dlink_node_delete(my_list, &temp, key_cmp);
     temp.key = 5; dlink_node_delete(my_list, &temp, key_cmp);
     temp.key = 8; dlink_node_delete(my_list, &temp, key_cmp);
     dlink_walk(my_list, node_print, NULL);
     printf("\r\n");
 
-    printf("%d: dlink_node_find 2,3 \r\n", __LINE__);
+    printf("%d: dlink_node_find key 2,3 \r\n", __LINE__);
     temp.key = 2; ptr = (demo_data_t *)dlink_node_find(my_list, key_cmp, &temp);
     MY_ASSERT(ptr != NULL);
     node_print(ptr, NULL);
@@ -283,12 +281,12 @@ int main(int argc, char **argv)
     dlink_walk(my_list, node_print, NULL);
     printf("\r\n");
 
-    printf("%d: dlink_node_insert 0 \r\n", __LINE__);
+    printf("%d: dlink_node_insert key 0 \r\n", __LINE__);
     temp.key = 0; temp.param = 111;
     ret = dlink_node_insert(my_list, &temp, val_cmp);
     MY_ASSERT(ret == 0);
 
-    printf("%d: dlink_node_append 5 \r\n", __LINE__);
+    printf("%d: dlink_node_append key 5 \r\n", __LINE__);
     temp.key = 5; temp.param = 0;
     ret = dlink_node_append(my_list, &temp);
     MY_ASSERT(ret == 0);

@@ -2,8 +2,8 @@
 #define _TEST_AVL_H_
 
 #include "avlmini.h"
-#include "test/test_linux_rb.h"
-#include "test/printt.h"
+//#include "test/test_linux_rb.h"
+//#include "test/printt.h"
 
 #include <stdio.h>
 #include <stdlib.h>

@@ -1,10 +1,8 @@
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
 #include "stack.h"
-
 
 int xlib_stack_init(STACK_INFO_ST *pStack, int stack_size, int data_size)
 {
