@@ -1,4 +1,3 @@
-
 #include <unistd.h>
 #include <pthread.h>
 #include <stdio.h>
@@ -18,8 +17,9 @@ int pthread_cond_signal(pthread_cond_t *cond);
 int condition = FALSE;
 
 pthread_mutex_t lock = PTHREAD_MUTEX_INITIALIZER;
-pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
 pthread_cond_t cond = PTHREAD_COND_INITIALIZER;
+
+pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
 
 void* thread_1(void *a)
 {
@@ -74,7 +74,7 @@ int main()
 	int i;
 	pthread_t ths[2];
 
-#if 0    
+#if 1    
 	pthread_create(&ths[0], NULL,  thread_1, 0);
 	pthread_create(&ths[1], NULL,  thread_2, 0);
 #else    
@@ -88,6 +88,4 @@ int main()
 	printf("Play End!\n");
     return 0;
 }
-
-
 
