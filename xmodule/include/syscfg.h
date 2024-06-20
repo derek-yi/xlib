@@ -1,8 +1,6 @@
 #ifndef _SYS_CFG_H_
 #define _SYS_CFG_H_
 
-//#define INCLUDE_JSON_CFGFILE
-
 int sys_conf_set(char *key_str, char *value);
 
 int sys_conf_seti(char *key_str, int value);

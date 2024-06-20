@@ -37,7 +37,7 @@ int     cli_console_active = -1;
 CMD_NODE  *gst_cmd_list  = NULL;
 uint32     pwd_check_ok = FALSE;
 
-sem_t print_sem; //sem for print_buff
+static pthread_mutex_t print_mutex = PTHREAD_MUTEX_INITIALIZER;
 char print_buff[8192];
 
 CLI_OUT_CB cli_out = NULL;
@@ -59,14 +59,8 @@ int vos_print(const char * format,...)
 {
     va_list args;
     int len;
-    static int init_done = FALSE;
 
-    if (!init_done) {
-        if (sem_init(&print_sem, 0, 1) < 0) return 0;
-        init_done = TRUE;
-    }
-    sem_wait(&print_sem);
-    
+    pthread_mutex_lock(&print_mutex);
     va_start(args, format);
     len = vsnprintf(print_buff, 8192, format, args);
     va_end(args);
@@ -80,7 +74,7 @@ int vos_print(const char * format,...)
 		fflush(stdout);
     }
 
-    sem_post(&print_sem);
+    pthread_mutex_unlock(&print_mutex);
     return len;    
 }
 
@@ -150,6 +144,8 @@ void cli_show_match_cmd(char *cmd_buf, uint32 key_len)
 
 #ifdef INCLUDE_SHELL_CMD    
 
+int shell_enable = 0;
+
 #define OUTPUT_TEMP_FILE   "/tmp/cmd.log" 
 
 int cli_run_shell(char *cmd_buf)
@@ -183,13 +179,6 @@ int cli_run_shell(char *cmd_buf)
     return CMD_OK;
 }
 
-#endif
-
-#ifndef MAKE_XLIB
-int sys_conf_geti(char *key_str, int def_val)
-{
-	return def_val;
-}
 #endif
 
 #if 1
@@ -240,10 +229,17 @@ int cli_cmd_exec(char *buff)
 
     if (pNode == NULL)
     {
-		if ( sys_conf_geti("shell_enable", 0) )
+        #ifdef INCLUDE_SHELL_CMD 
+        if (strncasecmp("sh_enable", buff, 9) == 0) {
+            shell_enable = 1;
+        } else if ( shell_enable ) {
         	cli_run_shell(buff);
-    	else
+        } else {
 	        vos_print("unknown cmd: %s \r\n", buff);
+        }
+        #else
+        vos_print("unknown cmd: %s \r\n", buff);
+        #endif
         return CMD_OK; 
     }
 
@@ -498,7 +494,7 @@ void cli_cmd_init(void)
 {
     cli_cmd_reg("quit",         "exit app",             &cli_do_exit);
     cli_cmd_reg("help",         "cmd help",             &cli_do_help);
-    //cli_cmd_reg("version",      "show version",         &cli_do_show_version);
+    cli_cmd_reg("version",      "show version",         &cli_do_show_version);
     cli_cmd_reg("cmdtest",      "cmd param test",       &cli_do_param_test);
 	
 #ifdef CLI_PWD_CHECK    
@@ -603,6 +599,7 @@ void* telnet_listen_task(void *param)
 	}
 
     //if (daemon(0, 1) < 0) perror("daemon");
+    vos_set_self_name("telnet_listen_task");
     while (1) {
         int fd;
         socklen_t salen;

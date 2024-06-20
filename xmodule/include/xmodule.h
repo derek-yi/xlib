@@ -26,23 +26,27 @@
 #include "tiny_cli.h"
 #include "cJSON.h"
 #include "syscfg.h"
-#include "xmsg.h"
 
 /****************************************************************************************
  * xmodule
  ****************************************************************************************/
-#define APP_ROLE_SLAVE          0
-#define APP_ROLE_MASTER         1
-
 #define DEF_CONFIG_FILE			"/home/config/top_cfg.txt"
 #define TX_CONFIG_FILE			"/home/config/tx_atten_cfg.txt"
+#define TX_COMP_FILE			"/home/config/tx_comp_cfg.txt"
 #define WIFI_CONFIG_FILE		"/home/config/wpa_supplicant.conf"
-#define DEF_LICENSE_FILE		"/run/raw_license.txt"
-#define FENCE_CFG_FILE			"/home/config/fence_cfg.bin"
+#define DEF_LICENSE_FILE		"/home/config/raw_license.bin"
+#define GNB_CFG_FILE			"/home/config/gnb_cfg.json"
+#define GAIN_ADJUST_CONFIG		"/home/config/gain_adjust.txt"
+#define EXT_CFG_FILE			"/home/config/ext_cfg.txt"
 
-int xmodule_init(char *app_name, char *json_file);
+
+int xmodule_init(char *app_name, int mode, char *log_file, char *cfg_file);
 
 char *get_app_name(void);
+
+int get_app_role(void);
+
+int app_in_master(void);
 
 /****************************************************************************************
  * xx

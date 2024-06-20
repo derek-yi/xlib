@@ -313,11 +313,13 @@ int cfgfile_read_str(char *file_name, char *key_str, char *val_buf, int buf_len)
 	ret = VOS_E_NONEXIST;
     while (fgets(line_str, LINE_BUF_SZ, fp) != NULL) { 
 		ptr = &line_str[0];
-		while ( *ptr == ' ' || *ptr == '\t' ) ptr++; //skip space/tab at head
-		if (*ptr == '#') continue; //skip comment line
+        while ( *ptr == ' ' || *ptr == '\t' || *ptr == '#' ) ptr++;
+        for (i = 0; ; i++) if (INVALID_CFG_CHAR(ptr[i])) break;
+        if (i < strlen(key_str)) i = strlen(key_str);
+        if (i == 0) continue;
 		
-		if (memcmp(ptr, key_str, strlen(key_str)) == 0) {
-			ptr = ptr +  strlen(key_str);
+		if (memcmp(ptr, key_str, i) == 0) {
+			ptr = ptr +  i;
 			while (*ptr == ' ' || *ptr == '\t' || *ptr == '=') ptr++; 
 			for (i = 0; ; i++) {
 				if ( INVALID_CFG_CHAR(ptr[i]) )
@@ -344,7 +346,7 @@ int cfgfile_write_str(char *file_name, char *key_str, char *val_str)
 	char line_str[LINE_BUF_SZ];
 	char *ptr;
 	int find_node = 0;
-	int buf_ptr = 0;
+	int i, buf_ptr = 0;
 
 	if (file_name == NULL || key_str == NULL) return -1;
 
@@ -356,8 +358,11 @@ int cfgfile_write_str(char *file_name, char *key_str, char *val_str)
 		while (fgets(line_str, LINE_BUF_SZ, fp) != NULL) { 
 			ptr = &line_str[0];
 			while ( *ptr == ' ' || *ptr == '\t' || *ptr == '#' ) ptr++;
+            for (i = 0; ; i++) if (INVALID_CFG_CHAR(ptr[i])) break;
+            if (i < strlen(key_str)) i = strlen(key_str);
+            if (i == 0) continue;
 			
-			if (memcmp(ptr, key_str, strlen(key_str)) == 0) {
+			if (memcmp(ptr, key_str, i) == 0) {
 				find_node = 1;
 				if (val_str == NULL) {
 					if(debug_en) printf("%d> delete %s\n", __LINE__, key_str);
@@ -389,10 +394,11 @@ int cfgfile_write_str(char *file_name, char *key_str, char *val_str)
 		return VOS_E_FILE;
 	}
 
-    for (int i = 0; i < buf_ptr; i++) {
+    for (i = 0; i < buf_ptr; i++) {
         fwrite(file_buff[i], strlen(file_buff[i]), 1, fp);
     }
-    
+
+    //fsync(fileno(fp));
 	fclose(fp);
 	pthread_mutex_unlock(&cfgfile_mutex);
 	return VOS_OK;
@@ -453,13 +459,15 @@ int cfgfile_store_file(char *old_file, char *new_file)
 	FILE *fp;
     SYS_CFG_S *p;
 	int find_key = 0;
-	char key_str[LINE_BUF_SZ];
+	char key_str[LINE_BUF_SZ - 8];
 	int i, line_cnt = 0;
 	int add_line = 0;
 
 	pthread_mutex_lock(&cfgfile_mutex);
-	fmt_time_str(key_str, LINE_BUF_SZ);
+    #ifdef MAKE_XLIB
+	fmt_time_str(key_str, sizeof(key_str));
 	sys_conf_set("last_update", key_str);
+    #endif
 
 	fp = fopen(old_file, "r");
 	if (fp != NULL) {
@@ -474,7 +482,7 @@ int cfgfile_store_file(char *old_file, char *new_file)
 				if ( INVALID_CFG_CHAR(ptr[i]) ) 
 					break;
 			}
-			if (i > 0) {
+			if ((i > 0) && (i < sizeof(key_str))) {
 				memset(key_str, 0, sizeof(key_str));
 				memcpy(key_str, ptr, i);
 				if (sys_conf_get(key_str) == NULL) {

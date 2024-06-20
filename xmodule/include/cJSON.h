@@ -295,4 +295,30 @@ int json_write_file(const char *filename, char *buff, int buff_size);
 }
 #endif
 
+#define GET_OBJ_INT_VALUE(json, result, obj_name)   \
+    do {    \
+        cJSON *obj = cJSON_GetObjectItem(json, obj_name);   \
+        if(obj) result = obj->valueint; \
+    } while(0)
+
+#define GET_OBJ_INT_VALUE2(json, result, obj_name, def_val)   \
+    do {    \
+        cJSON *obj = cJSON_GetObjectItem(json, obj_name);   \
+        if(obj) result = obj->valueint; \
+        else result = def_val; \
+    } while(0)
+
+#define GET_OBJ_LONG_VALUE(json, result, obj_name)   \
+    do {    \
+        cJSON *obj = cJSON_GetObjectItem(json, obj_name);   \
+        if(obj) result = (long)round(obj->valuedouble); \
+    } while(0)
+
+#define GET_OBJ_STR_PTR(json, result, obj_name)   \
+    do {    \
+        cJSON *obj = cJSON_GetObjectItem(json, obj_name);   \
+        if(obj) result = obj->valuestring; \
+        else result = NULL; \
+    } while(0)
+
 #endif

@@ -1,4 +1,3 @@
-
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <sys/param.h>	/* for NAME_MAX */
@@ -7,6 +6,7 @@
 #include <strings.h>	/* for strcasecmp() */
 #include <stdio.h>
 #include <stdlib.h>
+#include <stdint.h>
 #include <unistd.h>
 #include <limits.h>
 #include <dirent.h>
@@ -14,6 +14,7 @@
 #include <errno.h>
 #include <linux/i2c-dev.h>
 #include <sys/time.h>
+#include <pthread.h>
 
 #include "drv_i2c.h"
 
@@ -312,7 +313,7 @@ static int wr_check_funcs(int file, int size, int pec)
 #endif
 
 #if 1 //IOCTRL
-
+//https://github.com/costad2/i2c-tools/blob/master/tools/i2ctransfer.c
 
 #define DEFAULT_NUM_PAGES    8            /* we default to a 24C16 eeprom which has 8 pages */
 #define BYTES_PER_PAGE       256          /* one eeprom page is 256 byte */
@@ -320,8 +321,42 @@ static int wr_check_funcs(int file, int size, int pec)
        /* ... note: 24C02 and 24C01 only allow 8 bytes to be written in one chunk.   *
         *  if you are going to write 24C04,8,16 you can change this to 16            */
 
+#define PRINT_STDERR	(1 << 0)
+#define PRINT_READ_BUF	(1 << 1)
+#define PRINT_WRITE_BUF	(1 << 2)
+#define PRINT_HEADER	(1 << 3)
 
-int i2c_write_chunk(int i2c_bus, int dev_id, int offset, __u8 *data_p, int len)
+static pthread_mutex_t fpga_rw_mutex = PTHREAD_MUTEX_INITIALIZER;
+
+int verbose = 0;
+
+static void print_msgs(struct i2c_msg *msgs, __u32 nmsgs, unsigned flags)
+{
+	__u32 i, j;
+	FILE *output = flags & PRINT_STDERR ? stderr : stdout;
+
+	for (i = 0; i < nmsgs; i++) {
+		int read = !!(msgs[i].flags & I2C_M_RD);
+		int newline = !!(flags & PRINT_HEADER);
+
+		if (flags & PRINT_HEADER)
+			fprintf(output, "Msg %u: addr 0x%02x, %s, len %u",
+				i, msgs[i].addr, read ? "read" : "write", msgs[i].len);
+		if (msgs[i].len &&
+		   (read == !!(flags & PRINT_READ_BUF) ||
+		   !read == !!(flags & PRINT_WRITE_BUF))) {
+			if (flags & PRINT_HEADER)
+				fprintf(output, ", buf ");
+			for (j = 0; j < msgs[i].len; j++)
+				fprintf(output, "0x%02x ", msgs[i].buf[j]);
+			newline = 1;
+		}
+		if (newline)
+			fprintf(output, "\n");
+	}
+}
+
+int i2c_write_chunk(int i2c_bus, int dev_id, int offset, char *data_p, int len)
 {
     int ret;
     int file;
@@ -341,40 +376,37 @@ int i2c_write_chunk(int i2c_bus, int dev_id, int offset, __u8 *data_p, int len)
         return VOS_ERR;
     }
 
-	_buf[0] = offset;    /* _buf[0] is the offset into the eeprom page! */
+	_buf[0] = (offset >> 8) & 0xFF;
+	_buf[1] = (offset) & 0xFF;
 	for(i=0; i<len; i++) /* copy buf[0..n] -> _buf[1..n+1] */
-	    _buf[1+i] = data_p[i];
+	    _buf[2+i] = data_p[i];
 
 	msg_rdwr.msgs = &i2cmsg;
 	msg_rdwr.nmsgs = 1;
-
 	i2cmsg.addr  = dev_id;
 	i2cmsg.flags = 0; //0-write, 1-read
-	i2cmsg.len   = len + 1;
+	i2cmsg.len   = len + 2;
 	i2cmsg.buf   = _buf;
- 
     ret = ioctl(file, I2C_RDWR, (unsigned long)&msg_rdwr);
     if (ret < 0) {
         fprintf(stderr, "%d: ioctl failed \r\n", __LINE__);
-        //return VOS_ERR;
+        return VOS_ERR;
     }
+
+    if (verbose)
+    print_msgs(&i2cmsg, ret, PRINT_READ_BUF | (verbose ? PRINT_HEADER | PRINT_WRITE_BUF : 0));
 
     close(file);
     return VOS_OK;
 }
 
-int i2c_read_chunk(int i2c_bus, int dev_id, int offset, __u8 *data_p, int len)
+int i2c_read_chunk(int i2c_bus, int dev_id, int offset, char *data_p, int len)
 {
 	struct i2c_rdwr_ioctl_data msg_rdwr;
-	struct i2c_msg             i2cmsg;
+	struct i2c_msg i2cmsg[2];
+	char _buf[MAX_BYTES + 1];
     int file;
 	int ret;
-
-    ret = i2c_write_chunk(i2c_bus, dev_id, offset, NULL, 0);
-    if (ret != VOS_OK) {
-        fprintf(stderr, "%d: Error \r\n", __LINE__);
-        return VOS_ERR;
-    }
 
     file = open_i2c_dev(i2c_bus, 0);
     if (file < 0) {
@@ -382,26 +414,66 @@ int i2c_read_chunk(int i2c_bus, int dev_id, int offset, __u8 *data_p, int len)
         return VOS_ERR;
     }
 
-	msg_rdwr.msgs = &i2cmsg;
-	msg_rdwr.nmsgs = 1;
+	_buf[0] = (offset >> 8) & 0xFF;
+	_buf[1] = (offset) & 0xFF;
+	i2cmsg[0].addr  = dev_id;
+	i2cmsg[0].flags = 0; //0-write, 1-read
+	i2cmsg[0].len   = 2;
+	i2cmsg[0].buf   = _buf;
 
-	i2cmsg.addr  = dev_id;
-	i2cmsg.flags = I2C_M_RD;
-	i2cmsg.len   = len;
-	i2cmsg.buf   = (char *)data_p;
+	i2cmsg[1].addr  = dev_id;
+	i2cmsg[1].flags = I2C_M_RD | I2C_M_NOSTART;
+	i2cmsg[1].len   = len;
+	i2cmsg[1].buf   = (char *)data_p;
 
+	msg_rdwr.msgs = i2cmsg;
+	msg_rdwr.nmsgs = 2;
     ret = ioctl(file, I2C_RDWR, (unsigned long)&msg_rdwr);
     if (ret < 0) {
         fprintf(stderr, "%d: ioctl failed \r\n", __LINE__);
-        //return VOS_ERR;
+        return VOS_ERR;
     }
+
+    if (verbose)
+    print_msgs(i2cmsg, ret, PRINT_READ_BUF | (verbose ? PRINT_HEADER | PRINT_WRITE_BUF : 0));
 
     close(file);
     return VOS_OK;    
 }
 
-#endif
+int fpga_read(uint32_t address) 
+{
+    int ret, data;
+    char buff[8];
 
+    pthread_mutex_lock(&fpga_rw_mutex);
+    ret = i2c_read_chunk(3, 0x50, address, buff, 4);
+    data = buff[0];
+    data = (data << 8) | buff[1];
+    data = (data << 8) | buff[2];
+    data = (data << 8) | buff[3];
+    pthread_mutex_unlock(&fpga_rw_mutex);
+
+    return ret == VOS_OK ? data : 0xFFFFFFFF;
+}
+
+int fpga_write(uint32_t address, uint32_t value) 
+{
+    int ret;
+    char buff[8];
+
+    pthread_mutex_lock(&fpga_rw_mutex);
+    buff[0] = (value >> 24) & 0xFF;
+    buff[1] = (value >> 16) & 0xFF;
+    buff[2] = (value >> 8) & 0xFF;
+    buff[3] = value & 0xFF;
+    ret = i2c_write_chunk(3, 0x50, address, buff, 4);
+    pthread_mutex_unlock(&fpga_rw_mutex);
+
+    return ret;
+}
+
+#endif
 
 #if 1 //SMBUS
 
@@ -444,6 +516,45 @@ int i2c_read_data(int i2c_bus, int mode, int dev_id, int offset)
     return ret;
 }
 
+int i2c_write_data(int i2c_bus, int mode, int dev_id, int offset, __u16 data_w)
+{
+    int file, ret;
+    int pec = 0;
+    int value;
+
+    //align to BYTES_PER_PAGE
+    dev_id = dev_id + offset/BYTES_PER_PAGE;
+    offset = offset%BYTES_PER_PAGE;
+
+    file = open_i2c_dev(i2c_bus, 0);
+	if (file < 0
+	 || wr_check_funcs(file, mode, pec)
+	 || set_slave_addr(file, dev_id, 1)) {
+	    fprintf(stderr, "Warning - open_i2c_dev failed\n");
+        return -1;
+    }
+
+    switch (mode) {
+    case I2C_SMBUS_BYTE:
+        ret = i2c_smbus_write_byte(file, offset);
+        break;
+    case I2C_SMBUS_WORD_DATA:
+        value = (__u16)data_w;
+        ret = i2c_smbus_write_word_data(file, offset, value);
+        break;
+    default: /* I2C_SMBUS_BYTE_DATA */
+        value = (__u8)data_w;
+        ret = i2c_smbus_write_byte_data(file, offset, value);
+        break;
+    }
+
+    if (ret < 0) {
+        fprintf(stderr, "Error: Write failed\n");
+    }
+
+    close(file);
+    return ret;
+}
 
 int i2c_read_buffer(int i2c_bus, int mode, int dev_id, int offset, __u8 *data_p, int len)
 {
@@ -484,7 +595,6 @@ int i2c_read_buffer(int i2c_bus, int mode, int dev_id, int offset, __u8 *data_p,
 
     return ret;
 }
-
 
 int i2c_write_buffer(int i2c_bus, int mode, int dev_id, int offset, __u8 *data_p, int len)
 {
@@ -543,330 +653,62 @@ int i2c_write_buffer(int i2c_bus, int mode, int dev_id, int offset, __u8 *data_p
 
 #ifdef APP_TEST
 
-#define I2C_BUS		0x04
+#define I2C_BUS		0x08
 #define I2C_ADDR 	0x54
 #define BUFF_SIZE	256
 
 int i2c_byte_rw() 
 {
-    __u8 data_value[] = {0x40, 0x41};
     int ret;
 
-	printf("================= %d: %s ============== \r\n", __LINE__, __func__);
-	
-    //i2cset -f 6 0x50 0 0x40
-    if ( i2c_write_buffer(I2C_BUS, I2C_SMBUS_BYTE_DATA, I2C_ADDR, 0, data_value, 1) != 0 ) {
+    //eeprom
+    if ( i2c_write_data(I2C_BUS, I2C_SMBUS_BYTE_DATA, I2C_ADDR, 0x40, 0x30) != 0 ) {
        printf("%d: failed \r\n", __LINE__);
+       return 0;
     }
-    sleep(1); 
 
-    ret = i2c_read_data(I2C_BUS, I2C_SMBUS_BYTE_DATA, I2C_ADDR, 0);
-    if ( ret != 0x40 ) {
+    ret = i2c_read_data(I2C_BUS, I2C_SMBUS_BYTE_DATA, I2C_ADDR, 0x40);
+    if ( ret != 0x30 ) {
         printf("%d: failed, read 0x%x \r\n", __LINE__, ret);
-    }
-
-    ret = i2c_read_data(I2C_BUS, I2C_SMBUS_BYTE, I2C_ADDR, 0);
-    if ( ret != 0x40 ) {
-        printf("%d: failed, read 0x%x \r\n", __LINE__, ret);
-    }
-
-    return 0;
-}
-
-/*
-root@analog:~# i2cdetect -l
-i2c-3   i2c             i2c-0-mux (chan_id 2)                   I2C adapter
-i2c-1   i2c             i2c-0-mux (chan_id 0)                   I2C adapter
-i2c-8   i2c             i2c-0-mux (chan_id 7)                   I2C adapter
-i2c-6   i2c             i2c-0-mux (chan_id 5)                   I2C adapter
-i2c-4   i2c             i2c-0-mux (chan_id 3)                   I2C adapter
-i2c-2   i2c             i2c-0-mux (chan_id 1)                   I2C adapter
-i2c-0   i2c             Cadence I2C at e0004000                 I2C adapter
-i2c-7   i2c             i2c-0-mux (chan_id 6)                   I2C adapter
-i2c-5   i2c             i2c-0-mux (chan_id 4)                   I2C adapter
-
-## DTS   
-i2c_mux
-    i2c@2
-        eeprom@54
-    i2c@3
-        tmp75@48 
-        tmp75@49 
-    i2c@5
-        tmp75@48
-        tmp75@49
-        tmp75@4A
-        tmp75@4C 
-        eeprom@50
-    i2c@6 
-        ina219@40
-        ina219@41 
-*/
-int misc_rw_test() 
-{
-    int ret;
-
-	printf("================= %d: %s ============== \r\n", __LINE__, __func__);
-	
-    //tmp75@48 
-    ret = i2c_read_data(6, I2C_SMBUS_BYTE_DATA, 0x48, 2);
-    if ( ret != 0x4B ) {
-       printf("%d: failed, read 0x%x \r\n", __LINE__, ret);
-    }
-
-    //ina219@40
-    ret = i2c_read_data(7, I2C_SMBUS_BYTE_DATA, 0x40, 0);
-    if ( ret != 0x39 ) {
-       printf("%d: failed, read 0x%x \r\n", __LINE__, ret);
-    }
-	
-    ret = i2c_read_data(7, I2C_SMBUS_BYTE_DATA, 0x40, 1);
-    if ( ret != 0x07 ) {
-       printf("%d: failed, read 0x%x \r\n", __LINE__, ret);
-    }
-
-    return 0;
-}
-
-int i2c_buffer_rw1()
-{
-    __u8 mem_buff[64];
-    __u8 rd_buff[64];
-    int i, ret;
-
-	printf("================= %d: %s ============== \r\n", __LINE__, __func__);
-    for(i = 0; i < sizeof(mem_buff); i++) {
-        mem_buff[i] = 0x20 + i%60;
-    }
-
-    //i2c_write_block(6, I2C_SMBUS_BLOCK_DATA, 0x50, 0, mem_buff, sizeof(mem_buff)); //not work
-    ret = i2c_write_buffer(I2C_BUS, I2C_SMBUS_I2C_BLOCK_DATA, I2C_ADDR, 0, mem_buff, 16);
-    vos_msleep(80);
-    ret |= i2c_write_buffer(I2C_BUS, I2C_SMBUS_I2C_BLOCK_DATA, I2C_ADDR, 16, mem_buff + 16, 16);
-    vos_msleep(80);
-    ret |= i2c_write_buffer(I2C_BUS, I2C_SMBUS_I2C_BLOCK_DATA, I2C_ADDR, 32, mem_buff + 32, 16);
-    vos_msleep(80);
-    ret |= i2c_write_buffer(I2C_BUS, I2C_SMBUS_I2C_BLOCK_DATA, I2C_ADDR, 48, mem_buff + 48, 16);
-    vos_msleep(80);
-
-    if ( ret != 0 ) {
-        printf("%d: failed, write failed \r\n", __LINE__);
         return 0;
     }
 
-    memset(rd_buff, 0, sizeof(rd_buff));
-    for(i = 0, ret = 0; i < 64/32; i++) {
-        ret |= i2c_read_buffer(I2C_BUS, I2C_SMBUS_I2C_BLOCK_DATA, I2C_ADDR, i*32, rd_buff+i*32, 32); 
-    }
-    for(i = 0; i < 64; i++) {
-        if (rd_buff[i] != mem_buff[i]) {
-            printf("%d: index %d, write 0x%x, read 0x%x \r\n", __LINE__, i, mem_buff[i], rd_buff[i]);
-        }
+    //tmp75@48 
+    ret = i2c_read_data(8, I2C_SMBUS_BYTE_DATA, 0x48, 2);
+    if ( ret != 0x4B ) {
+       printf("%d: failed, read 0x%x \r\n", __LINE__, ret);
+       return 0;
     }
 
-    for(i = 0; i < 64; i++) {
-        ret = i2c_read_data(I2C_BUS, I2C_SMBUS_BYTE_DATA, I2C_ADDR, i);
-        if (ret != mem_buff[i]) {
-            printf("%d: index %d, write 0x%x, read 0x%x \r\n", __LINE__, i, mem_buff[i], ret);
-        }
-    }
-
+    printf("i2c_byte_rw pass \n");
     return 0;
 }
 
-
-int i2c_buffer_rw2() //if offset not align to 16, write failed
+int main(int argc, char **argv)
 {
-    __u8 mem_buff[64];
-    __u8 rd_buff[64];
-    int i, ret;
-
-	printf("================= %d: %s ============== \r\n", __LINE__, __func__);
-    for(i = 0; i < sizeof(mem_buff); i++) {
-        mem_buff[i] = 0x20 + i%32;
-    }
-
-    ret = i2c_write_buffer(I2C_BUS, I2C_SMBUS_I2C_BLOCK_DATA, I2C_ADDR, 0, mem_buff, 8);
-    vos_msleep(100);
-    ret |= i2c_write_buffer(I2C_BUS, I2C_SMBUS_I2C_BLOCK_DATA, I2C_ADDR, 8, mem_buff + 8, 16);
-    vos_msleep(100);
-    ret |= i2c_write_buffer(I2C_BUS, I2C_SMBUS_I2C_BLOCK_DATA, I2C_ADDR, 24, mem_buff + 32, 8);
-    vos_msleep(100);
-
-    if ( ret != 0 ) {
-        printf("%d: failed, write failed \r\n", __LINE__);
-    }
-
-    memset(rd_buff, 0, sizeof(rd_buff));
-    ret = i2c_read_buffer(I2C_BUS, I2C_SMBUS_I2C_BLOCK_DATA, I2C_ADDR, i*32, rd_buff+i*32, 32);
-    for(i = 0; i < 32; i++) {
-        if (rd_buff[i] != mem_buff[i]) {
-            printf("%d: index %d, write 0x%x, read 0x%x \r\n", __LINE__, i, mem_buff[i], rd_buff[i]);
-        }
-    }
-
-    return 0;
-}
-
-int i2c_buffer_rw3()
-{
-    __u8 mem_buff[BUFF_SIZE];
-    __u8 rd_buff[BUFF_SIZE];
-    int i, ret = 0;
-    struct timeval t_start, t_end;
-    int t_used = 0;
-
-	printf("================= %d: %s ============== \r\n", __LINE__, __func__);
-    for(i = 0; i < sizeof(mem_buff); i++) {
-        mem_buff[i] = (i + 20)%200;
-    }
-
-    gettimeofday(&t_start, NULL);
-    for(i = 0; i < BUFF_SIZE; i++) {
-        ret |= i2c_write_buffer(I2C_BUS, I2C_SMBUS_BYTE_DATA, I2C_ADDR, i, &mem_buff[i], 1); //byte mode
-        vos_msleep(5);
-    }
-    gettimeofday(&t_end, NULL);
-
-    t_used = (t_end.tv_sec - t_start.tv_sec)*1000000+(t_end.tv_usec - t_start.tv_usec);
-    t_used = t_used/1000; //us to ms
-    printf("%d: t_used %d ms \r\n", __LINE__, t_used);
-
-    if ( ret != 0 ) {
-        printf("%d: failed, write failed \r\n", __LINE__);
-    }
-
-    memset(rd_buff, 0, sizeof(rd_buff));
-    for(i = 0, ret = 0; i < BUFF_SIZE/32; i++) {
-        ret |= i2c_read_buffer(I2C_BUS, I2C_SMBUS_I2C_BLOCK_DATA, I2C_ADDR, i*32, rd_buff+i*32, 32);
-    }
-    for(i = 0; i < 1024; i++) {
-        if (rd_buff[i] != mem_buff[i]) {
-            printf("%d: index %d, write 0x%x, read 0x%x \r\n", __LINE__, i, mem_buff[i], rd_buff[i]);
-        }
-    }
-
-    return 0;
-}
-
-int i2c_buffer_rw4()
-{
-    __u8 mem_buff[BUFF_SIZE];
-    int i, ret = 0;
-    struct timeval t_start, t_end;
-    int t_used = 0;
-
-	printf("================= %d: %s ============== \r\n", __LINE__, __func__);
-    for(i = 0; i < sizeof(mem_buff); i++) {
-        mem_buff[i] = (i + 20)%200;
-    }
-
-    gettimeofday(&t_start, NULL);
-    for(i = 0; i < BUFF_SIZE/16; i++) {
-        ret |= i2c_write_buffer(I2C_BUS, I2C_SMBUS_I2C_BLOCK_DATA, I2C_ADDR, i*16, mem_buff+i*16, 16);
-        vos_msleep(80);
-    }
-    gettimeofday(&t_end, NULL);
-
-    t_used = (t_end.tv_sec - t_start.tv_sec)*1000000+(t_end.tv_usec - t_start.tv_usec);
-    t_used = t_used/1000; //us to ms
-    printf("%d: t_used %d ms \r\n", __LINE__, t_used);
-
-    if ( ret != 0 ) {
-        printf("%d: failed, write failed \r\n", __LINE__);
-    }
-
-    for(i = 0; i < BUFF_SIZE; i++) {
-        ret = i2c_read_data(I2C_BUS, I2C_SMBUS_BYTE_DATA, I2C_ADDR, i);
-        if (ret != mem_buff[i]) {
-            printf("%d: index %d, write 0x%x, read 0x%x \r\n", __LINE__, i, mem_buff[i], ret);
-        }
-    }
-
-    return 0;
-}
-
-int i2c_chunk_rw1(int page)
-{
-    __u8 mem_buff[BYTES_PER_PAGE];
-    __u8 rd_buff[BYTES_PER_PAGE];
-    int i, ret;
-
-	printf("================= %d: %s ============== \r\n", __LINE__, __func__);
-    for(i = 0; i < sizeof(mem_buff); i++) {
-        mem_buff[i] = 0x20 + i%60;
-    }
-
-    for(i = 0, ret = 0; i < BYTES_PER_PAGE/MAX_BYTES; i++) {
-        ret |= i2c_write_chunk(I2C_BUS, I2C_ADDR + page, i*MAX_BYTES, mem_buff + i*MAX_BYTES, MAX_BYTES);
-        vos_msleep(5);
-    }
-    if ( ret != 0 ) {
-        printf("%d: failed, write failed \r\n", __LINE__);
-    }
-
-
-    memset(rd_buff, 0, sizeof(rd_buff));
-    for(i = 0, ret = 0; i < BYTES_PER_PAGE/MAX_BYTES; i++) {
-        ret |= i2c_read_chunk(I2C_BUS, I2C_ADDR + page, i*MAX_BYTES, rd_buff + i*MAX_BYTES, MAX_BYTES);
-    }
-    if ( ret != 0 ) {
-        printf("%d: failed, write failed \r\n", __LINE__);
-    }
-
-    for(i = 0; i < BYTES_PER_PAGE; i++) {
-        if (rd_buff[i] != mem_buff[i]) {
-            printf("%d: index %d, write 0x%x, read 0x%x \r\n", __LINE__, i, mem_buff[i], rd_buff[i]);
-        }
-    }
-
-    return 0;
-}
-
-int i2c_chunk_rw2(int page) //if offset not align to MAX_BYTES, write failed
-{
-    __u8 mem_buff[BYTES_PER_PAGE];
-    __u8 rd_buff[BYTES_PER_PAGE];
-    int i, ret;
-
-	printf("================= %d: %s ============== \r\n", __LINE__, __func__);
-    for(i = 0; i < sizeof(mem_buff); i++) {
-        mem_buff[i] = 0x20 + i%60;
-    }
-
-    ret = i2c_write_chunk(I2C_BUS, I2C_ADDR + page, 11, mem_buff, MAX_BYTES);
-    vos_msleep(5);
-    if ( ret != 0 ) {
-        printf("%d: failed, write failed \r\n", __LINE__);
-    }
-
-    memset(rd_buff, 0, sizeof(rd_buff));
-    ret = i2c_read_chunk(I2C_BUS, I2C_ADDR + page, 11, rd_buff, MAX_BYTES);
-    for(i = 0; i < MAX_BYTES; i++) {
-        if (rd_buff[i] != mem_buff[i]) {
-            printf("%d: index %d, write 0x%x, read 0x%x \r\n", __LINE__, i, mem_buff[i], rd_buff[i]);
-        }
-    }
-
-    return 0;
-}
-
-int main()
-{
-    i2c_byte_rw();
-    //misc_rw_test();
+    int ret;
+    int i2c_bus, dev_id, addr, data;
+    char buff[8];
     
-    i2c_buffer_rw1();
-    //i2c_buffer_rw2();
-    //i2c_buffer_rw3(); //fail
-    i2c_buffer_rw4();
+    if (argc < 2) {
+        fprintf(stderr, "usage: %s <addr> <32> <data> \n", argv[0]);
+        fprintf(stderr, "       %s <addr> [<32>] \n", argv[0]);
+        return 0;
+    }
 
-    i2c_chunk_rw1(0);
-	i2c_chunk_rw1(1);
-	
-    i2c_chunk_rw2(0);
-    
-    //fru_info_test();
+    i2c_bus = 3;
+    dev_id  = 0x50;
+    addr    = strtoul(argv[1], 0, 0);
+    if (argc < 4) {
+        printf("0x%08X \n", fpga_read(addr));
+    } else {
+        data = (uint32_t)strtoul(argv[3], 0, 0);
+        ret = fpga_write(addr, data);
+        if (ret != VOS_OK) {
+            printf("fpga_write failed \r\n");
+            return 0;
+        }
+    }
 
     return 0;
 }

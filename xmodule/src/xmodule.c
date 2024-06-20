@@ -1,9 +1,21 @@
 
 #include "xmodule.h"
 
+int app_role = APP_ROLE_SLAVE;
+
 char *get_app_name(void)
 {   
     return sys_conf_get("app_name");
+}
+
+int get_app_role(void)
+{
+    return app_role;
+}
+
+int app_in_master(void)
+{
+    return (app_role == APP_ROLE_MASTER);
 }
 
 int cli_sys_cfg_proc(int argc, char **argv)
@@ -47,11 +59,7 @@ int cli_sys_cfg_proc(int argc, char **argv)
     }
 
     if (!strncasecmp(argv[1], "save", cp_len)) {
-		#ifdef INCLUDE_JSON_CFGFILE
-        store_json_cfg(cfg_file);
-        #else
 		cfgfile_store_file(cfg_file, cfg_file);
-		#endif
         return VOS_OK;
     }
 
@@ -63,45 +71,33 @@ int cli_sys_cfg_proc(int argc, char **argv)
     return VOS_OK;
 }
 
-int cli_xlog_level(int argc, char **argv);
+int xlog_cmd_set_level(int argc, char **argv);
 
 void xmodule_cmd_init(void)
 {
     cli_cmd_reg("cfg",      "sys cfg operation",            &cli_sys_cfg_proc);
-    cli_cmd_reg("xlog",     "xlog level config",            &cli_xlog_level);
+    cli_cmd_reg("xlog",     "xlog level config",            &xlog_cmd_set_level);
 }
 
-int xmodule_init(char *app_name, char *log_file)
+int xmodule_init(char *app_name, int mode, char *log_file, char *cfg_file)
 {
-	int app_role;
-
-	if (access(DEF_CONFIG_FILE, F_OK) == 0) {
-		#ifdef INCLUDE_JSON_CFGFILE
-		if (parse_json_cfg(DEF_CONFIG_FILE) != VOS_OK) {
-			printf("invalid json cfg \r\n");
-			return VOS_ERR;
-		}
-		#else
-		if (cfgfile_load_file(DEF_CONFIG_FILE) != VOS_OK) {
+	if (access(cfg_file, F_OK) == 0) {
+		if (cfgfile_load_file(cfg_file) != VOS_OK) {
 			printf("invalid cfg file \r\n");
 			return VOS_ERR;
 		}
-		#endif
+        sys_conf_set("sys_cfgfile", DEF_CONFIG_FILE);
 	}
 
-	sys_conf_set("sys_cfgfile", DEF_CONFIG_FILE);
-    if (sys_conf_get("app_name") == NULL) {
-        sys_conf_set("app_name", "app_main");
+	app_role = mode;
+    if (app_name == NULL) {
+        sys_conf_set("app_name", "app_main");
     }
-	
+
     xlog_init(log_file);
 	sys_conf_set("log_file", log_file);
 	xlog_info("------------------------------------------------------------");
-	xlog_info("top cfg: %s", DEF_CONFIG_FILE);
-	
-    app_role = sys_conf_geti("app_role", 1);
-    devm_msg_init(sys_conf_get("app_name"), app_role);
-	
+    
 	cli_cmd_init();
     xmodule_cmd_init();
     if (sys_conf_geti("telnet_enable", 1)) {
@@ -124,7 +120,7 @@ int main(int argc, char **argv)
 	}
 
 	sys_conf_seti("cli_enable", 1);
-	xmodule_init(argv[1], NULL);
+	xmodule_init(argv[1], NULL, NULL);
 
 	while(1) sleep(3);
 	return VOS_OK;
