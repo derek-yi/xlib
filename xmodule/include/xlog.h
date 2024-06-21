@@ -2,6 +2,7 @@
 #define _XLOG_H_
 
 #define XLOG_BUFF_MAX           2048
+#define OAM_XLOG_FWD_PORT       11030
 
 #define XLOG_DEBUG      		1
 #define XLOG_TRACE              2

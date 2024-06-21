@@ -1,28 +1,36 @@
 #include "avlmini.c"
-#include "test/linux_rbtree.c"
+//#include "test/linux_rbtree.c"
 #include "test_avl.h"
 
-#include <map>
 
-
+#ifndef MAKE_XLIB
 //---------------------------------------------------------------------
 // random 
 //---------------------------------------------------------------------
 static void benchmark(const char *text, int mode, int count)
 {
 	int *keys;
+	struct avl_node **avl_nodes = NULL;
+	struct rb_node **rb_nodes = NULL;
 	struct avl_root avl_root;
 	struct rb_root rb_root;
 	unsigned int ts, total = 0;
 	int i, missing = 0;
-	std::map<int, int> stlmap;
 
 	keys = (int*)malloc(sizeof(int) * count);
 	random_keys(keys, count, 0x11223344);
 	if (mode == 0) {
+		avl_nodes = (struct avl_node**)malloc(sizeof(void*) * count);
+		for (i = 0; i < count; i++) {
+			avl_nodes[i] = (struct avl_node*)avl_node_new(keys[i]);
+		}
 		avl_root.node = NULL;
 	}
 	else if (mode == 1) {
+		rb_nodes = (struct rb_node**)malloc(sizeof(void*) * count);
+		for (i = 0; i < count; i++) {
+			rb_nodes[i] = (struct rb_node*)rb_node_new(keys[i]);
+		}
 		rb_root.rb_node = NULL;
 	}
 
@@ -35,25 +43,18 @@ static void benchmark(const char *text, int mode, int count)
 	if (mode == 0) {
 		for (i = 0; i < count; i++) {
 			struct avl_node *dup;
-			struct MyNode *node = avl_node_new(keys[i]);
-			node->val = node->key * 10;
-			avl_node_add(&avl_root, &(node->node), avl_node_compare, dup);
+			struct avl_node *node = avl_nodes[i];
+			avl_node_add(&avl_root, node, avl_node_compare, dup);
 			assert(dup == NULL);
+			/* avl_test_validate(&avl_root); */
 		}
 	}
 	else if (mode == 1) {
 		for (i = 0; i < count; i++) {
 			struct rb_node *dup;
-			struct RbNode *node = rb_node_new(keys[i]);
-			node->val = node->key * 10;
-			rb_node_add(&rb_root, &(node->node), rb_node_compare, dup);
+			struct rb_node *node = rb_nodes[i];
+			rb_node_add(&rb_root, node, rb_node_compare, dup);
 			assert(dup == NULL);
-		}
-	}
-	else if (mode == 2) {
-		for (i = 0; i < count; i++) {
-			int key = keys[i];
-			stlmap[key] = key * 10;
 		}
 	}
 
@@ -66,12 +67,9 @@ static void benchmark(const char *text, int mode, int count)
 		avl_test_validate(&avl_root);
 		avl_node_first(&avl_root);
 	}
-	else if (mode == 1) {
+	else {
 		printf(", height=%d\n", rb_tree_height(rb_root.rb_node));
 		rb_first(&rb_root);
-	}
-	else {
-		printf("\n");
 	}
 
 	sleepms(200);
@@ -103,13 +101,6 @@ static void benchmark(const char *text, int mode, int count)
 			assert(result->key == key);
 		}
 	}
-	else if (mode == 2) {
-		for (i = 0; i < count; i++) {
-			int key = keys[count - 1 - i];
-			std::map<int, int>::iterator it = stlmap.find(key);
-			assert(it != stlmap.end());
-		}
-	}
 
 	ts = gettime() - ts;
 	total += ts;
@@ -120,33 +111,36 @@ static void benchmark(const char *text, int mode, int count)
 
 	if (mode == 0) {
 		for (i = 0; i < count; i++) {
-			struct avl_node *node = avl_node_first(&avl_root);
+			struct avl_node *node = avl_root.node;
 			assert(node);
 			avl_node_erase(node, &avl_root);
-			/* free(node); */
 			/* avl_test_validate(&avl_root); */
 		}
 		assert(avl_root.node == NULL);
 	}
 	else if (mode == 1) {
 		for (i = 0; i < count; i++) {
-			struct rb_node *node = rb_first(&rb_root);
+			struct rb_node *node = rb_root.rb_node;
 			assert(node);
 			rb_erase(node, &rb_root);
-			/* free(node); */
-		}
-	}
-	else if (mode == 2) {
-		for (i = 0; i < count; i++) {
-			std::map<int, int>::iterator it = stlmap.begin();
-			assert(it != stlmap.end());
-			stlmap.erase(it);
 		}
 	}
 
 	ts = gettime() - ts;
 	total += ts;
 	printf("delete time: %dms\n", (int)ts);
+
+	if (avl_nodes) {
+		for (i = 0; i < count; i++) 
+			free(avl_nodes[i]);
+		free(avl_nodes);
+	}
+
+	if (rb_nodes) {
+		for (i = 0; i < count; i++) 
+			free(rb_nodes[i]);
+		free(rb_nodes);
+	}
 
 	printf("total: %dms\n", (int)total);
 	printf("\n");
@@ -167,15 +161,15 @@ void test2()
 #define COUNT3   100000
 	benchmark("linux rbtree", 1, COUNT);
 	benchmark("avlmini", 0, COUNT);
-	benchmark("std::map", 2, COUNT);
 	benchmark("linux rbtree", 1, COUNT2);
 	benchmark("avlmini", 0, COUNT2);
-	benchmark("std::map", 2, COUNT2);
+	benchmark("linux rbtree", 1, COUNT3);
+	benchmark("avlmini", 0, COUNT3);
 }
 
 void test3()
 {
-	benchmark("std::map", 2, 1000);
+	benchmark("avlmini", 0, 1000);
 }
 
 int main(void)
@@ -188,42 +182,45 @@ int main(void)
 	return 0;
 }
 
+#endif
 
 /*
+sizeof=16/16
 linux rbtree with 10000000 nodes:
-insert time: 2745ms, height=33
-search time: 1547ms error=0
-delete time: 500ms
-total: 4792ms
+insert time: 2187ms, height=33
+search time: 1266ms error=0
+delete time: 469ms
+total: 3922ms
 
 avlmini with 10000000 nodes:
-insert time: 2852ms, height=27
-search time: 1266ms error=0
-delete time: 547ms
-total: 4665ms
-
-std::map with 10000000 nodes:
-insert time: 3008ms
-search time: 2241ms error=0
-delete time: 578ms
-total: 5827ms
+insert time: 2141ms, height=27
+search time: 1234ms error=0
+delete time: 515ms
+total: 3890ms
 
 linux rbtree with 1000000 nodes:
-insert time: 234ms, height=26
-search time: 110ms error=0
-delete time: 38ms
-total: 375ms
+insert time: 187ms, height=27
+search time: 125ms error=0
+delete time: 39ms
+total: 343ms
 
 avlmini with 1000000 nodes:
-insert time: 266ms, height=23
+insert time: 188ms, height=24
 search time: 109ms error=0
-delete time: 44ms
-total: 420ms
+delete time: 48ms
+total: 360ms
 
-std::map with 1000000 nodes:
-insert time: 265ms
-search time: 203ms error=0
-delete time: 47ms
-total: 515ms*/
+linux rbtree with 100000 nodes:
+insert time: 15ms, height=20
+search time: 0ms error=0
+delete time: 0ms
+total: 15ms
+
+avlmini with 100000 nodes:
+insert time: 16ms, height=20
+search time: 15ms error=0
+delete time: 0ms
+total: 31ms
+*/
 
 

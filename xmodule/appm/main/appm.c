@@ -1,9 +1,11 @@
-#include "vos.h"
+#include "xmodule.h"
 #include "appm.h"
 
 int main()
 {
 	xmodule_init("MAIN", 0, NULL, NULL);
-	printf("hello \n");
+	
+	cli_main_task(NULL);
+
 	return 0;
 }

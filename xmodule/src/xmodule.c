@@ -1,4 +1,3 @@
-
 #include "xmodule.h"
 
 int app_role = APP_ROLE_SLAVE;
@@ -71,8 +70,6 @@ int cli_sys_cfg_proc(int argc, char **argv)
     return VOS_OK;
 }
 
-int xlog_cmd_set_level(int argc, char **argv);
-
 void xmodule_cmd_init(void)
 {
     cli_cmd_reg("cfg",      "sys cfg operation",            &cli_sys_cfg_proc);
@@ -92,7 +89,9 @@ int xmodule_init(char *app_name, int mode, char *log_file, char *cfg_file)
 	app_role = mode;
     if (app_name == NULL) {
         sys_conf_set("app_name", "app_main");
-    }
+    } else {
+			sys_conf_set("app_name", "app_main");
+	}
 
     xlog_init(log_file);
 	sys_conf_set("log_file", log_file);
@@ -110,21 +109,5 @@ int xmodule_init(char *app_name, int mode, char *log_file, char *cfg_file)
     return VOS_OK;
 }
 
-#ifdef MAKE_APP
 
-int main(int argc, char **argv)
-{
-	if (argc < 2) {
-		printf("usage: %s <app_name> \r\n", argv[0]);
-		return VOS_OK;
-	}
-
-	sys_conf_seti("cli_enable", 1);
-	xmodule_init(argv[1], NULL, NULL);
-
-	while(1) sleep(3);
-	return VOS_OK;
-}
-
-#endif
 

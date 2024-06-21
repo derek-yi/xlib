@@ -1,46 +1,24 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <stdarg.h>
-#include <pthread.h>
-#include <sys/syscall.h>
-#include <sys/types.h>
-#include <sys/mman.h>
-#include <unistd.h>
-#include <fcntl.h>
-#include <errno.h>
-#include <semaphore.h>
-#include <netinet/in.h>
-#include <fcntl.h>
-#include <signal.h>
-#include <arpa/inet.h> 
-
 #include "vos.h"
 #include "tiny_cli.h"
 
-typedef struct CMD_NODE
-{
-    struct CMD_NODE *pNext;
-
-    char  *cmd_str;
-    char  *help_str;
-    CMD_FUNC  cmd_func;    
-}CMD_NODE;
-
-#define CMD_BUFF_MAX            1024
-
 char    cli_cmd_buff[CMD_BUFF_MAX];
+
 uint32  cli_cmd_ptr = 0;
+
 int     telnet_fd = -1;
+
 int     cli_console_active = -1;
 
 CMD_NODE  *gst_cmd_list  = NULL;
+
 uint32     pwd_check_ok = FALSE;
 
 static pthread_mutex_t print_mutex = PTHREAD_MUTEX_INITIALIZER;
+
 char print_buff[8192];
 
 CLI_OUT_CB cli_out = NULL;
+
 void *cb_cookie = NULL;
 
 int cli_telnet_active(void)
@@ -146,17 +124,16 @@ void cli_show_match_cmd(char *cmd_buf, uint32 key_len)
 
 int shell_enable = 0;
 
-#define OUTPUT_TEMP_FILE   "/tmp/cmd.log" 
+#define OUTPUT_TEMP_FILE   "/run/cmd.log" 
 
 int cli_run_shell(char *cmd_buf)
 {
     int ret;
-    char temp_buf[512];
     FILE *fp;
+	char temp_buf[512];
 
     //vos_print("cmd: %s \r\n", cmd_buf);
-    snprintf(temp_buf, sizeof(temp_buf), "%s > /tmp/cmd.log", cmd_buf);
-    ret = system(temp_buf);
+    ret = vos_run_cmd("%s > %s 2>&1", cmd_buf, OUTPUT_TEMP_FILE);
     if (ret < 0) {
         vos_print("cmd failed \r\n");
         return 0;
@@ -350,7 +327,7 @@ void cli_buf_insert(char c)
 
 void cli_prompt(void)
 {
-    vos_print("\r\nDaemon>");
+    vos_print("\r\nvos>");
 }
 
 void* cli_main_task(void *param)
@@ -379,7 +356,8 @@ void* cli_main_task(void *param)
             memset(cli_cmd_buff, 0, CMD_BUFF_MAX);
             cli_cmd_ptr = 0;
             cli_prompt();
-        } else if (cli_do_spec_char(ch)) {
+        } 
+		else if (cli_do_spec_char(ch)) {
             //null
         }
         else {
@@ -440,7 +418,12 @@ int cli_do_param_test(int argc, char **argv)
     {
         vos_print("%d: %s\r\n", i, argv[i]);
     }
+    
+    return CMD_OK;
+}
 
+int cli_do_sz_check(int argc, char **argv)
+{
 	vos_print("char=%ld short=%ld int=%ld \r\n", sizeof(char), sizeof(short), sizeof(int));
 	vos_print("ulong=%ld ptr=%ld llong=%ld \r\n", sizeof(unsigned long), sizeof(char *), sizeof(long long));
 	vos_print("float=%ld double=%ld \r\n", sizeof(float), sizeof(double));
@@ -496,13 +479,13 @@ void cli_cmd_init(void)
     cli_cmd_reg("help",         "cmd help",             &cli_do_help);
     cli_cmd_reg("version",      "show version",         &cli_do_show_version);
     cli_cmd_reg("cmdtest",      "cmd param test",       &cli_do_param_test);
+    cli_cmd_reg("xsize",        "xsize check",       	&cli_do_sz_check);
 	
 #ifdef CLI_PWD_CHECK    
     cli_cmd_reg("passwd",       "password verify",      &cli_do_passwd_verify);
 #endif
 }
 #endif
-
 
 #ifdef INCLUDE_TELNETD
 
@@ -633,23 +616,4 @@ int telnet_task_init(void)
 
 #endif
 
-#ifndef MAKE_XLIB
-
-int main()
-{
-    cli_cmd_init();
-
-#ifdef INCLUDE_TELNETD
-    telnet_task_init();
-#endif    
-    
-#ifdef INCLUDE_CONSOLE
-    cli_main_task(NULL);
-#else   
-    while(1) sleep(1);
-#endif    
-    
-}
-
-#endif
 

@@ -13,6 +13,7 @@
 
 #include "common.h"
 
+#ifndef MAKE_XLIB
 
 typedef struct {
     int key;
@@ -98,4 +99,5 @@ int main(int argc, char *argv[])
     return 0;
 }
 
+#endif
 

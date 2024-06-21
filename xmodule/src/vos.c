@@ -144,11 +144,11 @@ void vos_msleep(uint32 milliseconds)
 int vos_run_cmd(const char *format, ...)
 {
 	va_list args;
-	char cmd_str[512];
+	char cmd_str[1024];
     int status;
     
     va_start(args, format);
-    vsnprintf(cmd_str, 512, format, args);
+    vsnprintf(cmd_str, 1024, format, args);
     va_end(args);
     
     status = system(cmd_str);
@@ -542,69 +542,6 @@ int list_max_index2(uint64_t *list, int size)
 	return max_index;
 }
 
-int xlog_save_list(char *file_name, int *list, int cnt)
-{
-	int i, len;
-	char buf[128];
-	FILE *fd;
-
-	fd = fopen(file_name, "w");
-	if (fd == NULL) {
-		return -1;
-	}
-
-	for (i = 0; i < cnt; i++) {
-		len = sprintf(buf, "%d\n", list[i]);
-		fwrite(buf, 1, len, fd);
-	}
-
-	fflush(fd);
-	fclose(fd);
-	return 0;
-}
-
-int xlog_save_ulist(char *file_name, uint32 *list, int cnt)
-{
-	int i, len;
-	char buf[128];
-	FILE *fd;
-
-	fd = fopen(file_name, "w");
-	if (fd == NULL) {
-		return -1;
-	}
-
-	for (i = 0; i < cnt; i++) {
-		len = sprintf(buf, "%u\n", list[i]);
-		fwrite(buf, 1, len, fd);
-	}
-
-	fflush(fd);
-	fclose(fd);
-	return 0;
-}
-
-int xlog_save_list2(char *file_name, uint64_t *list, int cnt)
-{
-	int i, len;
-	char buf[128];
-	FILE *fd;
-
-	fd = fopen(file_name, "w");
-	if (fd == NULL) {
-		return -1;
-	}
-
-	for (i = 0; i < cnt; i++) {
-		len = sprintf(buf, "%lu\n", (uint64_t)list[i]);
-		fwrite(buf, 1, len, fd);
-	}
-
-	fflush(fd);
-	fclose(fd);
-	return 0;
-}
-
 #endif
 
 #define INCLUDE_DEV_MEM
@@ -672,7 +609,6 @@ uint32 devmem_write(uint64_t mem_addr, uint32 writeval)
 }
 
 #endif
-
 
 #if 1
 

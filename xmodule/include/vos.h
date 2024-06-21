@@ -40,23 +40,15 @@ typedef unsigned int uint32;
 #endif
 
 #define VOS_OK      		0
-#define VOS_ERR     		(-1)
-#define VOS_E_PARAM     	(-2)
-#define VOS_E_NONEXIST     	(-3)
-#define VOS_E_FILE     		(-4)
-#define VOS_E_SOCK     		(-5)
-#define VOS_E_MALLOC   		(-6)
+#define VOS_ERR     		(1)
+#define VOS_E_PARAM     	(2)
+#define VOS_E_NONEXIST     	(3)
+#define VOS_E_FILE     		(4)
+#define VOS_E_SOCK     		(5)
+#define VOS_E_MALLOC   		(6)
 
 /************************************************************************************/
-#define APP_ROLE_MASTER             0
-#define APP_ROLE_SLAVE              1
-
 #define LOCAL_IP_ADDR               "127.0.0.1"
-#define MASTER_IP_ADDR              "172.16.3.10"
-#define SLAVE_IP_ADDR               "172.16.3.20"
-
-#define OAM_MS_RX_PORT              11010
-#define OAM_XLOG_FWD_PORT           11030
 
 #ifndef TRUE
 #define TRUE        1

@@ -19,7 +19,7 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O2 -g ")
 #set(CMAKE_BUILD_TYPE release)
 #set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -O2 ")
 #set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O2 ")
-add_compile_options(-DLINUX_PLATFORM -DADRV9025 -DMAKE_XLIB -DROCKCHIP_BOARD -Wno-unused-result)
+add_compile_options(-DLINUX_PLATFORM -DMAKE_XLIB -Wno-unused-result)
 #add_compile_options(-Wchar-subscripts -Wno-format-overflow)
 message(STATUS "CMAKE_C_FLAGS: " ${CMAKE_C_FLAGS})
 #get_target_property(MY_COMPILE_OPTIONS ${PROJECT_NAME} COMPILE_OPTIONS)
@@ -32,12 +32,11 @@ include_directories(${ROOT_DIR}/include)
 ## link
 #link_directories(${ROOT_DIR}/lib)
 #LINK_LIBRARIES(${ROOT_DIR}/aa.a)
-#LINK_LIBRARIES(${ROOT_DIR}/lteSync/bb.a)
 
 ## sources
-#aux_source_directory(${ROOT_DIR}/app/g73c sources)
-#file(GLOB ${ROOT_DIR}/boards/daughterboards/adrv9025 CONFIGURE_DEPENDS *.c *.h)
-#file(GLOB_RECURSE sources ${ROOT_DIR}/app/g73c CONFIGURE_DEPENDS *.c *.h)
+#aux_source_directory(${ROOT_DIR}/app/xx sources)
+#file(GLOB ${ROOT_DIR}/boards/xx CONFIGURE_DEPENDS *.c *.h)
+#file(GLOB_RECURSE sources ${ROOT_DIR}/app/xx CONFIGURE_DEPENDS *.c *.h)
 file(GLOB_RECURSE 
 	sources 
 	${ROOT_DIR}/src/*.c
