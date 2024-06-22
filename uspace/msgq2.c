@@ -30,7 +30,6 @@ typedef struct msgbuf
 int send_task2(void)  
 {
     PRIV_MSG_INFO sndmsg;
-    //int var_len = 10;
     
     msg_qid = msgget((key_t)1234, 0666 | IPC_CREAT);  
     if (msg_qid == -1) {
@@ -43,18 +42,15 @@ int send_task2(void)
         memset(&sndmsg, 0, sizeof(PRIV_MSG_INFO));
         sndmsg.msgtype = 10;
         sprintf(sndmsg.msgtext, "type %ld", sndmsg.msgtype);
-        //memset(&sndmsg, 0x31, var_len); //not support var_len
-        //if (++var_len > 100) var_len = 10;
         
-        //if (msgsnd(msg_qid, (PRIV_MSG_INFO *)&sndmsg, var_len + 8, 0)==-1) {
-        if (msgsnd(msg_qid, (PRIV_MSG_INFO *)&sndmsg, sizeof(PRIV_MSG_INFO), 0)==-1) {
+        if (msgsnd(msg_qid, (PRIV_MSG_INFO *)&sndmsg, 16, 0)==-1) {
             printf("msgsnd error\n");
             exit(0);
         }
         
         sndmsg.msgtype = 20;
         sprintf(sndmsg.msgtext, "type %ld", sndmsg.msgtype);
-        if (msgsnd(msg_qid, (PRIV_MSG_INFO *)&sndmsg, sizeof(PRIV_MSG_INFO), 0)==-1) {
+        if (msgsnd(msg_qid, (PRIV_MSG_INFO *)&sndmsg, 32, 0)==-1) {
             printf("msgsnd error\n");
             exit(0);
         }
@@ -66,6 +62,7 @@ int send_task2(void)
 int recv_task2(void)  
 {
     PRIV_MSG_INFO rcvmsg;
+	int ret;
 
     msg_qid = msgget((key_t)1234, 0666 | IPC_CREAT);  
     if (msg_qid == -1) {
@@ -75,13 +72,13 @@ int recv_task2(void)
 
     for(;;)
     {
-        if (msgrcv(msg_qid, (PRIV_MSG_INFO *)&rcvmsg, sizeof(PRIV_MSG_INFO), 10, 0) == -1) {
+    	ret = msgrcv(msg_qid, (PRIV_MSG_INFO *)&rcvmsg, sizeof(PRIV_MSG_INFO), 0, 0);
+        if (ret == -1) {
             printf("msgrcv error\n");
             exit(0);
         }
         
-        printf("recv msg: %s\n", rcvmsg.msgtext);
-        //printf("recv msg len %ld\n", strlen(rcvmsg.msgtext));
+        printf("recv msg(%d): type %ld, %s\n", ret, rcvmsg.msgtype, rcvmsg.msgtext);
     }
 }
 
@@ -104,7 +101,6 @@ int create_task(int param)
     pthread_join(thread_id, NULL);  
     return 0;  
 }  
- 
 
 int main(int argc, char **argv)
 {
@@ -119,7 +115,6 @@ int main(int argc, char **argv)
     
     return ret;
 }
-
 
 
 

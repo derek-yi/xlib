@@ -34,20 +34,24 @@ int send_task(void)
 {
     PRIV_MSG_INFO sndmsg;
     int serial_num = 0;
+	int ret;
 
     for(;;)
     {
-        sprintf(sndmsg.msgtext, "serial_num %d", serial_num++);
-        sndmsg.msgtype = serial_num%5;
-        
-        if (msgsnd(msg_qid, (PRIV_MSG_INFO *)&sndmsg, sizeof(PRIV_MSG_INFO), 0)==-1) {
-            printf("send msg_qid error\n");
+        sprintf(sndmsg.msgtext, "sn %d", serial_num++);
+        sndmsg.msgtype = serial_num%10;
+
+		ret = msgsnd(msg_qid, (PRIV_MSG_INFO *)&sndmsg, sndmsg.msgtype*10, 0);
+        if (ret == -1) {
+            printf("send msg_qid error %d \n", ret);
             exit(254);
         }
-        
-        if (msgsnd(msg_qid2, (PRIV_MSG_INFO *)&sndmsg, sizeof(PRIV_MSG_INFO), 0)==-1) {
-            printf("send msg_qid2 error\n");
-            exit(254);
+
+		sndmsg.msgtype = serial_num%2;
+		ret = msgsnd(msg_qid2, (PRIV_MSG_INFO *)&sndmsg, sizeof(PRIV_MSG_INFO), 0);
+        if (ret == -1) {
+            printf("send msg_qid2 error %d \n", ret);
+            //exit(254);
         }
         
         sleep(5);
@@ -56,29 +60,35 @@ int send_task(void)
 
 int recv_task(void)  
 {
+	int ret;
     PRIV_MSG_INFO rcvmsg;
 
     for(;;)
     {
-        if(msgrcv(msg_qid, (PRIV_MSG_INFO *)&rcvmsg, sizeof(PRIV_MSG_INFO), 0, 0) == -1) {
+    	ret = msgrcv(msg_qid, (PRIV_MSG_INFO *)&rcvmsg, sizeof(PRIV_MSG_INFO), 0, 0);
+        if ( ret == -1) {
             printf("msgrcv error\n");
             exit(254);
         }
-        printf("recv_task recv msg: %s\n", rcvmsg.msgtext);
+        printf("recv_task recv msg(%d): type %ld, %s\n", ret, rcvmsg.msgtype, rcvmsg.msgtext);
     }
 }
 
 int recv_task2(void)  
 {
+	int ret;
     PRIV_MSG_INFO rcvmsg;
 
     for(;;)
     {
-        if (msgrcv(msg_qid2, (PRIV_MSG_INFO *)&rcvmsg, sizeof(PRIV_MSG_INFO), 0, 0) == -1) {
+    	//If msgtyp is 0, then the first message in the queue is read.
+    	//If msgtyp is greater than 0, then the first message in the queue of type msgtyp is read, unless MSG_EXCEPT was specified in msgflg
+    	ret = msgrcv(msg_qid2, (PRIV_MSG_INFO *)&rcvmsg, sizeof(PRIV_MSG_INFO), 1, 0);
+        if ( ret == -1) {
             printf("msgrcv error\n");
             exit(254);
         }
-        printf("recv_task2 recv msg: %s\n", rcvmsg.msgtext);
+        printf("recv_task2 recv msg(%d): type %ld, %s\n", ret, rcvmsg.msgtype, rcvmsg.msgtext);
     }
 }
 
@@ -127,6 +137,9 @@ int create_task(void)
     return 0;  
 }  
 
+
+//ipcs -q
+//ipcrm -q qid
 int main(int argc, char **argv)
 {
     create_task();

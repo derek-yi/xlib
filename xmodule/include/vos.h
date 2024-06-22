@@ -67,8 +67,23 @@ typedef unsigned int uint32;
 #define x_perror(x)	 
 #endif
 
-#define t_swap(x, y) \
+#define max(x, y) \
+	(((x) > (y)) ? (x) : (y))
+	
+#define max_t(type, x, y) \
+	(type)max((type)(x), (type)(y))
+
+#define clamp(val, min_val, max_val) \
+	(max(min((val), (max_val)), (min_val)))
+	
+#define clamp_t(type, val, min_val, max_val) \
+	(type)clamp((type)(val), (type)(min_val), (type)(max_val))
+
+#define swap_t(x, y) \
 	{typeof(x) _tmp_ = (x); (x) = (y); (y) = _tmp_;}
+
+#define round_up(x,y) \
+		(((x)+(y)-1)/(y))
 
 typedef struct
 {
