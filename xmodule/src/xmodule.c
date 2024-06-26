@@ -88,10 +88,8 @@ int xmodule_init(char *app_name, int mode, char *log_file, char *cfg_file)
 
 	app_role = mode;
     if (app_name == NULL) {
-        sys_conf_set("app_name", "app_main");
-    } else {
-			sys_conf_set("app_name", "app_main");
-	}
+        sys_conf_set("app_name", "app_main");    } else {
+		sys_conf_set("app_name", app_name);	}
 
     xlog_init(log_file);
 	sys_conf_set("log_file", log_file);
@@ -99,6 +97,8 @@ int xmodule_init(char *app_name, int mode, char *log_file, char *cfg_file)
     
 	cli_cmd_init();
     xmodule_cmd_init();
+	devm_msg_init(app_role == APP_ROLE_MASTER);
+
     if (sys_conf_geti("telnet_enable", 1)) {
         telnet_task_init();
     }
