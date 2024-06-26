@@ -37,3 +37,8 @@
 # Debug files
 *.dSYM/
 *.su
+
+##
+xmodule/build/*
+xmodule/appm/build/*
+xmodule/apps/build/*

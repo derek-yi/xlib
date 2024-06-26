@@ -28,8 +28,10 @@ int cli_telnet_active(void)
 
 int cli_set_output_cb(CLI_OUT_CB cb, void *cookie)
 {
+	pthread_mutex_lock(&print_mutex);
     cli_out = cb;
     cb_cookie = cookie;
+	pthread_mutex_unlock(&print_mutex);
     return CMD_OK;
 }
 

@@ -199,7 +199,7 @@ void* msg_rx_task(void *param)
             continue;
         }
 
-        xlog_info("new msg %d, %s to %s", rx_msg->msg_type, rx_msg->src_app, rx_msg->dst_app);
+        //xlog_info("new msg %d, %s to %s", rx_msg->msg_type, rx_msg->src_app, rx_msg->dst_app);
         if ( strcmp(rx_msg->dst_app, "_master") == 0 ) {
             if (!local_is_master) continue;
         } else if ( strcmp(rx_msg->dst_app, get_app_name() ) ) {
@@ -260,6 +260,7 @@ void* socket_rx_task(void *param)
 		}
 
 		sock_list[index].rx_cnt++;
+		xlog_info("new msg %d, %s to %s", raw_msg->msg_type, raw_msg->src_app, raw_msg->dst_app);
         if ( msgsnd(xmsg_qid, raw_msg, rx_len, 0) < 0 ) {
             xlog_info("msgsnd failed(%s)", strerror(errno));
             continue;
@@ -342,8 +343,6 @@ void* inet_rx_task(void *param)
 			break;
 		}
 
-		//xlog_info("----------------------------------------------------------------------<<<");
-		//oam_msg_dump(__func__, rmt_sock, rx_msg.msg_data, rx_len);
 		xlog_info("new msg %d, %s to %s", raw_msg->msg_type, raw_msg->src_app, raw_msg->dst_app);
 		if (rx_len >= sizeof(DEVM_MSG_S)) {
 			msgsnd(xmsg_qid, msg_buff, rx_len, 0);
@@ -445,10 +444,10 @@ int cli_fake_print(void *cookie, char *buff)
     DEVM_MSG_S *rx_msg = (DEVM_MSG_S *)cookie;
     char usr_data[512];
 
-    //xlog(XLOG_DEBUG, "%d: %s \n", __LINE__, buff);
+    xlog_info(">> %s \n", buff);
     snprintf(usr_data, 512, "%s", buff);
     app_send_msg(rx_msg->src_app, XMSG_T_ECHO_ACK, usr_data, strlen(usr_data) + 1);
-    vos_msleep(3);
+    //vos_msleep(3);
     
     return VOS_OK;
 }
