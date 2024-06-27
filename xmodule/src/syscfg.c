@@ -198,7 +198,8 @@ int sys_conf_show(void)
 {
     SYS_CFG_S *p;
 
-	pthread_mutex_lock(&syscfg_mutex);
+	//pthread_mutex_lock(&syscfg_mutex);
+	//vos_print may call sys_conf_xx
     p = my_syscfg;
     while (p != NULL) {
         if ( p->key && p->value ) {
@@ -207,7 +208,7 @@ int sys_conf_show(void)
         p = p->next;
     }    
 
-	pthread_mutex_unlock(&syscfg_mutex);
+	//pthread_mutex_unlock(&syscfg_mutex);
     return VOS_OK;
 }
 #endif

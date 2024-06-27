@@ -4,6 +4,7 @@
 #include <sys/types.h>
 #include <sys/ipc.h>
 #include <sys/msg.h>
+#include <stdarg.h>
 
 #define MAX_CONNECT_NUM 32
 
@@ -157,16 +158,16 @@ int app_send_msg(char *dst_app, int msg_type, char *usr_data, int data_len)
 
 	vos_msleep(10); //avoid packet crush
     memset(msg_buff, 0, sizeof(msg_buff));
-    tx_msg->magic_num = MSG_MAGIC_NUM;
-    tx_msg->msg_type = msg_type;
-	tx_msg->serial_num = serial_num++;
+    tx_msg->magic_num = htonl(MSG_MAGIC_NUM);
+    tx_msg->msg_type = htonl(msg_type);
+	tx_msg->serial_num = htonl(serial_num++);
     snprintf(tx_msg->src_app, APP_NAME_LEN, "%s", get_app_name());
     snprintf(tx_msg->dst_app, APP_NAME_LEN, "%s", dst_app ? dst_app : "_master");
 	xlog_debug("app send to %s", tx_msg->dst_app);
 	
     if (usr_data != NULL && data_len != 0) {
         memcpy(tx_msg->msg_payload, usr_data, data_len);
-        tx_msg->payload_len = data_len;
+        tx_msg->payload_len = htonl(data_len);
     }
 
     if (local_is_master && !dst_app) {
@@ -199,7 +200,9 @@ void* msg_rx_task(void *param)
             continue;
         }
 
-        //xlog_info("new msg %d, %s to %s", rx_msg->msg_type, rx_msg->src_app, rx_msg->dst_app);
+        xlog_info("new msg %d len %d, sn %u, %s to %s", 
+                  ntohl(rx_msg->msg_type), ntohl(rx_msg->payload_len),
+                  ntohl(rx_msg->serial_num), rx_msg->src_app, rx_msg->dst_app);
         if ( strcmp(rx_msg->dst_app, "_master") == 0 ) {
             if (!local_is_master) continue;
         } else if ( strcmp(rx_msg->dst_app, get_app_name() ) ) {
@@ -211,7 +214,11 @@ void* msg_rx_task(void *param)
             }
             continue;
         }
-        
+
+        rx_msg->magic_num   = ntohl(rx_msg->magic_num);
+        rx_msg->msg_type    = ntohl(rx_msg->msg_type);
+        rx_msg->serial_num  = ntohl(rx_msg->serial_num);
+        rx_msg->payload_len = ntohl(rx_msg->payload_len);
         if ( (rx_msg->msg_type < XMSG_T_MAX) && (msg_func_list[rx_msg->msg_type] != NULL) ) {
             msg_func_list[rx_msg->msg_type](rx_msg);
         }
@@ -249,7 +256,7 @@ void* socket_rx_task(void *param)
         }
 
         //xlog(XLOG_DEBUG, "new msg %d", raw_msg->msg_type);
-        if (raw_msg->magic_num != MSG_MAGIC_NUM) {
+        if (raw_msg->magic_num != ntohl(MSG_MAGIC_NUM)) {
             xlog_info("wrong magic 0x%x", raw_msg->magic_num);
             continue;
         }
@@ -260,7 +267,7 @@ void* socket_rx_task(void *param)
 		}
 
 		sock_list[index].rx_cnt++;
-		xlog_info("new msg %d, %s to %s", raw_msg->msg_type, raw_msg->src_app, raw_msg->dst_app);
+		//xlog_info("new msg %d, %s to %s", raw_msg->msg_type, raw_msg->src_app, raw_msg->dst_app);
         if ( msgsnd(xmsg_qid, raw_msg, rx_len, 0) < 0 ) {
             xlog_info("msgsnd failed(%s)", strerror(errno));
             continue;
@@ -343,7 +350,12 @@ void* inet_rx_task(void *param)
 			break;
 		}
 
-		xlog_info("new msg %d, %s to %s", raw_msg->msg_type, raw_msg->src_app, raw_msg->dst_app);
+        if (raw_msg->magic_num != ntohl(MSG_MAGIC_NUM)) {
+            xlog_info("wrong magic 0x%x", raw_msg->magic_num);
+            continue;
+        }
+
+		//xlog_info("new msg %d, %s to %s", raw_msg->msg_type, raw_msg->src_app, raw_msg->dst_app);
 		if (rx_len >= sizeof(DEVM_MSG_S)) {
 			msgsnd(xmsg_qid, msg_buff, rx_len, 0);
 		}
@@ -364,8 +376,8 @@ void* inet_tx_task(void *param)
     while (1) {
         if (local_sock < 0) break;
 		memset(msg_buff, 0, sizeof(msg_buff));
-        tx_msg->magic_num = MSG_MAGIC_NUM;
-        tx_msg->msg_type = XMSG_T_HELLO;
+        tx_msg->magic_num = htonl(MSG_MAGIC_NUM);
+        tx_msg->msg_type = htonl(XMSG_T_HELLO);
     	tx_msg->serial_num = 0;
         snprintf(tx_msg->src_app, APP_NAME_LEN, "%s", get_app_name());
         snprintf(tx_msg->dst_app, APP_NAME_LEN, "_master");
@@ -383,7 +395,7 @@ void* inet_tx_task(void *param)
     return NULL;
 }
 
-void inet_connect_task()
+void* inet_connect_task(void *param)
 {
     struct sockaddr_in srv_addr;
 	int on = 1;
@@ -403,7 +415,7 @@ void inet_connect_task()
         if (local_sock < 0) {
              xlog_info("socket failed(%d): %s", errno, strerror(errno));
              sleep(10);
-             return ;
+             continue;
         }
 
         srv_addr.sin_family =  AF_INET; 
@@ -422,6 +434,7 @@ void inet_connect_task()
     }
 
 	xlog_info("%s exit", __func__);
+    return NULL;
 }
 
 #endif
@@ -430,10 +443,10 @@ void inet_connect_task()
 
 int echo_msg_proc(DEVM_MSG_S *rx_msg)
 {
-    vos_print("%s: %s\n", rx_msg->src_app, rx_msg->msg_payload);
+    vos_print("%s> %s", rx_msg->src_app, rx_msg->msg_payload);
 	if (rx_msg->msg_type == XMSG_T_ECHO_REQ) {
-		char usr_data[64];
-		sprintf(usr_data, "ECHO_ACK");
+		char usr_data[512];
+		snprintf(usr_data, 512, "ECHO(%s)\n", rx_msg->msg_payload);
     	app_send_msg(rx_msg->src_app, XMSG_T_ECHO_ACK, usr_data, strlen(usr_data) + 1);
 	}
     return VOS_OK;
@@ -444,7 +457,7 @@ int cli_fake_print(void *cookie, char *buff)
     DEVM_MSG_S *rx_msg = (DEVM_MSG_S *)cookie;
     char usr_data[512];
 
-    xlog_info(">> %s \n", buff);
+    //xlog_info(">> %s \n", buff);
     snprintf(usr_data, 512, "%s", buff);
     app_send_msg(rx_msg->src_app, XMSG_T_ECHO_ACK, usr_data, strlen(usr_data) + 1);
     //vos_msleep(3);
@@ -559,8 +572,10 @@ int devm_msg_init(int is_master)
     msg_func_list[XMSG_T_RCMD]        = rcmd_msg_proc;
 
     cli_cmd_reg("echo",     "send echo msg",            &cli_send_echo_msg);
-    cli_cmd_reg("rcmd",     "remote cmd",               &cli_send_remote_cmd);
-    cli_cmd_reg("list",     "list client",              &cli_show_client_list);
+    if (local_is_master) {
+        cli_cmd_reg("rcmd",     "remote cmd",               &cli_send_remote_cmd);
+        cli_cmd_reg("list",     "list client",              &cli_show_client_list);
+    }
 
     return VOS_OK;
 }

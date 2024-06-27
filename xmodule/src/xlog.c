@@ -126,8 +126,8 @@ int _xlog(const char *func, int line, int level, const char *format, ...)
 
     buf_len = strlen(buff);
     if (!app_in_master()) {
-		if (sys_conf_get("master_ipaddr") != NULL) {
-        	vos_send_udp_pkt(sys_conf_get("master_ipaddr"), OAM_XLOG_FWD_PORT, buff, buf_len);
+		if (sys_conf_get("xlog_server") != NULL) {
+        	vos_send_udp_pkt(sys_conf_get("xlog_server"), OAM_XLOG_FWD_PORT, buff, buf_len);
 		}
     }
 	
