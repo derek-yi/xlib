@@ -1,6 +1,9 @@
+export CROSS_COMPILE=
+export ARCH=x86
+
 ifneq ($(KERNELRELEASE),)
 
-obj-m:=mmap.o
+obj-m:=mmap1.o
 
 else
 

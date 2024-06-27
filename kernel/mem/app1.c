@@ -51,7 +51,7 @@ int main()
 	char *huge_buff;
 	void *phy_addr;
  
-    fd = open("/dev/misc_cache", O_RDWR);
+    fd = open("/dev/misc_op_cache", O_RDWR);
     if( fd < 0 ) {
         printf("open failed \n");
         return 0;

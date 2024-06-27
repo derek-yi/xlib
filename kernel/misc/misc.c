@@ -1,4 +1,3 @@
-
 #include <linux/kernel.h>
 #include <linux/init.h>
 #include <linux/types.h>
@@ -40,7 +39,6 @@ static long misc_ioctl( struct file *file, unsigned int cmd, unsigned long arg)
     return 0;
 }
  
- 
 static const struct file_operations misc_fops =
 {
     .owner   =   THIS_MODULE,
@@ -55,14 +53,12 @@ static struct miscdevice misc_dev =
     .fops = &misc_fops,
 };
  
- 
 static int __init misc_init(void)
 {
     int ret;
      
     ret = misc_register(&misc_dev);
-    if (ret)
-    {
+    if (ret) {
         printk("misc_register error\n");
         return ret;
     }
@@ -78,5 +74,5 @@ static void __exit misc_exit(void)
 module_init(misc_init);
 module_exit(misc_exit);
 MODULE_LICENSE("GPL");
-MODULE_AUTHOR("Decly");
+MODULE_AUTHOR("Derek");
 

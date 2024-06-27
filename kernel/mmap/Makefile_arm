@@ -1,0 +1,16 @@
+export CROSS_COMPILE=aarch64-linux-gnu-
+export ARCH=arm64
+
+KERNELDIR = /home/derek/share/repo_rk/rk3588/kernel_g76
+PWD := $(shell pwd)
+CC  = $(CROSS_COMPILE)gcc
+
+obj-m := mmap1.o
+
+modules:
+	$(MAKE) -C $(KERNELDIR) M=$(PWD) modules
+    
+clean:
+	rm -rf *.o *~ core .depend .*.cmd *.ko *.mod.c .tmp_versions
+
+.PHONY: modules clean

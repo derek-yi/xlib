@@ -18,22 +18,13 @@ char *buf = NULL;
 
 static int misc_open(struct inode *inode, struct file *file)
 {
-    buf = (char *)kmalloc(MM_SIZE, GFP_KERNEL);
-    if(buf == NULL) {
-        printk("kmalloc failed\n");
-        return -1;
-    }
-    
+    printk("misc_open \n");  
     return 0;
 }
 
 static int misc_close(struct inode *indoe, struct file *file)  
 {  
-    printk("misc_close\n");  
-    if(buf)  
-    {  
-        kfree(buf);  
-    }  
+    printk("misc_close \n");  
     return 0;  
 }  
 
@@ -54,8 +45,14 @@ static long misc_ioctl( struct file *file, unsigned int cmd, unsigned long arg)
             break;
     }
      
-    //printk(KERN_NOTICE"ioctl CMD%d done!\n",temp);   
     return 0;
+}
+
+//sudo cat /sys/devices/virtual/misc/miscdriver/ext_sync
+static ssize_t ext_sync_show(struct device *dev, struct device_attribute *attr, char *buff)
+{
+	return sprintf(buff, "buff %d %d %d %d %d, temp_data %d \n", 
+                   buf[0], buf[1], buf[2], buf[3], buf[4], temp_data);
 }
 
 static int device_mmap(struct file *file, struct vm_area_struct *vma)  
@@ -63,8 +60,6 @@ static int device_mmap(struct file *file, struct vm_area_struct *vma)
     printk("device_mmap\n");  
     
     vma->vm_flags |= VM_IO; 
-    //vma->vm_flags |= VM_RESERVED;
-    
     if(remap_pfn_range(vma,
                        vma->vm_start,
                        virt_to_phys(buf)>>PAGE_SHIFT,
@@ -77,6 +72,7 @@ static int device_mmap(struct file *file, struct vm_area_struct *vma)
     return 0;  
 }  
 
+static DEVICE_ATTR(ext_sync, 0660, ext_sync_show, NULL);
  
 static const struct file_operations misc_fops =
 {
@@ -93,29 +89,41 @@ static struct miscdevice misc_dev =
     .name = MISC_NAME,
     .fops = &misc_fops,
 };
- 
- 
+  
 static int __init misc_init(void)
 {
-    int ret;
+    int ret, i;
      
     ret = misc_register(&misc_dev);
-    if (ret)
-    {
+    if (ret) {
         printk("misc_register error\n");
         return ret;
     }
- 
+
+    device_create_file(misc_dev.this_device, &dev_attr_ext_sync);
+
+    buf = (char *)kmalloc(MM_SIZE, GFP_KERNEL);
+    if (buf == NULL) {
+        printk("kmalloc failed\n");
+        return -1;
+    }
+    //SetPageReserved(virt_to_page(buf)); //no need
+    for (i = 0; i < 1024; i++) {
+        buf[i] = i;
+    }
+
     return 0;
 }
  
 static void __exit misc_exit(void)
 {
+    if (buf) kfree(buf);     
+    device_remove_file(misc_dev.this_device, &dev_attr_ext_sync);
     misc_deregister(&misc_dev);
 }
- 
+
 module_init(misc_init);
 module_exit(misc_exit);
 MODULE_LICENSE("GPL");
-MODULE_AUTHOR("Decly");
+MODULE_AUTHOR("Derek");
 

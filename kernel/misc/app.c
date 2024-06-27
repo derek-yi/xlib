@@ -1,6 +1,3 @@
-
-#if 1
- 
 #include <stdio.h> 
 #include <fcntl.h> 
 #include <stdlib.h> 
@@ -34,8 +31,5 @@ int main()
     close(fd);
     return 0;
 }
- 
-#endif
-
 
 

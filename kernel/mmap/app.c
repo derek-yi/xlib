@@ -4,35 +4,39 @@
 #include <stdlib.h>  
 #include <string.h>  
   
-int main( void )  
+int main(void)  
 {  
-    int fd;  
-    char *buffer;  
+    int fd, ret;  
     char *mapBuf;  
+    int io_data = 100;
     
     fd = open("/dev/miscdriver", O_RDWR);
-    if(fd<0)  
-    {  
-        printf("open device is error,fd = %d\n",fd);  
+    if (fd < 0)  {  
+        printf("open failed, fd %d \n",fd);  
         return -1;  
     }  
     
-    printf("before mmap, my pid: %d\n", getpid());  
-    sleep(15);
-    
-    buffer = (char *)malloc(1024);  
-    memset(buffer, 0, 1024);  
     mapBuf = mmap(NULL, 1024, PROT_READ|PROT_WRITE, MAP_SHARED, fd, 0);
-    printf("after mmap\n");  
-    sleep(15);
-      
-    strcpy(mapBuf, "Driver Test");
-    memset(buffer, 0, 1024);  
-    strcpy(buffer, mapBuf);
-    printf("buf = %s\n", buffer);
-      
+    if (mapBuf == NULL) {
+        printf("mmap failed \n");
+        close(fd);
+        return 0;  
+    }
+
+    for (int i = 0; i < 5; i++) {
+        printf("mapBuf[%d] %d \n", i, mapBuf[i]);
+        mapBuf[i] += 1;
+    }
+
+    io_data = 0;
+    ret = ioctl(fd, 0x101, &io_data);
+    printf("ioctl ret %d, io_data %d \n", ret, io_data);
+
+    io_data += 1;
+    ret = ioctl(fd, 0x100, &io_data);
+    printf("ioctl ret %d \n", ret);    
+    
     munmap(mapBuf, 1024);
-    free(buffer);  
     close(fd);
     return 0;  
 }  
