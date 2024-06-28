@@ -1,8 +1,5 @@
-#export CROSS_COMPLE=aarch64-linux-gnu-
-#export ARCH=arm
-#CC  = $(CROSS_COMPILE)gcc
-
-KERNELDIR:=/home/derek/share/imb_g70/sprd_linux
+# make KERNELDIR=/home/derek/share/repo_rk/rk3588/kernel_g75
+KERNELDIR := /home/derek/share/repo_rk/rk3588/kernel_g76
 PWD := $(shell pwd)
 
 ## todo

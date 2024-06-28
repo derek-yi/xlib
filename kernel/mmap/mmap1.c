@@ -14,7 +14,7 @@
 
 #define MISC_NAME       "misc_xx"
 #define MEM_SIZE        4096
-#define DMA_MAP_MEM
+//#define DMA_MAP_MEM
 
 char *map_mem = NULL;  
 
@@ -26,6 +26,7 @@ dma_addr_t dma_mem_phy = 0;
 
 static int misc_open(struct inode *inode, struct file *file)
 {
+#if 0
     struct mm_struct *mm = current->mm;
 
     printk("client: %s (%d)\n", current->comm, current->pid);
@@ -36,6 +37,7 @@ static int misc_open(struct inode *inode, struct file *file)
     printk("stack section: s: 0x%lx\n", mm->start_stack);
     printk("arg   section: [0x%lx   0x%lx]\n", mm->arg_start, mm->arg_end);
     printk("env   section: [0x%lx   0x%lx]\n", mm->env_start, mm->env_end);
+#endif
     return 0;
 }
 
@@ -54,6 +56,9 @@ static int misc_map(struct file *filp, struct vm_area_struct *vma)
 
 #else
     vma->vm_flags |= VM_IO; //keep coherent
+    vma->vm_flags |= VM_DONTEXPAND | VM_DONTDUMP;
+
+    vma->vm_page_prot = pgprot_noncached(vma->vm_page_prot);
     if (remap_pfn_range(vma,
                        vma->vm_start,
                        virt_to_phys(map_mem)>>PAGE_SHIFT,
@@ -119,7 +124,7 @@ static int __init misc_init(void)
         printk("kmalloc failed\n");
         return -1;
     }
-    //SetPageReserved(virt_to_page(map_mem));
+    SetPageReserved(virt_to_page(map_mem));
     pr_info("kmalloc memory at va 0x%p, pa 0x%llx, size %u \n", 
             map_mem, virt_to_phys(map_mem), MEM_SIZE);
 #endif

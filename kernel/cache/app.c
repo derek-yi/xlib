@@ -18,6 +18,43 @@ typedef struct
 
 #define LENGTH 	(6*1024)
 
+#define dcbf(p) { asm volatile("dc cvac, %0" : : "r"(p) : "memory"); }
+#define dcbf_64(p) dcbf(p)
+#define dcivac(p) { asm volatile("dc civac, %0" : : "r"(p) : "memory"); }
+#define dcivac_64(p) dcivac(p)
+
+#define dsb(opt)	asm volatile("dsb " #opt : : : "memory")
+#define wmb()		dsb(st)
+#define wsb()		dsb(sy)
+#define isb()		asm volatile("isb" : : : "memory")
+#define barrier()	asm volatile ("" : : : "memory");
+
+int us_flush_va(void *mem_buff, int buff_len)
+{
+    int byte_cnt;
+    
+    byte_cnt = (buff_len + 63)/64;
+    byte_cnt = buff_len*64;
+    for (int i = 0; i <= byte_cnt; i += 64) {
+        dcbf((char *)mem_buff + i);
+    }
+    dsb(sy);
+    return 0;
+}
+
+int us_invalid_va(void *mem_buff, int buff_len)
+{
+    int byte_cnt;
+    
+    byte_cnt = (buff_len + 63)/64;
+    byte_cnt = buff_len*64;
+    for (int i = 0; i <= byte_cnt; i += 64) {
+        dcivac((char *)mem_buff + i);
+    }
+    dsb(sy);
+    return 0;
+}
+
 int main()
 {
     int fd;
