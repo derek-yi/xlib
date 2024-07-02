@@ -9,7 +9,6 @@
 #include <linux/mm.h> 
 #include <linux/cdev.h> 
 #include <linux/miscdevice.h>
-
 #include <linux/fs.h>
 #include <linux/string.h>
 #include <linux/syscalls.h>
@@ -18,18 +17,16 @@
 
 #define MISC_NAME   "miscdriver"
 
-#if 1
-
 #define XLOG_BUFF_MAX           512
-
-struct file *log_fd = NULL;
 
 #define MY_FILE "/tmp/kern.xlog"
 
 int cnt = 0;
 
+#if 0 //old kernel
 int kern_xlog(const char *format, ...)
 {
+    struct file *log_fd = NULL;
     mm_segment_t old_fs;
     va_list args;
     char buf[XLOG_BUFF_MAX];
@@ -39,15 +36,13 @@ int kern_xlog(const char *format, ...)
     len = vsnprintf(buf, XLOG_BUFF_MAX, format, args);
     va_end(args);
 
-    if (log_fd == NULL) {
-        log_fd = filp_open(MY_FILE, O_RDWR | O_APPEND | O_CREAT, 0644);
-        if ( IS_ERR(log_fd) )  {
-            printk("failed to open file %s\n", MY_FILE);
-            return 0;
-        }
+    log_fd = filp_open(MY_FILE, O_RDWR | O_APPEND | O_CREAT, 0644);
+    if ( IS_ERR(log_fd) )  {
+        printk("failed to open file %s\n", MY_FILE);
+        return 0;
     }
 
-    printk("write file %s\n", MY_FILE);
+    //printk("write file %s\n", MY_FILE);
     old_fs = get_fs();
     set_fs(KERNEL_DS);
     vfs_write(log_fd, buf, strlen(buf) + 1,  0);
@@ -59,6 +54,33 @@ int kern_xlog(const char *format, ...)
     return len;    
 }
 
+#else
+
+int kern_xlog(const char *format, ...)
+{
+    struct file *log_fd = NULL;
+    loff_t pos = 0;
+    va_list args;
+    char buf[XLOG_BUFF_MAX];
+    int len;
+
+    log_fd = filp_open(MY_FILE, O_RDWR | O_APPEND | O_CREAT, 0644);
+    if ( IS_ERR(log_fd) )  {
+        printk("failed to open file %s\n", MY_FILE);
+        return 0;
+    }
+
+    va_start(args, format);
+    len = vsnprintf(buf, XLOG_BUFF_MAX, format, args);
+    va_end(args);
+
+    //kernel_read(i_fp, in_buf, count1, &pos);
+    //printk("write file %s\n", MY_FILE);
+    kernel_write(log_fd, buf, len, &pos);
+    
+    filp_close(log_fd, NULL);  
+    return len;    
+}
 
 #endif
 
@@ -92,7 +114,6 @@ static long misc_ioctl( struct file *file, unsigned int cmd, unsigned long arg)
     return 0;
 }
  
- 
 static const struct file_operations misc_fops =
 {
     .owner   =   THIS_MODULE,
@@ -107,14 +128,12 @@ static struct miscdevice misc_dev =
     .fops = &misc_fops,
 };
  
- 
 static int __init misc_init(void)
 {
     int ret;
      
     ret = misc_register(&misc_dev);
-    if (ret)
-    {
+    if (ret) {
         printk("misc_register error\n");
         return ret;
     }
@@ -124,10 +143,6 @@ static int __init misc_init(void)
  
 static void __exit misc_exit(void)
 {
-    if (log_fd != NULL) {
-        filp_close(log_fd, NULL);
-    }
-
     misc_deregister(&misc_dev);
 }
  
