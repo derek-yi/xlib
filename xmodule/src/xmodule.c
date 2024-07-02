@@ -79,9 +79,11 @@ void xmodule_cmd_init(void)
 int xmodule_init(char *app_name, int mode, char *log_file, char *cfg_file)
 {
 	if (access(cfg_file, F_OK) == 0) {
-		if (cfgfile_load_file(cfg_file) != VOS_OK) {
-			printf("invalid cfg file \r\n");
-			return VOS_ERR;
+		if (parse_json_cfg(cfg_file) != VOS_OK) {
+			if (cfgfile_load_file(cfg_file) != VOS_OK) {
+				printf("invalid cfg file \r\n");
+				return VOS_ERR;
+			}
 		}
         sys_conf_set("sys_cfgfile", DEF_CONFIG_FILE);
 	}
@@ -98,13 +100,6 @@ int xmodule_init(char *app_name, int mode, char *log_file, char *cfg_file)
 	cli_cmd_init();
     xmodule_cmd_init();
 	devm_msg_init(app_role == APP_ROLE_MASTER);
-
-    if (sys_conf_geti("telnet_enable", 1)) {
-        telnet_task_init();
-    }
-    if (sys_conf_geti("cli_enable", 0)) {
-        cli_task_init();
-    }
 
     return VOS_OK;
 }

@@ -6,6 +6,7 @@
 #include "tiny_cli.h"
 #include "cJSON.h"
 #include "syscfg.h"
+#include "xmsg.h"
 
 /****************************************************************************************
  * config
@@ -19,8 +20,6 @@
  ****************************************************************************************/
 #define APP_ROLE_MASTER             0
 #define APP_ROLE_SLAVE              1
-	
-
 
 int xmodule_init(char *app_name, int mode, char *log_file, char *cfg_file);
 

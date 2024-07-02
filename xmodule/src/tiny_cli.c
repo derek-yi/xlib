@@ -372,19 +372,6 @@ void* cli_main_task(void *param)
     return NULL;
 }
 
-int cli_task_init(void)
-{
-    int ret;
-    pthread_t unused_tid;
-
-    ret = pthread_create(&unused_tid, NULL, cli_main_task, NULL);  
-    if (ret != 0)  {  
-        printf("Error at %s:%d, pthread_create failed(%s)\r\n", __FILE__, __LINE__, strerror(errno));
-        return CMD_ERR;  
-    } 
-    return CMD_OK;
-}
-
 int cli_task_run(void)
 {
 	if (telnet_fd > 0 || cli_console_active)

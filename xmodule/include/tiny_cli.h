@@ -36,8 +36,6 @@ int cli_task_run(void);
 
 void cli_cmd_init(void);
 
-int cli_task_init(void);
-
 int telnet_task_init(void);
 
 int cli_set_output_cb(CLI_OUT_CB cb, void *cookie);

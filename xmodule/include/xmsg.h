@@ -13,9 +13,6 @@
 #define XMSG_T_MAX                	0x30
 
 #define APP_NAME_LEN                32
-#define MSG_HEAD_LEN                96	//sizeof(DEVM_MSG_S)
-#define MSG_MAX_PAYLOAD             2048
-#define MSG_MAGIC_NUM               0x01015AA5
 
 typedef struct {
     int  magic_num;
@@ -29,6 +26,10 @@ typedef struct {
     int  payload_len;
     char msg_payload[0];
 }DEVM_MSG_S;
+
+#define MSG_HEAD_LEN                sizeof(DEVM_MSG_S)
+#define MSG_MAX_PAYLOAD             2048
+#define MSG_MAGIC_NUM               0x01015AA5
 
 typedef int (*msg_func)(DEVM_MSG_S *rx_msg);
 

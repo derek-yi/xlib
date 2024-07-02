@@ -1,4 +1,3 @@
-
 #include "xmodule.h"
 
 int app_in_master(void);

@@ -1,10 +1,7 @@
 #include "xmodule.h"
-#include "xmsg.h"
 
-#include <sys/types.h>
 #include <sys/ipc.h>
 #include <sys/msg.h>
-#include <stdarg.h>
 
 #define MAX_CONNECT_NUM 32
 
@@ -195,7 +192,7 @@ void* msg_rx_task(void *param)
             continue;
         }
 
-        if (rx_len < sizeof(DEVM_MSG_S)) {
+        if (rx_len < MSG_HEAD_LEN) {
             //xlog(XLOG_ERROR, "invalid msg len %d\n", ret);
             continue;
         }
@@ -446,7 +443,7 @@ int echo_msg_proc(DEVM_MSG_S *rx_msg)
     vos_print("%s> %s", rx_msg->src_app, rx_msg->msg_payload);
 	if (rx_msg->msg_type == XMSG_T_ECHO_REQ) {
 		char usr_data[512];
-		snprintf(usr_data, 512, "ECHO(%s)\n", rx_msg->msg_payload);
+		snprintf(usr_data, 512, "ECHO: %s\n", rx_msg->msg_payload);
     	app_send_msg(rx_msg->src_app, XMSG_T_ECHO_ACK, usr_data, strlen(usr_data) + 1);
 	}
     return VOS_OK;
@@ -486,7 +483,7 @@ int cli_send_echo_msg(int argc, char **argv)
         return VOS_OK;
     }
 
-    snprintf(usr_data, 128, "msg(%s)", argv[2]);
+    snprintf(usr_data, 128, "%s", argv[2]);
     ret = app_send_msg(argv[1], XMSG_T_ECHO_REQ, usr_data, strlen(usr_data) + 1);
     if (ret != VOS_OK) {  
         vos_print("app_send_msg failed(%d) \n", ret);

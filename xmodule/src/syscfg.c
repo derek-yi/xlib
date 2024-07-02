@@ -1,9 +1,4 @@
-#include "vos.h"
-#include <pthread.h>
-
-#include "cJSON.h"
-#include "syscfg.h"
-
+#include "xmodule.h"
 
 #ifndef MAKE_XLIB
 
