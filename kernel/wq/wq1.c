@@ -9,24 +9,21 @@
 #include <linux/string.h>
 #include <linux/gpio.h>
 #include <linux/interrupt.h>  
-
+#include <linux/workqueue.h>
 
 static int nix_status = 0;
 
 static struct kobject *my_kobj;
 
-void tasklet_fun(struct tasklet_struct *data);
-DECLARE_TASKLET(mytasklet, tasklet_fun);
-//struct tasklet_struct mytasklet;
-//tasklet_init(&mytasklet, tasklet_func);
+struct workqueue_struct *my_wq;
 
-void tasklet_fun(struct tasklet_struct *data)
+struct work_struct my_work;
+
+static void mywork_func(struct work_struct *work)
 {
-	static unsigned long count = 30;
-    
-	printk("count %lu, %s is call! data %p \r\n", count--, __FUNCTION__, data);
-    
-	if (count) tasklet_schedule(&mytasklet);
+    printk("%s called: \n",__FUNCTION__);
+    msleep(10);
+    printk("%s end \n",__FUNCTION__);
 }
 
 static ssize_t nix_show(struct kobject* kobjs, struct kobj_attribute *attr, char *buf)
@@ -43,10 +40,15 @@ static ssize_t nix_status_store(struct kobject *kobj, struct kobj_attribute *att
 {
     printk(KERN_INFO "nix_status_store: %s \n", buf);
     if (0 == memcmp(buf, "on", 2)) {
-        if (nix_status == 0) tasklet_schedule(&mytasklet);
+        //1 user workque
+        queue_work(my_wq, &my_work);
         nix_status = 1;
     } 
     else if (0 == memcmp(buf, "off", 3)) {
+        //2 system workque
+        //schedule_work => queue_work(keventd_wq, work)
+        schedule_work(&my_work); 
+        //schedule_delayed_work(&my_queue_work, tick); 
         nix_status = 0;
     }
     
@@ -70,15 +72,21 @@ static struct attribute_group nix_attr_grp = {
 static int __init sysfs_ctrl_init(void)
 {
     int ret;
+    
     my_kobj = kobject_create_and_add("derek", kernel_kobj->parent);
     ret = sysfs_create_group(my_kobj, &nix_attr_grp);
     printk(KERN_INFO "sysfs_ctrl_init ret %d \n", ret);
+
+    my_wq = create_workqueue("my_wq"); //1 user workque
+    INIT_WORK(&my_work, mywork_func);
+    
     return 0;
 }
 
 static void __exit sysfs_ctrl_exit(void)
 {
     printk(KERN_INFO "sysfs_ctrl_exit \n");
+    destroy_workqueue(my_wq);
     sysfs_remove_group(my_kobj, &nix_attr_grp);
     kobject_put(my_kobj);
 }

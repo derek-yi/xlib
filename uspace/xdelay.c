@@ -8,6 +8,11 @@
 #include <unistd.h>
 #include <fcntl.h>
 #include <errno.h>
+#include <sys/types.h>
+#include <sys/wait.h>
+#include <semaphore.h>
+#include <sched.h>
+#include <sys/ioctl.h>
 
 int bind_cpu = 0;
 
@@ -25,6 +30,7 @@ pid_t gettid(void)
     return syscall(SYS_gettid);  
 }
 
+#if 0
 int delay_test(char *task_name)
 {
     struct timeval start_tv, end_tv;   
@@ -62,6 +68,88 @@ int delay_test(char *task_name)
 
     return 0;
 }
+
+#else
+
+static sem_t demo_sem; 
+static pthread_cond_t cond;
+static pthread_mutex_t mutex;
+
+int delay_test(char *task_name)
+{
+    struct timeval start_tv, end_tv;   
+    long diff_us;
+	struct timespec ts;
+    int ret;
+    
+    gettimeofday(&start_tv, NULL);
+	clock_gettime(CLOCK_REALTIME, &ts);
+	ts.tv_nsec += 1000;  //1us
+	if (ts.tv_nsec >= 1000*1000*1000) {
+        ts.tv_sec += 1;
+        ts.tv_nsec -= 1000*1000*1000;
+    } 
+	ret = sem_timedwait(&demo_sem, &ts);
+    gettimeofday(&end_tv, NULL);
+    diff_us = (end_tv.tv_sec - start_tv.tv_sec)*1000000 + (end_tv.tv_usec - start_tv.tv_usec);
+    printf("%s: sem_timedwait(1) %d us, ret %d \n", task_name, diff_us, ret);
+
+    gettimeofday(&start_tv, NULL);
+	clock_gettime(CLOCK_REALTIME, &ts);
+	ts.tv_nsec += 10000;  //10us
+	if (ts.tv_nsec >= 1000*1000*1000) {
+        ts.tv_sec += 1;
+        ts.tv_nsec -= 1000*1000*1000;
+    } 
+	ret = sem_timedwait(&demo_sem, &ts);
+    gettimeofday(&end_tv, NULL);
+    diff_us = (end_tv.tv_sec - start_tv.tv_sec)*1000000 + (end_tv.tv_usec - start_tv.tv_usec);
+    printf("%s: sem_timedwait(10) %d us, ret %d \n", task_name, diff_us, ret);
+
+    gettimeofday(&start_tv, NULL);
+	clock_gettime(CLOCK_REALTIME, &ts);
+	ts.tv_nsec += 50000;  //50us
+	if (ts.tv_nsec >= 1000*1000*1000) {
+        ts.tv_sec += 1;
+        ts.tv_nsec -= 1000*1000*1000;
+    } 
+	ret = sem_timedwait(&demo_sem, &ts);
+    gettimeofday(&end_tv, NULL);
+    diff_us = (end_tv.tv_sec - start_tv.tv_sec)*1000000 + (end_tv.tv_usec - start_tv.tv_usec);
+    printf("%s: sem_timedwait(50) %d us, ret %d \n", task_name, diff_us, ret);
+
+    gettimeofday(&start_tv, NULL);
+    pthread_mutex_lock(&mutex);
+	clock_gettime(CLOCK_REALTIME, &ts);
+	ts.tv_nsec += 10000;  //10us
+	if (ts.tv_nsec >= 1000*1000*1000) {
+        ts.tv_sec += 1;
+        ts.tv_nsec -= 1000*1000*1000;
+    } 
+	ret = pthread_cond_timedwait(&cond, &mutex, &ts);
+    pthread_mutex_unlock(&mutex);
+    gettimeofday(&end_tv, NULL);
+    diff_us = (end_tv.tv_sec - start_tv.tv_sec)*1000000 + (end_tv.tv_usec - start_tv.tv_usec);
+    printf("%s: pthread_cond_timedwait(10) %d us, ret %d \n", task_name, diff_us, ret);
+
+    gettimeofday(&start_tv, NULL);
+    pthread_mutex_lock(&mutex);
+	clock_gettime(CLOCK_REALTIME, &ts);
+	ts.tv_nsec += 50000;  //50us
+	if (ts.tv_nsec >= 1000*1000*1000) {
+        ts.tv_sec += 1;
+        ts.tv_nsec -= 1000*1000*1000;
+    } 
+	ret = pthread_cond_timedwait(&cond, &mutex, &ts);
+    pthread_mutex_unlock(&mutex);
+    gettimeofday(&end_tv, NULL);
+    diff_us = (end_tv.tv_sec - start_tv.tv_sec)*1000000 + (end_tv.tv_usec - start_tv.tv_usec);
+    printf("%s: pthread_cond_timedwait(50) %d us, ret %d \n", task_name, diff_us, ret);
+
+    return 0;
+}
+
+#endif
 
 void thread_2(void)  
 {  
@@ -113,6 +201,10 @@ int main(int argc, char **argv)
     select = atoi(argv[2]);
     printf("main: pid=%d tid=%d self=%d\n", getppid(), getpid(), gettid(), (int)pthread_self());
     printf("main: scheduler %d \r\n", sched_getscheduler(0));
+
+    sem_init(&demo_sem, 0, 0); 
+    pthread_mutex_init(&mutex, NULL);
+    pthread_cond_init(&cond, NULL);
 
     if (select == 0) {
         ret = pthread_create(&my_tid, NULL, (void *)thread_1, NULL);  
