@@ -2,7 +2,7 @@
 #export ARCH=arm
 #CC  = $(CROSS_COMPILE)gcc
 
-KERNELDIR:=/home/derek/share/imb_g70/sprd_linux
+KERNELDIR:=/home/derek/share/repo_rk/rk3588/kernel_g76
 PWD := $(shell pwd)
 
 ## todo

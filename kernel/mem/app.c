@@ -84,7 +84,8 @@ int main()
     char mem_buff[6000];
 	char *dyn_buff;
 	char *huge_buff;
- 
+    int io_data;
+    long phy_addr;
 
 	mem_buff[5900] = 0x5a;	
     printf("local: va 0x%p, pa 0x%lx \n", mem_buff, virt_to_phys(mem_buff));
@@ -96,7 +97,8 @@ int main()
         free(dyn_buff);
 	}
 
-	huge_buff = (char *)mmap(0, MEM_SIZE, (PROT_READ | PROT_WRITE), (MAP_PRIVATE |MAP_POPULATE | MAP_ANONYMOUS | MAP_HUGETLB), -1, 0);
+	huge_buff = (char *)mmap(0, MEM_SIZE, (PROT_READ | PROT_WRITE), 
+	                        (MAP_PRIVATE |MAP_POPULATE | MAP_ANONYMOUS | MAP_HUGETLB), -1, 0);
 	if (huge_buff != MAP_FAILED) {
 		huge_buff[MEM_SIZE-1] = 0x5a;
         printf("hugepage: va 0x%p, pa 0x%lx \n", huge_buff, virt_to_phys(huge_buff));
@@ -107,20 +109,58 @@ int main()
         alloc_huge_page(i);
     }
 
-    fd = open("/dev/misc_op_cache", O_RDWR);
+    fd = open("/dev/misc_mem", O_RDWR);
     if( fd < 0 ) {
         printf("open failed \n");
         return 0;
     }
 
+    getchar();
+    printf("mmap dma_mem \n");
+    io_data = 0; ioctl(fd, 0x100, &io_data);
+
 	dyn_buff = (char *)mmap(0, MEM_SIZE, (PROT_READ | PROT_WRITE), MAP_SHARED, fd, 0);
 	if (dyn_buff != MAP_FAILED) {
-		dyn_buff[MEM_SIZE-1] = 0x5a;
-        printf("map_buff: va 0x%p, pa 0x%lx \n", dyn_buff, virt_to_phys(dyn_buff));
+        ioctl(fd, 0x200, &phy_addr);
+        dyn_buff[0] = 0x11;
+		dyn_buff[MEM_SIZE-1] = 0x11;
+        printf("map_buff: va 0x%p, pa 0x%lx 0x%lx \n", dyn_buff, virt_to_phys(dyn_buff), phy_addr);
+        ioctl(fd, 0x300, &phy_addr);
+        munmap(dyn_buff, MEM_SIZE);
 	}
-	
+
+    getchar();
+    printf("mmap kmalloc \n");
+    io_data = 1; ioctl(fd, 0x100, &io_data);
+
+	dyn_buff = (char *)mmap(0, MEM_SIZE, (PROT_READ | PROT_WRITE), MAP_SHARED, fd, 0);
+	if (dyn_buff != MAP_FAILED) {
+        ioctl(fd, 0x200, &phy_addr);
+        dyn_buff[0] = 0x22;
+		dyn_buff[MEM_SIZE-1] = 0x22;
+        printf("map_buff: va 0x%p, pa 0x%lx 0x%lx \n", dyn_buff, virt_to_phys(dyn_buff), phy_addr);
+        ioctl(fd, 0x300, &phy_addr);
+        munmap(dyn_buff, MEM_SIZE);
+	}
+
+    getchar();
+    printf("mmap glb_mem \n");
+    io_data = 2; ioctl(fd, 0x100, &io_data);
+
+	dyn_buff = (char *)mmap(0, MEM_SIZE, (PROT_READ | PROT_WRITE), MAP_SHARED, fd, 0);
+	if (dyn_buff != MAP_FAILED) {
+        ioctl(fd, 0x200, &phy_addr);
+        //read only ??
+        //dyn_buff[0] = 0x33;
+		//dyn_buff[MEM_SIZE-1] = 0x33;
+        printf("map_buff: va 0x%p, pa 0x%lx 0x%lx \n", dyn_buff, virt_to_phys(dyn_buff), phy_addr);
+        ioctl(fd, 0x300, &phy_addr);
+        munmap(dyn_buff, MEM_SIZE);
+	}
+
     getchar();
     close(fd);
+
     return 0;
 }
 

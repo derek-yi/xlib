@@ -31,16 +31,9 @@
 #include <linux/types.h>
 #include <linux/spinlock.h>
 
-//#define OP_CACHE_AREA
+#define MISC_NAME   			"misc_mem"
 
-#define MISC_NAME   			"misc_op_cache"
 #define DMA_BUFF_SZ 			(16 * 4096)
-
-typedef struct
-{
-	void *buff; //dma_addr_t
-	unsigned long len;
-}IO_DATA_ST;
 
 int mem_type = 0;
 
@@ -50,7 +43,7 @@ dma_addr_t dma_mem_phy = 0;
 char *kmalloc_mem_virt = NULL;
 dma_addr_t kmalloc_mem_phy = 0;
 
-char glb_mem_virt[DMA_BUFF_SZ];
+static char glb_mem_virt[DMA_BUFF_SZ];
 dma_addr_t glb_mem_phy = 0;
 
 static struct device *cma_dev;  
@@ -67,21 +60,22 @@ static int misc_map(struct file *filp, struct vm_area_struct *vma)
 	unsigned long pfn_start;
 	char *virt_addr = NULL;
 
-    printk("vm_start 0x%lu 0x%lx, vm_pgoff 0x%lx \n", 
+    printk("vm_start 0x%lx vm_end 0x%lx, vm_pgoff 0x%lx \n", 
             vma->vm_start, vma->vm_end, vma->vm_pgoff);
 
 	if (mem_type == 0) {
 		virt_addr = dma_mem_virt;
+        pfn_start = dma_mem_phy;
 	    ret = dma_mmap_coherent(cma_dev, vma,
 	     					   dma_mem_virt, dma_mem_phy,
 	     					   vma->vm_end - vma->vm_start);
 	} else if (mem_type == 1) {
 		virt_addr = kmalloc_mem_virt;
-		pfn_start = (virt_to_phys(kmalloc_mem_virt) >> PAGE_SHIFT) + vma->vm_pgoff;
+		pfn_start = virt_to_phys(kmalloc_mem_virt + vma->vm_pgoff) >> PAGE_SHIFT;
 	    ret = remap_pfn_range(vma, vma->vm_start, pfn_start, vma->vm_end - vma->vm_start, vma->vm_page_prot);
 	} else if (mem_type == 2) {
 		virt_addr = glb_mem_virt;
-		pfn_start = (virt_to_phys(glb_mem_virt) >> PAGE_SHIFT) + vma->vm_pgoff;
+		pfn_start = virt_to_phys(glb_mem_virt + vma->vm_pgoff) >> PAGE_SHIFT;
 	    ret = remap_pfn_range(vma, vma->vm_start, pfn_start, vma->vm_end - vma->vm_start, vma->vm_page_prot);
 	} 
 
@@ -89,7 +83,7 @@ static int misc_map(struct file *filp, struct vm_area_struct *vma)
         printk("%s: dma_mmap_coherent failed at [0x%lx 0x%lx]\n",
             __func__, vma->vm_start, vma->vm_end);
     else
-        printk("%s: map 0x%p to 0x%lx, size 0x%lx\n", __func__, virt_addr,
+        printk("%s: map 0x%p(0x%lx) to 0x%lx, size 0x%lx\n", __func__, virt_addr, pfn_start,
             vma->vm_start, vma->vm_end - vma->vm_start);
 
     return ret;
@@ -98,42 +92,40 @@ static int misc_map(struct file *filp, struct vm_area_struct *vma)
 static long misc_ioctl( struct file *file, unsigned int cmd, unsigned long arg)
 {   
 	dma_addr_t phy_addr = 0;
-	#ifdef OP_CACHE_AREA
-	IO_DATA_ST temp_data;
-	#endif
+    char *v_addr;
 	
 	pr_info("misc_ioctl cmd 0x%x \n", cmd);
     switch(cmd)
     {
-		case 0x300: //set mem_type
+		case 0x100: //set mem_type
 			if(copy_from_user(&mem_type,  (int *)arg, sizeof(int)))
 				return -EFAULT;
 			pr_info("mem_type %d \n", mem_type);
 			break;
 			
-        case 0x301: //get phy address
+        case 0x200: //get phy address
         	if (mem_type == 0) {
 				phy_addr = dma_mem_phy;
-				pr_info("check 0x%x \n", dma_mem_virt[0]);
         	} else if (mem_type == 1) {
 				phy_addr = kmalloc_mem_phy;
-				pr_info("check 0x%x \n", kmalloc_mem_virt[0]);
         	} else if (mem_type == 2) {
 				phy_addr = glb_mem_phy;
-				pr_info("check 0x%x \n", glb_mem_virt[0]);
         	} 
 			
             if(copy_to_user( (int *)arg, &phy_addr, sizeof(dma_addr_t))) {
                 return -EFAULT;
             }
-			
+            break;
+
+        case 0x300:
         	if (mem_type == 0) {
-				dma_mem_virt[0] = 0x10;
+				v_addr = dma_mem_virt;
         	} else if (mem_type == 1) {
-				kmalloc_mem_virt[0] = 0x11;
+        	    v_addr = kmalloc_mem_virt;
         	} else if (mem_type == 2) {
-				glb_mem_virt[0] = 0x12;
-        	} 
+                v_addr = glb_mem_virt;
+        	}
+            pr_info("check 0x%x 0x%x\n", v_addr[0], v_addr[1]);
             break;
 
 		default:
@@ -184,7 +176,6 @@ static int __init misc_init(void)
 	kmalloc_mem_virt = kzalloc(DMA_BUFF_SZ, GFP_KERNEL);
 	if (!kmalloc_mem_virt) {
         pr_info("kzalloc allocation error\n");
-        dma_mem_phy = 0;
 	} else {
 		kmalloc_mem_phy = virt_to_phys(kmalloc_mem_virt);
         pr_info("kzalloc memory at va 0x%p, pa 0x%llx, size %u \n", 
@@ -192,6 +183,7 @@ static int __init misc_init(void)
 	}
 
 	glb_mem_phy = virt_to_phys(glb_mem_virt);
+    memset(glb_mem_virt, 0, DMA_BUFF_SZ);
 	pr_info("glb memory at va 0x%p, pa 0x%llx, size %u \n", 
 			glb_mem_virt, glb_mem_phy, DMA_BUFF_SZ);
 
