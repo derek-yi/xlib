@@ -543,6 +543,7 @@ void* telnet_listen_task(void *param)
 	struct sockaddr_in sa;
 	int master_fd;
 	int on = 1;
+    long tcp_port = (param) ? (long)param : TELNETD_LISTEN_PORT;
 
 	master_fd = socket(AF_INET, SOCK_STREAM, 0);
 	if (master_fd < 0) {
@@ -555,7 +556,7 @@ void* telnet_listen_task(void *param)
 	/* Set it to listen to specified port */
 	memset((void *)&sa, 0, sizeof(sa));
 	sa.sin_family = AF_INET;
-	sa.sin_port = htons(TELNETD_LISTEN_PORT);
+	sa.sin_port = htons(tcp_port);
 
 	/* Set it to listen on the specified interface */
 	//sa.sin_addr.s_addr = htonl(INADDR_ANY);
@@ -572,6 +573,7 @@ void* telnet_listen_task(void *param)
 
     //if (daemon(0, 1) < 0) perror("daemon");
     vos_set_self_name("telnet_listen_task");
+    printf("telnetd: listen port %ld \r\n", tcp_port);
     while (1) {
         int fd;
         socklen_t salen;
@@ -581,7 +583,7 @@ void* telnet_listen_task(void *param)
             perror("accept");
             continue;
         } else {
-            printf("Server: connect from host %s, port %d.\r\n", inet_ntoa (sa.sin_addr), ntohs (sa.sin_port));        
+            printf("telnetd: connect from host %s, port %d.\r\n", inet_ntoa (sa.sin_addr), ntohs(sa.sin_port));        
             cli_telnet_task(fd);
             close(fd);
         }
@@ -590,12 +592,13 @@ void* telnet_listen_task(void *param)
     return NULL;
 }
 
-int telnet_task_init(void)
+int telnet_task_init(int port)
 {
     int ret;
     pthread_t unused_tid;
+    long tcp_port = (long)port;
 
-    ret = pthread_create(&unused_tid, NULL, telnet_listen_task, NULL);  
+    ret = pthread_create(&unused_tid, NULL, telnet_listen_task, (void *)tcp_port);  
     if (ret != 0)  {  
         printf("Error at %s:%d, pthread_create failed(%s)\r\n", __FILE__, __LINE__, strerror(errno));
         return CMD_ERR;  

@@ -195,6 +195,19 @@ int vos_get_mem_occupy(void);
 
 int vos_send_udp_pkt(char *dst_ipaddr, int dst_port, void *tx_buff, int len);
 
+char* base64_encode(char* plain);
+char* base64_decode(char* cipher);
+
+typedef struct {
+    uint8 se[256], sd[256];
+    uint32 pose, posd;
+    uint8 te, td;
+} rc4_ctx;
+
+void rc4_ks(rc4_ctx *ctx, const uint8 *key, uint32 key_len);
+void rc4_encrypt(rc4_ctx *ctx, const uint8 *src, uint8 *dst, uint32 len);
+void rc4_decrypt(rc4_ctx *ctx, const uint8 *src, uint8 *dst, uint32 len);
+
 #endif
 
 

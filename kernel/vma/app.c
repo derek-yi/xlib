@@ -108,7 +108,7 @@ int main()
     }
 
 	//map_mem = (char *)mmap(NULL, DMA_BUFF_SZ, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
-	map_mem = (char *)mmap(NULL, DMA_BUFF_SZ, PROT_READ | PROT_WRITE, MAP_SHARED|MAP_POPULATE|MAP_LOCKED, fd, 0);
+	map_mem = (char *)mmap(NULL, DMA_BUFF_SZ, PROT_READ | PROT_WRITE, MAP_SHARED|MAP_POPULATE, fd, 0);
 	if (map_mem != MAP_FAILED) {
         printf("map_map 0x%x 0x%x 0x%x \n", map_mem[0], map_mem[1], map_mem[2]);
         map_mem[1] = 100;
@@ -116,7 +116,8 @@ int main()
 		if (map_mem != MAP_FAILED) munmap(map_mem, DMA_BUFF_SZ);
 	}
     close(fd);
-    
+
+#if 0 //hugepage
     fd = open("/mnt/huge/hugepage0", O_CREAT|O_RDWR);
     if (fd < 0) {
         printf("open failed \n");
@@ -130,6 +131,7 @@ int main()
 		if (map_mem != MAP_FAILED) munmap(map_mem, DMA_BUFF_SZ);
     }
     close(fd);
+#endif
     
 	printf("local va %p, pa 0x%p \n", mem_buff, virt_to_phys(mem_buff));
 

@@ -76,8 +76,10 @@ void xmodule_cmd_init(void)
     cli_cmd_reg("xlog",     "xlog level config",            &xlog_cmd_set_level);
 }
 
-int xmodule_init(char *app_name, int mode, char *log_file, char *cfg_file)
+int xmodule_init(char *app_name, int mode, char *log_file, char *init_file)
 {
+    char *cfg_file = (init_file) ? init_file : DEF_CONFIG_FILE;
+    
 	if (access(cfg_file, F_OK) == 0) {
 		if (parse_json_cfg(cfg_file) != VOS_OK) {
 			if (cfgfile_load_file(cfg_file) != VOS_OK) {
@@ -85,13 +87,11 @@ int xmodule_init(char *app_name, int mode, char *log_file, char *cfg_file)
 				return VOS_ERR;
 			}
 		}
-        sys_conf_set("sys_cfgfile", DEF_CONFIG_FILE);
+        sys_conf_set("cfg_file", cfg_file);
 	}
 
 	app_role = mode;
-    if (app_name == NULL) {
-        sys_conf_set("app_name", "app_main");    } else {
-		sys_conf_set("app_name", app_name);	}
+    sys_conf_set("app_name", app_name ? app_name : "app_demo");
 
     xlog_init(log_file);
 	sys_conf_set("log_file", log_file);

@@ -1,4 +1,0 @@
-[submodule "cves"]
-path = cves
-url = ssh://`echo hello > cve.ext`foo.example.com/bar
-

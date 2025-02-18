@@ -1,7 +1,5 @@
 #include "xmodule.h"
 
-int app_in_master(void);
-
 static char my_log_file[128];
 
 static uint32 xlog_file_max = 0x1000000;
@@ -97,7 +95,7 @@ int xlog_init(char *log_file)
 int _xlog(const char *func, int line, int level, const char *format, ...)
 {
     va_list args;
-	char time_str[32];
+	char tmp_str[256];
     char buff[XLOG_BUFF_MAX];
     static int check_cnt = 0;
 	int ptr = 0, buf_len;
@@ -110,11 +108,11 @@ int _xlog(const char *func, int line, int level, const char *format, ...)
         ptr = vsnprintf(buff, XLOG_BUFF_MAX - 1, format, args);
         va_end(args);
     } else {
-        fmt_time_str(time_str, sizeof(time_str));
+        fmt_time_str(tmp_str, sizeof(tmp_str));
         if (app_in_master()) {
-        	ptr = snprintf(buff, XLOG_BUFF_MAX, "<MM%d>[%s]<%s,%d> ", level, time_str, f_name, line);
+        	ptr = snprintf(buff, XLOG_BUFF_MAX, "<MM%d>[%s]<%s,%d> ", level, tmp_str, f_name, line);
         } else {
-        	ptr = snprintf(buff, XLOG_BUFF_MAX, "<SS%d>[%s]<%s,%d> ", level, time_str, f_name, line);
+        	ptr = snprintf(buff, XLOG_BUFF_MAX, "<SS%d>[%s]<%s,%d> ", level, tmp_str, f_name, line);
         }
         
         va_start(args, format);
@@ -141,13 +139,13 @@ int _xlog(const char *func, int line, int level, const char *format, ...)
 
     if (xlog_file_max && (vos_file_size(my_log_file) > xlog_file_max) && (++check_cnt > 100)) {
         check_cnt = 0;
-        sprintf(time_str, "/home/log/xlog.init.txt");
-        if (vos_file_exist(time_str)) {
-            vos_run_cmd("cp -f /home/log/xlog_%d.txt /home/log/xlog.last.txt");
+        sprintf(tmp_str, "%s.init", my_log_file);
+        if (vos_file_exist(tmp_str)) {
+            vos_run_cmd("cp -f %s %s.last", my_log_file, my_log_file);
         } else {
-            vos_run_cmd("cp -f /home/log/xlog_%d.txt /home/log/xlog.init.txt");
+            vos_run_cmd("cp -f %s %s.init", my_log_file, my_log_file);
         }
-        vos_run_cmd("echo new_log > /home/log/xlog.txt");
+        vos_run_cmd("echo new_log > %s", my_log_file);
     }
 
     return VOS_OK;    
