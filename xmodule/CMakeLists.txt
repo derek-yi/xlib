@@ -28,7 +28,6 @@ message(STATUS "CMAKE_C_FLAGS: " ${CMAKE_C_FLAGS})
 ## include
 include_directories(${ROOT_DIR}/include)
 
-
 ## link
 #link_directories(${ROOT_DIR}/lib)
 #LINK_LIBRARIES(${ROOT_DIR}/aa.a)
