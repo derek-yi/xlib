@@ -367,6 +367,7 @@ void* inet_tx_task(void *param)
 {
     char msg_buff[MSG_HEAD_LEN];
     DEVM_MSG_S *tx_msg = (DEVM_MSG_S *)msg_buff;
+	static int serial_num = 0;
 	int tx_len;
 
     xlog_info("%s start, local_sock %d", __func__, local_sock);
@@ -375,7 +376,7 @@ void* inet_tx_task(void *param)
 		memset(msg_buff, 0, sizeof(msg_buff));
         tx_msg->magic_num = htonl(MSG_MAGIC_NUM);
         tx_msg->msg_type = htonl(XMSG_T_HELLO);
-    	tx_msg->serial_num = 0;
+    	tx_msg->serial_num = serial_num++;
         snprintf(tx_msg->src_app, APP_NAME_LEN, "%s", get_app_name());
         snprintf(tx_msg->dst_app, APP_NAME_LEN, "_master");
 
@@ -440,12 +441,14 @@ void* inet_connect_task(void *param)
 
 int echo_msg_proc(DEVM_MSG_S *rx_msg)
 {
-    vos_print("%s> %s", rx_msg->src_app, rx_msg->msg_payload);
+    vos_print("\r\n%s: %s\r\n", rx_msg->src_app, rx_msg->msg_payload);
+#if 0	
 	if (rx_msg->msg_type == XMSG_T_ECHO_REQ) {
 		char usr_data[512];
 		snprintf(usr_data, 512, "ECHO: %s\n", rx_msg->msg_payload);
     	app_send_msg(rx_msg->src_app, XMSG_T_ECHO_ACK, usr_data, strlen(usr_data) + 1);
 	}
+#endif	
     return VOS_OK;
 }
 
