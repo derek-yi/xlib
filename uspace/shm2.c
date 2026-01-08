@@ -120,25 +120,21 @@ int main(int argc, char **argv)
     int ret;
     
     if (argc < 2) {
-        printf("\n Usage: %s <1|2>", argv[0]);
-        printf("\n   1 -- create read task");
-        printf("\n   2 -- create write task");
+        printf("\n Usage: %s <read|write>", argv[0]);
         printf("\n");
         return 0;
     }
 
-    int tu = atoi(argv[1]);
-    if (tu == 1) ret = task1_proc();
-    if (tu == 2) ret = task2_proc();
+    if (!memcmp(argv[1], "read", 4)) ret = task1_proc();
+    else ret = task2_proc();
     
     return ret;
 }
 
 /*
-
-gcc -o shm.out shm.c -lrt
-./shm.out 2
-./shm.out 1
+gcc -o shm.out shm2.c -lrt
+./shm.out read
+./shm.out write
 
 */
 

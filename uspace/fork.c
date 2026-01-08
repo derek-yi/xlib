@@ -1,6 +1,3 @@
-
-
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <pthread.h>
@@ -41,53 +38,45 @@ void assert(int expression);
 
 */
 
-#ifndef T_DESC
-#define T_DESC(x, y)   (y)
-#endif
-
-
-#if T_DESC("global", 1)
-
 
 int main(int argc, char **argv)
 {
-     pid_t pid;
-     int status;
-     
-     if((pid = fork()) < 0)
-     {
-         status = -1;
-     }
-     else if(pid == 0)
-     {
-         printf("child: 11\n");
-         
-         // 执行/bin目录下的ls, 第一参数为程序名ls, 第二个参数为"-al", 第三个参数为"/etc/passwd"
-         execl("/bin/ls", "ls", "-al", "/etc/passwd", (char *) 0);
-         //system("ls -a");
-         
-         printf("child: 22\n");
-         //_exit(127);
-     }
-     else
-     {
-         printf("father: 11\n");
-         while(waitpid(pid, &status, 0) < 0)
-         {
-             if(errno != EINTR)
-             {
-                 status = -1;
-                 break;
-             }
-         }
-         printf("father: 22\n");
-     }
+    pid_t pid;
+    int status;
 
-     printf("status: %d\n", status);
-     return status;
- } 
+    if((pid = fork()) < 0)
+    {
+        status = -1;
+    }
+    else if(pid == 0)
+    {
+        printf("child: start \n");
+        
+        //execl("/bin/ls", "ls", "-al", "/etc/passwd", (char *) 0);
+        system("ls -al /etc/passwd");
 
-#endif
+        //execl do not run next
+        printf("child: end \n");
+        //_exit(10);
+    }
+    else
+    {
+        printf("father: start \n");
+        while(waitpid(pid, &status, 0) < 0)
+        {
+            if(errno != EINTR)
+            {
+                status = -1;
+                break;
+            }
+        }
+        printf("status: %d \n", status);
+        printf("father: end \n");
+    }
+
+    return status;
+} 
+
 
 
 

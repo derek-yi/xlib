@@ -53,12 +53,16 @@ int tu1_proc(int rw_flag, char *op_str)
 	char buf[FILE_SIZE] = {0};
 	void* map_addr = NULL;
 
-	if (rw_flag == 0)
+	if (rw_flag == 2) {
+		shm_unlink(SHM_NAME);
+        return 0;
+	} else if (rw_flag == 0) {
 		fd = shm_open(SHM_NAME, O_RDWR, 0644);
-	else 
+	} else {
 		fd = shm_open(SHM_NAME, O_RDWR|O_CREAT, 0644);
+    }
 	if (fd < 0) {
-		perror("shm failed: ");
+		perror("shm_open failed: ");
 		goto _OUT;
 	}
 
@@ -76,14 +80,13 @@ int tu1_proc(int rw_flag, char *op_str)
 		goto _OUT;
 	}
 
+	printf("map_addr phy_addr: 0x%lx\n", virt_to_phys(map_addr));
     if (rw_flag == 0) { // read
     	memcpy(buf, map_addr, sizeof(buf));
     	printf("read: %s\n", buf);
     } else {  // write
         memcpy(map_addr, op_str, strlen(op_str));
     }
-
-	printf("map_addr phy_addr: 0x%lx\n", virt_to_phys(map_addr));
 
 	ret = munmap(map_addr, FILE_SIZE);
 	if (-1 == ret) {
@@ -92,9 +95,6 @@ int tu1_proc(int rw_flag, char *op_str)
 	}
         
 _OUT:	
-    if (rw_flag == 0) {
-		//shm_unlink(SHM_NAME);
-	}
 	return ret;
 }
 
@@ -104,16 +104,23 @@ int main(int argc, char **argv)
 	int rw_flag = 1; //write
     
     if(argc < 2) {
-        printf("Usage: %s <write> <str> \r\n", argv[0]);
-        printf("       %s <read> \r\n", argv[0]);
+        printf("Usage: %s write <str> \r\n", argv[0]);
+        printf("       %s read \r\n", argv[0]);
+        printf("       %s clean \r\n", argv[0]);
         return 0;
     }
 
 	if (!memcmp(argv[1], "read", 4)) rw_flag = 0;
+	else if (!memcmp(argv[1], "clean", 5)) rw_flag = 2;
     ret = tu1_proc(rw_flag,  argv[2]);
 
-	//while (1) sleep(1);
     return ret;
 }
 
+/*
+gcc -o shm.out shm.c -lrt
+./shm.out write 337829732
+./shm.out read
+./shm.out clean
+*/
 
