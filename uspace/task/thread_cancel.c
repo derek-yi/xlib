@@ -1,4 +1,3 @@
-
 #include <pthread.h>
 #include <sys/types.h>
 #include <stdio.h>
@@ -15,18 +14,17 @@ static int cnt = 0;
 
 static void cleanup_handler(void *arg)
 {
-  printf("Called clean-up handler\n");
-  cnt = 0;
+    printf("Called clean-up handler\n");
+    cnt = 0;
 }
 
 static void cleanup_handler2(void *arg)
 {
-  printf("Called clean-up handler2\n");
-  cnt = 0;
+    printf("Called clean-up handler2\n");
+    cnt = 0;
 }
 
-static void *
-thread_start(void *arg)
+static void *thread_start(void *arg)
 {
   time_t start, curr;
 
@@ -59,8 +57,7 @@ thread_start(void *arg)
   return NULL;
 }
 
-int
-main(int argc, char *argv[])
+int main(int argc, char *argv[])
 {
   pthread_t thr;
   int s;
@@ -76,7 +73,6 @@ main(int argc, char *argv[])
       if (argc > 2)
           cleanup_pop_arg = atoi(argv[2]);
       done = 1;
-
   } else {
       printf("Canceling thread\n");
       s = pthread_cancel(thr);
@@ -85,8 +81,7 @@ main(int argc, char *argv[])
   }
 
   s = pthread_join(thr, &res);
-  if (s != 0)
-      handle_error_en(s, "pthread_join");
+  if (s != 0) handle_error_en(s, "pthread_join");
 
   if (res == PTHREAD_CANCELED)
       printf("Thread was canceled; cnt = %d\n", cnt);

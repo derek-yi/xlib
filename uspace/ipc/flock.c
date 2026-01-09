@@ -16,10 +16,8 @@
 #if T_DESC("fcntl", 1)
 
 char *flock_name1 = "/tmp/flock1";
-char *flock_name2 = "/tmp/flock2";
 
 int flock_fd1;
-int flock_fd2;
 
 int read_lock(int fd)
 {
@@ -89,13 +87,12 @@ void thread_11(void)
     int i;  
     
     for(i=0; i<100; i++)  {
-        write_lock(flock_fd1);
-        //write_lock(flock_fd2);
         printf("This is thread_11...");  
+        write_lock(flock_fd1);
+        //read_lock(flock_fd1);
         sleep(1);  
         printf("file_unlock.\n");
-        file_unlock(flock_fd2);
-        //file_unlock(flock_fd1);
+        file_unlock(flock_fd1);
     }  
     
     pthread_exit(0);  
@@ -106,12 +103,10 @@ void thread_12(void)
     int i;  
     
     for(i=0; i<100; i++) {
-        //write_lock(flock_fd1);
-        write_lock(flock_fd2);
         printf("This is thread_12...");  
-        sleep(2);  
+        write_lock(flock_fd1);
+        sleep(5);  
         printf("file_unlock.\n");
-        //file_unlock(flock_fd2);
         file_unlock(flock_fd1);
     }  
     
@@ -127,9 +122,6 @@ int tu1_proc(int tu_id)
     flock_fd1 = open(flock_name1, O_RDWR| O_CREAT, 0600);
     if (flock_fd1 < 0) return -1;
     
-    flock_fd2 = open(flock_name2, O_RDWR| O_CREAT, 0600);
-    if (flock_fd2 < 0) return -1;
-
     ret = pthread_create(&id_1, NULL, (void *)thread_11, NULL);  
     ret |= pthread_create(&id_2, NULL, (void *)thread_12, NULL);  
     if(ret != 0)  
@@ -142,7 +134,6 @@ int tu1_proc(int tu_id)
     pthread_join(id_2, NULL);  
 
     close(flock_fd1);
-    close(flock_fd2);
     
     return 0;  
 }  

@@ -7,7 +7,7 @@
 
 #define TEXT_SZ 256  
   
-struct shared_use_st  
+struct shared_st  
 {  
     int  written;
     char text[TEXT_SZ];
@@ -18,9 +18,9 @@ char *shm_mem = NULL;
 void task1_proc(void)
 {
     int running = 1;
-    struct shared_use_st *shared;
+    struct shared_st *shared;
 
-    shared = (struct shared_use_st*)shm_mem;
+    shared = (struct shared_st*)shm_mem;
     shared->written = 0;
     while (running)
     {
@@ -42,10 +42,10 @@ void task1_proc(void)
 void task2_proc(void)
 {
 	int running = 1;
-	struct shared_use_st *shared = NULL;
+	struct shared_st *shared = NULL;
 	char buffer[TEXT_SZ + 1];
 
-	shared = (struct shared_use_st*)shm_mem;
+	shared = (struct shared_st*)shm_mem;
 	while (running)
 	{
 		while (shared->written == 1) {
@@ -70,8 +70,8 @@ int main (int argc, char **argv)
 {
     pthread_t unused_id;
     
-    /* 匿名映射,创建一块内存供父子进程通信 */
-    shm_mem = (char *) mmap (NULL, TEXT_SZ*2, PROT_READ | PROT_WRITE, MAP_SHARED | MAP_ANONYMOUS, -1, 0);
+    shm_mem = (char *) mmap(NULL, sizeof(struct shared_st), 
+                            PROT_READ | PROT_WRITE, MAP_SHARED | MAP_ANONYMOUS, -1, 0);
     if (shm_mem == NULL) {
         perror("mmap");
         exit (0);
@@ -81,7 +81,7 @@ int main (int argc, char **argv)
     pthread_create(&unused_id, NULL, (void *)task2_proc, NULL);  
 
     pthread_join(unused_id, NULL);  
-    munmap(shm_mem, TEXT_SZ*2); //实际上，进程终止时，会自动解除映射。 
+    munmap(shm_mem, sizeof(struct shared_st));
     return 0;
 }
 

@@ -21,15 +21,15 @@ void thread_2(void)
 
     param.sched_priority = 80;
     sched_setscheduler(0, SCHED_RR, &param);
+    printf("thread_2: ppid=%d pid=%d tid=%d self=%d\n", getppid(), getpid(), gettid(), (int)pthread_self());
+    printf("thread_2: %d %d \r\n", sched_getscheduler(0), sched_getscheduler(gettid()));
     
-    while(1)  {
-        printf("thread_2: ppid=%d pid=%d tid=%d self=%d\n", getppid(), getpid(), gettid(), (int)pthread_self());
-        printf("thread_2: %d %d \r\n", sched_getscheduler(0), sched_getscheduler(gettid()));
+    while (1)  {
         my_var += 1000;
         printf("thread_2: my_var=%d addr=0x%x \n", my_var, &my_var);
-        sleep(10);
+        sleep(3);
     }  
-    pthread_exit(0);  
+    //pthread_exit(0);  
 }  
 
 void thread_1(void)  
@@ -38,21 +38,20 @@ void thread_1(void)
     int ret;  
 
     printf("thread_1: %d %d \r\n", sched_getscheduler(0), sched_getscheduler(gettid()));
+    printf("thread_1: ppid=%d pid=%d tid=%d self=%d\n", getppid(), getpid(), gettid(), (int)pthread_self());
     
     ret = pthread_create(&id_2, NULL, (void *)thread_2, NULL);  
-    if(ret != 0)  
-    {  
+    if (ret != 0) {  
         printf("Create pthread error!\n");  
         return -1;  
     }      
     
-    while(1)  {
-        printf("thread_1: ppid=%d pid=%d tid=%d self=%d\n", getppid(), getpid(), gettid(), (int)pthread_self());
+    while (1)  {
         my_var += 1;
         printf("thread_1: my_var=%d addr=0x%x \n", my_var, &my_var);
-        sleep(10);
+        sleep(3);
     }  
-    pthread_exit(0);  
+    //pthread_exit(0);  
 }  
   
 #include <sched.h>
@@ -80,20 +79,17 @@ int pthread_test1(void)
     printf("SCHED_OTHER: Max %u, Min %u\n", sched_get_priority_max(SCHED_OTHER), sched_get_priority_min(SCHED_OTHER));
 
     ret = pthread_create(&id_1, &attr, (void *)thread_1, NULL);  
-    if(ret != 0)  
-    {  
+    if (ret != 0) {  
         printf("Create pthread error!\n");  
         return -1;  
     }  
 
     printf("main: pid=0x%x tid=0x%x self=0x%x\n", getpid(), gettid(), (int)pthread_self());
-    
     pthread_join(id_1, NULL);  
     //pthread_join(id_2, NULL);  
     
     return 0;  
 }  
-
 
 int main(int argc, char **argv)
 {

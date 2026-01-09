@@ -12,7 +12,7 @@ int main()
     unsigned char content;
     FILE *f;
     int n, fd;
-	int map_size = 1024;
+	int map_size = 128;
  
     fd = open("/dev/mem", O_RDWR|O_SYNC);
     if (fd == -1)
@@ -21,13 +21,10 @@ int main()
     }
  
     map_base = mmap(NULL, map_size, PROT_READ|PROT_WRITE, MAP_SHARED, fd, 0x20000);
-    if (map_base == 0)
-    {
+    if (map_base == 0) {
         printf("NULL pointer!\n");
-    }
-    else
-    {
-        printf("Successfull!\n");
+        close(fd);
+        return 0;
     }
  
     for (int i = 0;i < map_size; ++i)

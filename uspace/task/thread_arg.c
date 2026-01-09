@@ -6,9 +6,10 @@ void *thread_func(void *args)
 {
     char *param = (char *)args;
     
-    printf("param %s\n", param);
-    sleep(1);
-    printf("param %s\n", param);
+    for (int i = 0; i < 10; i++) {
+        sleep(1);
+        printf("param %s\n", param);
+    }
 
     return (void*)0;
 }

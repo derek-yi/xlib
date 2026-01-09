@@ -14,38 +14,6 @@ const int __endian_bit = 1;
 #define is_bigendian() ( (*(char*)&__endian_bit) == 0 )
 
 
-int read_pagemap(char * path_buf, unsigned long virt_addr);
-
-int main(int argc, char ** argv)
-{
-    char path_buf [0x100] = {};
-    unsigned long virt_addr;
-    int pid;
-    char *end;
-    
-    if (argc != 3) {
-        printf("%s <pid> <vaddr> \n", argv[0]);
-        return -1;
-    }
-    
-    if (!memcmp(argv[1], "self", sizeof("self"))) {
-        sprintf(path_buf, "/proc/self/pagemap");
-        pid = -1;
-    } else {
-        pid = strtol(argv[1], &end, 10);
-        if (end == argv[1] || *end != '\0' || pid<=0) {
-            printf("PID must be a positive number or 'self'\n");
-            return -1;
-        }
-    }
-    
-    virt_addr = strtoll(argv[2], NULL, 16);
-    if (pid!=-1) sprintf(path_buf, "/proc/%u/pagemap", pid);
-
-    read_pagemap(path_buf, virt_addr);
-    return 0;
-}
-
 int read_pagemap(char * path_buf, unsigned long virt_addr)
 {
     uint64_t page_size = getpagesize();
@@ -107,4 +75,35 @@ int read_pagemap(char * path_buf, unsigned long virt_addr)
     fclose(f);
     return 0;
 }
+
+int main(int argc, char ** argv)
+{
+    char path_buf [0x100] = {};
+    unsigned long virt_addr;
+    int pid;
+    char *end;
+    
+    if (argc != 3) {
+        printf("%s <pid> <vaddr> \n", argv[0]);
+        return -1;
+    }
+    
+    if (!memcmp(argv[1], "self", sizeof("self"))) {
+        sprintf(path_buf, "/proc/self/pagemap");
+        pid = -1;
+    } else {
+        pid = strtol(argv[1], &end, 10);
+        if (end == argv[1] || *end != '\0' || pid<=0) {
+            printf("PID must be a positive number or 'self'\n");
+            return -1;
+        }
+    }
+    
+    virt_addr = strtoll(argv[2], NULL, 16);
+    if (pid != -1) sprintf(path_buf, "/proc/%u/pagemap", pid);
+
+    read_pagemap(path_buf, virt_addr);
+    return 0;
+}
+
 

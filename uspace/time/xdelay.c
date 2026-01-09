@@ -25,11 +25,6 @@ int vos_bind_to_cpu(int cpu_id)
     return sched_setaffinity(0, sizeof(mask), &mask);
 }
 
-pid_t gettid(void)
-{  
-    return syscall(SYS_gettid);  
-}
-
 #if 0
 int delay_test(char *task_name)
 {
@@ -160,10 +155,6 @@ void thread_2(void)
     sched_setscheduler(0, SCHED_FIFO, &param);
     sleep(1);
     
-    printf("thread_2: pid=%d tid=%d self=%d\n", getppid(), getpid(), gettid(), (int)pthread_self());
-    printf("thread_2: scheduler %d \r\n", sched_getscheduler(0));
-    sleep(1);
-    
     for (int i = 0; i < 5; i++) {
         delay_test("SCHED_FIFO");
     }
@@ -178,10 +169,6 @@ void thread_1(void)
     sched_setscheduler(0, SCHED_OTHER, &param);
     sleep(1);
     
-    printf("thread_1: pid=%d tid=%d self=%d\n", getppid(), getpid(), gettid(), (int)pthread_self());
-    printf("thread_1: scheduler %d \r\n", sched_getscheduler(0));
-    sleep(1);
-
     for (int i = 0; i < 5; i++) {
         delay_test("SCHED_OTHER");
     }
@@ -199,8 +186,6 @@ int main(int argc, char **argv)
 
     bind_cpu = atoi(argv[1]);
     select = atoi(argv[2]);
-    printf("main: pid=%d tid=%d self=%d\n", getppid(), getpid(), gettid(), (int)pthread_self());
-    printf("main: scheduler %d \r\n", sched_getscheduler(0));
 
     sem_init(&demo_sem, 0, 0); 
     pthread_mutex_init(&mutex, NULL);

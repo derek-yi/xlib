@@ -1,5 +1,3 @@
-
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <pthread.h>
@@ -38,7 +36,7 @@ int func_b(char *thread)
 
 void thread_1(void)  
 {  
-    while(1)  {
+    while (1)  {
         printf("This is pthread_1.\n");  
         func_a("thread_1", 1000);
         //func_b("thread_1 ");
@@ -50,7 +48,7 @@ void thread_1(void)
   
 void thread_2(void)  
 {  
-    while(1) {
+    while (1) {
         printf("This is pthread_2.\n");  
         //func_b("thread_2");
         func_a("thread_2", 1);
@@ -67,25 +65,25 @@ int case1_proc(void)
 
     //int sem_init(sem_t *sem, int pshared, unsigned int value);
     ret = sem_init(&my_sem1, 1, 1);
-    if(ret != 0)  {  
+    if (ret != 0)  {  
         printf("sem_init error!\n");  
         return -1;  
     } 
 
     ret = sem_init(&my_sem2, 1, 1);
-    if(ret != 0) {  
+    if (ret != 0) {  
         printf("sem_init error!\n");   
         return -1;  
     } 
     
     ret = pthread_create(&id_1, NULL, (void *)thread_1, NULL);  
-    if(ret != 0)  {  
+    if (ret != 0)  {  
         printf("Create pthread error!\n");  
         return -1;  
     }  
     
     ret = pthread_create(&id_2, NULL, (void *)thread_2, NULL);  
-    if(ret != 0)  {  
+    if (ret != 0)  {  
         printf("Create pthread error!\n");  
         return -1;  
     }  

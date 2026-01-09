@@ -44,12 +44,9 @@ int main(int argc, char **argv)
     pid_t pid;
     int status;
 
-    if((pid = fork()) < 0)
-    {
+    if ((pid = fork()) < 0) {
         status = -1;
-    }
-    else if(pid == 0)
-    {
+    } else if(pid == 0) {
         printf("child: start \n");
         
         //execl("/bin/ls", "ls", "-al", "/etc/passwd", (char *) 0);
@@ -58,14 +55,10 @@ int main(int argc, char **argv)
         //execl do not run next
         printf("child: end \n");
         //_exit(10);
-    }
-    else
-    {
+    } else {
         printf("father: start \n");
-        while(waitpid(pid, &status, 0) < 0)
-        {
-            if(errno != EINTR)
-            {
+        while (waitpid(pid, &status, 0) < 0) {
+            if (errno != EINTR) {
                 status = -1;
                 break;
             }

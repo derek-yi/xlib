@@ -29,8 +29,8 @@ void* thread_1(void *a)
         while (condition == FALSE)
             pthread_cond_wait(&cond, &lock);
         printf("thread_1111\n");
+        condition = FALSE;
         pthread_mutex_unlock(&lock);
-        sleep(1);
     }
 }
 
@@ -47,40 +47,13 @@ void* thread_2(void *a)
     }
 }  
 
-void* thread_3(void *a)
-{
-    while(1)
-    {
-        pthread_mutex_lock(&mutex);
-        printf("thread_33333\n");
-        pthread_mutex_unlock(&mutex);
-        sleep(3);
-    }
-}
-
-void* thread_4(void *a)  
-{  
-    while(1)
-    {
-        pthread_mutex_lock(&mutex);
-        printf("thread_44444\n");
-        pthread_mutex_unlock(&mutex);
-        sleep(4);
-    }
-}  
-
 int main()
 {
 	int i;
 	pthread_t ths[2];
 
-#if 1    
 	pthread_create(&ths[0], NULL,  thread_1, 0);
 	pthread_create(&ths[1], NULL,  thread_2, 0);
-#else    
-	pthread_create(&ths[0], NULL,  thread_3, 0);
-	pthread_create(&ths[1], NULL,  thread_4, 0);
-#endif    
     
 	for(i = 0; i < 2; ++ i){
 		pthread_join(ths[i], NULL);
